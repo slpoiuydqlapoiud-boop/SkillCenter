@@ -15,10 +15,10 @@ mvn -f apps/api/pom.xml spring-boot:run
 ```powershell
 cd apps/web
 npm.cmd install --prefer-offline --no-audit --no-fund
-npm.cmd run dev -- --host 127.0.0.1
+npm.cmd run dev
 ```
 
-访问 `http://127.0.0.1:5173/`。Vite 会把 `/api` 请求代理到 `http://127.0.0.1:8080`。
+Vite 会监听 `0.0.0.0:5173`：本机访问 `http://127.0.0.1:5173/`，局域网同事使用这台电脑的局域网 IP（例如 `http://192.168.1.20:5173/`）。Vite 会把 `/api` 请求代理到 `http://127.0.0.1:8080`。
 
 ## 已接入的 API 流程
 

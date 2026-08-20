@@ -4,6 +4,14 @@ import { readFile } from "node:fs/promises";
 import viteConfig from "../vite.config.mjs";
 
 const indexHtml = await readFile(new URL("../index.html", import.meta.url), "utf8");
+const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+
+test("development server listens on every network interface for LAN access", () => {
+  assert.equal(viteConfig.server.host, "0.0.0.0");
+  assert.match(packageJson.scripts.dev, /--host 0\.0\.0\.0/);
+  assert.doesNotMatch(readme, /run dev -- --host 127\.0\.0\.1/);
+});
 
 test("brands the browser tab and declares a SkillCenter favicon", () => {
   assert.match(indexHtml, /<title>SkillCenter<\/title>/);
