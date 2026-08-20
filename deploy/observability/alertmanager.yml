@@ -1,0 +1,12 @@
+route:
+  receiver: skill-center-notification-gateway
+  group_by: [alertname, service]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  - name: skill-center-notification-gateway
+    webhook_configs:
+      - url: http://notification-gateway.internal/hooks/skill-center
+        send_resolved: true

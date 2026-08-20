@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skill-center.internal/schemas/v1/installation-event.schema.json",
+  "title": "Skill Installation Event V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "eventId", "occurredAt", "skillId", "version", "subject", "client", "deviceId", "action", "method", "outcome"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "eventId": {"type": "string", "format": "uuid"},
+    "occurredAt": {"type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T.+(?:Z|[+-][0-9]{2}:[0-9]{2})$"},
+    "skillId": {"$ref": "#/$defs/slug"},
+    "version": {"$ref": "#/$defs/semver"},
+    "fromVersion": {"$ref": "#/$defs/semver"},
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["userId", "teamId"],
+      "properties": {
+        "userId": {"$ref": "#/$defs/principalId"},
+        "teamId": {"$ref": "#/$defs/slug"}
+      }
+    },
+    "client": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "version"],
+      "properties": {
+        "type": {"enum": ["codex", "department-agent", "skillmd-compatible"]},
+        "version": {"$ref": "#/$defs/semver"}
+      }
+    },
+    "deviceId": {"type": "string", "pattern": "^[A-Za-z0-9_-]{16,128}$"},
+    "action": {"enum": ["install", "upgrade", "downgrade", "uninstall"]},
+    "method": {"enum": ["one-click", "cli", "manual-zip"]},
+    "outcome": {"enum": ["success", "failure"]},
+    "errorCode": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,63}$"}
+  },
+  "allOf": [
+    {"if": {"properties": {"outcome": {"const": "failure"}}}, "then": {"required": ["errorCode"]}},
+    {"if": {"properties": {"outcome": {"const": "success"}}}, "then": {"not": {"required": ["errorCode"]}}},
+    {"if": {"properties": {"action": {"enum": ["upgrade", "downgrade"]}}}, "then": {"required": ["fromVersion"]}}
+  ],
+  "$defs": {
+    "semver": {"type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\\+([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?$"},
+    "slug": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$", "minLength": 2, "maxLength": 64},
+    "principalId": {"type": "string", "pattern": "^[A-Za-z0-9._@-]{2,128}$"}
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0",
+  "eventId": "f9cfe6f5-c6cf-486b-88bd-401acbbf44b1",
+  "occurredAt": "2026-08-12T10:02:00+08:00",
+  "skillId": "summarize-release-notes",
+  "version": "1.0.0",
+  "subject": {"userId": "u100002", "teamId": "developer-experience"},
+  "client": {"type": "codex", "version": "1.0.0"},
+  "deviceId": "device_a78c418d22bd",
+  "action": "install",
+  "method": "one-click",
+  "outcome": "failure"
+}

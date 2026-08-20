@@ -29,6 +29,7 @@ __pycache__/
 .idea/
 .vscode/
 dist/
+target/
 build/
 *.log
 node_modules/

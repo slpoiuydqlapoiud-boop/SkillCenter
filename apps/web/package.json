@@ -1,0 +1,25 @@
+{
+  "name": "web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/prepare-sites-build.mjs",
+    "preview": "vite preview",
+    "test:sites": "node --test tests/sites-worker.test.mjs",
+    "test": "node --test tests/auth.test.mjs tests/login-view.test.mjs tests/navigation.test.mjs tests/upload.test.mjs tests/state.test.mjs tests/sites-worker.test.mjs tests/api-client.test.mjs tests/distribution.test.mjs tests/review-queue.test.mjs tests/analytics.test.mjs tests/governance.test.mjs tests/operations-metrics.test.mjs tests/detail-layout.test.mjs tests/detail-view-interaction.test.mjs tests/collections-view.test.mjs tests/vite-proxy.test.mjs"
+  },
+  "dependencies": {
+    "@phosphor-icons/web": "^2.1.2",
+    "@vitejs/plugin-react": "5.0.4",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "vite": "6.4.2"
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1"
+  }
+}

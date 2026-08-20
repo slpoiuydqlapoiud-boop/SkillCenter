@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0",
+  "manifestId": "3b2e0ef6-d5b0-4b5c-bd98-71b382dd58f5",
+  "skill": {
+    "id": "summarize-release-notes",
+    "version": "1.0.0",
+    "status": "published"
+  },
+  "artifact": {
+    "downloadUrl": "https://skill-center.internal/artifacts/3b2e0ef6-d5b0-4b5c-bd98-71b382dd58f5",
+    "sha256": "c0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ff",
+    "sizeBytes": 4096,
+    "mediaType": "application/zip"
+  },
+  "compatibility": {
+    "client": "codex",
+    "minimumVersion": "1.0.0"
+  },
+  "permissions": {
+    "workspace": "read",
+    "network": "none",
+    "shell": "none",
+    "credentials": "none",
+    "mcpServers": []
+  },
+  "dependencies": [],
+  "issuedAt": "2026-08-12T10:00:00+08:00",
+  "expiresAt": "2026-08-12T10:05:00+08:00"
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skill-center.internal/schemas/v1/distribution-authorization.schema.json",
+  "title": "Skill Distribution Authorization V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tokenId", "token", "expiresAt", "method", "downloadUrl"],
+  "properties": {
+    "tokenId": {"type": "string", "format": "uuid"},
+    "token": {"type": "string", "minLength": 32, "maxLength": 128},
+    "expiresAt": {"type": "string", "format": "date-time"},
+    "method": {"enum": ["one-click", "cli", "manual-zip"]},
+    "downloadUrl": {"type": "string", "format": "uri-reference"},
+    "consumedAt": {"type": ["string", "null"], "format": "date-time"}
+  }
+}

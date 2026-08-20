@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0",
+  "eventId": "a3bdedee-4450-4e8f-b7c5-dd416d54c4b3",
+  "occurredAt": "2026-08-12T10:20:00+08:00",
+  "skillId": "summarize-release-notes",
+  "version": "1.0.0",
+  "subject": {
+    "userId": "u100002",
+    "teamId": "developer-experience"
+  },
+  "client": {
+    "type": "codex",
+    "version": "1.0.0"
+  },
+  "sessionId": "session_Ed81s3avP07j",
+  "status": "success",
+  "durationMs": 840
+}

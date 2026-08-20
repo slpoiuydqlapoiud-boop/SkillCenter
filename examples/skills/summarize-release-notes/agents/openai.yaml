@@ -1,0 +1,4 @@
+interface:
+  display_name: "Summarize Release Notes"
+  short_description: "Summarize internal release notes consistently"
+  default_prompt: "Use $summarize-release-notes to summarize these release notes."

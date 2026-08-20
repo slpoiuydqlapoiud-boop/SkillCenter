@@ -1,0 +1,50 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: skill-center-api
+  data:
+    redis:
+      connect-timeout: 2s
+      timeout: 2s
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
+
+skill-center:
+  package-storage: ./data/packages
+  package-max-bytes: 20971520
+  package-max-uncompressed-bytes: 104857600
+  artifact-base-url: https://skill-center.internal/artifacts
+  invocation-persistence: true
+  operations:
+    metrics-storage: ./data/operations/metrics.json
+    metrics-token: ""
+    redis:
+      key: skill-center:operations:metrics
+      ttl-seconds: 3660
+    alerts:
+      p95-latency-ms: 1000
+      server-error-rate: 0.05
+      minimum-requests: 10
+      security-event-count: 10
+      notification-url: ""
+      notification-timeout-ms: 1500
+  security:
+    allowed-origins:
+      - http://127.0.0.1:5173
+      - http://localhost:5173
+    idempotency-ttl-seconds: 900
+    rate-limit:
+      window-seconds: 60
+      installation-create: 30
+      distribution-consume: 60
+      distribution-download: 60
+      invocation-ingest: 120
+      export-create: 10

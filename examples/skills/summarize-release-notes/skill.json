@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0",
+  "id": "summarize-release-notes",
+  "name": "Summarize Release Notes",
+  "version": "1.0.0",
+  "description": "将内部版本说明整理为统一、简洁的发布摘要。",
+  "ownerTeam": "developer-experience",
+  "maintainers": ["u100001"],
+  "category": "documentation",
+  "tags": ["release-notes", "documentation"],
+  "compatibility": [
+    {"client": "codex", "minimumVersion": "1.0.0"},
+    {"client": "department-agent", "minimumVersion": "1.0.0"}
+  ],
+  "permissions": {
+    "workspace": "read",
+    "network": "none",
+    "shell": "none",
+    "credentials": "none",
+    "mcpServers": []
+  },
+  "dependencies": [],
+  "language": ["zh-CN"],
+  "entry": "SKILL.md",
+  "releaseNotes": "初始版本。"
+}

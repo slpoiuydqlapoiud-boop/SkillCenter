@@ -1,0 +1,45 @@
+{
+  "title": "Skill Center Operations",
+  "schemaVersion": 39,
+  "refresh": "15s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "API Requests",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [{ "expr": "skillcenter_requests_total{window=\"60m\"}", "legendFormat": "requests" }]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "P95 Latency (ms)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [{ "expr": "skillcenter_request_latency_p95_ms{window=\"60m\"}", "legendFormat": "p95" }]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Server Error Rate",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 8 },
+      "targets": [{ "expr": "skillcenter_request_error_rate_ratio{window=\"60m\"}", "legendFormat": "5xx ratio" }],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1 } }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Metrics Persistence",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 8 },
+      "targets": [{ "expr": "skillcenter_metrics_persistence_status{window=\"60m\"}", "legendFormat": "enabled" }],
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0, "max": 1 } }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Security Events",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 8 },
+      "targets": [{ "expr": "skillcenter_security_events_total{window=\"60m\"}", "legendFormat": "{{event}}" }]
+    }
+  ]
+}

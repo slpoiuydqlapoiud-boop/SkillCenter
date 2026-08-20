@@ -1,0 +1,30 @@
+groups:
+  - name: skill-center-operations
+    rules:
+      - alert: SkillCenterHighP95Latency
+        expr: skillcenter_request_latency_p95_ms{window="60m"} >= 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: skill-center
+        annotations:
+          summary: Skill Center API P95 latency is above 1 second
+          description: Review the operations dashboard and recent releases.
+      - alert: SkillCenterHighServerErrorRate
+        expr: skillcenter_request_error_rate_ratio{window="60m"} >= 0.05
+        for: 5m
+        labels:
+          severity: critical
+          service: skill-center
+        annotations:
+          summary: Skill Center API server error rate is above 5 percent
+          description: Check API logs, dependencies and rollback readiness.
+      - alert: SkillCenterMetricsPersistenceDegraded
+        expr: skillcenter_metrics_persistence_status{window="60m"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: skill-center
+        annotations:
+          summary: Skill Center operations metrics persistence is degraded
+          description: Check JSON storage or Redis connectivity before relying on the dashboard.
