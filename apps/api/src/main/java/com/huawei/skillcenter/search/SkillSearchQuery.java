@@ -1,6 +1,7 @@
 package com.huawei.skillcenter.search;
 
 import java.util.Locale;
+import java.util.Set;
 
 public record SkillSearchQuery(String text, String category, String status, String risk, String sort) {
     public SkillSearchQuery {
@@ -21,7 +22,12 @@ public record SkillSearchQuery(String text, String category, String status, Stri
     }
 
     private static String normalizeFilter(String value, String field, int maxLength) {
-        return SkillSearchDocument.bounded(value, field, maxLength).toLowerCase(Locale.ROOT);
+        String normalized = SkillSearchDocument.bounded(value, field, maxLength).toLowerCase(Locale.ROOT);
+        if (normalized.isEmpty()) {
+            return normalized;
+        }
+        return SkillSearchDocument.vocabulary(normalized, field,
+                "status".equals(field) ? Set.of("published", "deprecated", "withdrawn") : Set.of("low", "medium", "high"));
     }
 
     private static String normalizeSort(String value) {

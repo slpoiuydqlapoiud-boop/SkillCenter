@@ -64,7 +64,7 @@ public record SkillSearchDocument(
         return normalized;
     }
 
-    private static String vocabulary(String value, String field, Set<String> allowed) {
+    static String vocabulary(String value, String field, Set<String> allowed) {
         String normalized = boundedRequired(value, field, 32);
         String candidate = allowed.contains(normalized) ? normalized : normalized.toLowerCase(Locale.ROOT);
         if (!allowed.contains(candidate)) {
