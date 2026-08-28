@@ -8,4 +8,9 @@ public record SkillSearchRefreshEvent(String skillId, long sourceRevision, Strin
         }
         reasonCode = SkillSearchDocument.boundedRequired(reasonCode, "reasonCode", 128);
     }
+
+    /** Stable, metadata-only idempotency key for at-least-once delivery. */
+    public String eventKey() {
+        return skillId + "|" + sourceRevision + "|" + reasonCode;
+    }
 }

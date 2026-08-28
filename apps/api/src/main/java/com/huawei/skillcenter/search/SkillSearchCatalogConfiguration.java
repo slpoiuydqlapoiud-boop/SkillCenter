@@ -38,4 +38,23 @@ class SkillSearchCatalogConfiguration {
                                                                  SkillSearchDocumentSource source) {
         return new SkillSearchRefreshCoordinator(index, source);
     }
+
+    @Bean
+    @Conditional(SkillSearchBackendCondition.Postgresql.class)
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+            name = "skill-center.search-index-events.enabled", havingValue = "true")
+    JdbcSkillSearchRefreshEventStore skillSearchRefreshEventStore(org.springframework.jdbc.core.JdbcTemplate jdbc) {
+        return new JdbcSkillSearchRefreshEventStore(jdbc);
+    }
+
+    @Bean
+    @Conditional(SkillSearchBackendCondition.Postgresql.class)
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+            name = "skill-center.search-index-events.enabled", havingValue = "true")
+    SkillSearchRefreshEventPoller skillSearchRefreshEventPoller(SkillSearchRefreshEventStore store,
+                                                                 SkillSearchRefreshCoordinator coordinator,
+                                                                 @org.springframework.beans.factory.annotation.Value(
+                                                                         "${skill-center.search-index-events.batch-size:100}") int batchSize) {
+        return new SkillSearchRefreshEventPoller(store, coordinator, batchSize);
+    }
 }

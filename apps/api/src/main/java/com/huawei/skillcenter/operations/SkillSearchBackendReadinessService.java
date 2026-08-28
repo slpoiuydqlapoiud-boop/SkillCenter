@@ -51,6 +51,10 @@ public class SkillSearchBackendReadinessService implements SkillSearchBackendHea
                 return notReady("postgresql", "SEARCH_INDEX_SCHEMA_REQUIRED",
                         "Skill 搜索索引 PostgreSQL V16 schema 尚未就绪");
             }
+            if (properties.searchIndexEventsEnabled() && !hasSchemaAtLeast(persistenceStatus.schemaVersion(), 17)) {
+                return notReady("postgresql", "SEARCH_INDEX_EVENTS_SCHEMA_REQUIRED",
+                        "跨实例搜索刷新 PostgreSQL V17 schema 尚未就绪");
+            }
             SkillSearchIndexStatus indexStatus = index.status();
             if (indexStatus == null || !"READY".equals(indexStatus.state())) {
                 return notReady("postgresql", "SEARCH_INDEX_NOT_READY",
@@ -64,9 +68,13 @@ public class SkillSearchBackendReadinessService implements SkillSearchBackendHea
     }
 
     private boolean hasRequiredSchema(String schemaVersion) {
+        return hasSchemaAtLeast(schemaVersion, REQUIRED_SCHEMA_VERSION);
+    }
+
+    private boolean hasSchemaAtLeast(String schemaVersion, int requiredVersion) {
         if (schemaVersion == null || schemaVersion.isBlank()) return false;
         try {
-            return Integer.parseInt(schemaVersion.trim().split("\\.", 2)[0]) >= REQUIRED_SCHEMA_VERSION;
+            return Integer.parseInt(schemaVersion.trim().split("\\.", 2)[0]) >= requiredVersion;
         } catch (RuntimeException exception) {
             return false;
         }

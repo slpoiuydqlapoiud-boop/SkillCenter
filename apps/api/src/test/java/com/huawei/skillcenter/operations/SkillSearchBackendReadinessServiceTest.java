@@ -53,4 +53,21 @@ class SkillSearchBackendReadinessServiceTest {
                 .isEqualTo(new SkillSearchBackendReadiness("postgresql", "NOT_READY", "SEARCH_INDEX_NOT_READY",
                         "Skill 搜索索引尚未完成最新投影"));
     }
+
+    @Test
+    void enabledCrossInstanceRefreshRequiresV17Schema() {
+        PersistenceControlProperties properties = mock(PersistenceControlProperties.class);
+        PersistenceBackend persistence = mock(PersistenceBackend.class);
+        SkillSearchIndex index = mock(SkillSearchIndex.class);
+        when(properties.normalizedSearchIndexBackend()).thenReturn("postgresql");
+        when(properties.normalizedBackend()).thenReturn("postgresql");
+        when(properties.searchIndexEventsEnabled()).thenReturn(true);
+        when(persistence.status()).thenReturn(PersistenceBackendStatus.ready("postgresql", "16", null));
+
+        SkillSearchBackendReadiness readiness = new SkillSearchBackendReadinessService(properties, persistence, index)
+                .readiness();
+
+        assertThat(readiness.status()).isEqualTo("NOT_READY");
+        assertThat(readiness.reasonCode()).isEqualTo("SEARCH_INDEX_EVENTS_SCHEMA_REQUIRED");
+    }
 }

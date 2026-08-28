@@ -76,6 +76,28 @@ class SkillSearchBackendConfigurationTest {
                 });
     }
 
+    @Test
+    void sharedRefreshPollingIsExplicitlyOptIn() {
+        context.withPropertyValues(
+                        "skill-center.persistence.backend=postgresql",
+                        "skill-center.search-index-backend=postgresql",
+                        "skill-center.search-index-events.enabled=true")
+                .run(application -> {
+                    assertThat(application).hasNotFailed();
+                    assertThat(application).hasSingleBean(SkillSearchRefreshEventStore.class);
+                    assertThat(application).hasSingleBean(SkillSearchRefreshEventPoller.class);
+                });
+
+        context.withPropertyValues(
+                        "skill-center.persistence.backend=postgresql",
+                        "skill-center.search-index-backend=postgresql")
+                .run(application -> {
+                    assertThat(application).hasNotFailed();
+                    assertThat(application.getBeansOfType(SkillSearchRefreshEventStore.class)).isEmpty();
+                    assertThat(application.getBeansOfType(SkillSearchRefreshEventPoller.class)).isEmpty();
+                });
+    }
+
     @Configuration
     static class Fixture {
         @Bean

@@ -59,6 +59,10 @@ skill-center:
   skill-scope-backend: ${SKILL_CENTER_SKILL_SCOPE_BACKEND:json}
   skill-relation-backend: ${SKILL_CENTER_SKILL_RELATION_BACKEND:json}
   search-index-backend: ${SKILL_CENTER_SEARCH_INDEX_BACKEND:json}
+  search-index-events:
+    enabled: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_ENABLED:false}
+    poll-interval-ms: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_POLL_INTERVAL_MS:5000}
+    batch-size: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_BATCH_SIZE:100}
   quality-evidence-storage: ./data/governance/quality-evidence.json
   benchmark-storage: ./data/governance/benchmarks.json
   runtime-summary-backend: json

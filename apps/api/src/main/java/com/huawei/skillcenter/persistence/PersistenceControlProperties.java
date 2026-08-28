@@ -44,6 +44,8 @@ public class PersistenceControlProperties {
     private String applicationSkillRelationBackend = "";
     @Value("${skill-center.search-index-backend:}")
     private String applicationSearchIndexBackend = "";
+    @Value("${skill-center.search-index-events.enabled:false}")
+    private String applicationSearchIndexEventsEnabled = "false";
     private String controlStorage = "./data/control";
     private String snapshotStorage = "./data/backups";
     private String startupMode = "fail-closed";
@@ -266,6 +268,9 @@ public class PersistenceControlProperties {
                 && !"postgresql".equals(normalizedBackend())) {
             throw new IllegalArgumentException("searchIndexBackend=postgresql requires backend=postgresql");
         }
+        if (searchIndexEventsEnabled() && !"postgresql".equals(normalizedSearchIndexBackend())) {
+            throw new IllegalArgumentException("search-index-events.enabled requires searchIndexBackend=postgresql");
+        }
         if (manifestRetention < 1) {
             throw new IllegalArgumentException("manifestRetention must be at least 1");
         }
@@ -349,6 +354,11 @@ public class PersistenceControlProperties {
         String configured = applicationSearchIndexBackend == null || applicationSearchIndexBackend.isBlank()
                 ? searchIndexBackend : applicationSearchIndexBackend;
         return normalizeBackendValue(configured);
+    }
+
+    public boolean searchIndexEventsEnabled() {
+        return Boolean.parseBoolean(applicationSearchIndexEventsEnabled == null
+                ? "false" : applicationSearchIndexEventsEnabled.trim());
     }
 
     private boolean isSupportedBackend(String value) {

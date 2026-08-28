@@ -2,8 +2,11 @@ package com.huawei.skillcenter.search;
 
 import org.springframework.context.event.EventListener;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 /** Coordinates bounded, in-process refreshes while preserving the last committed index. */
-public final class SkillSearchRefreshCoordinator {
+public final class SkillSearchRefreshCoordinator implements SkillSearchRefreshEventConsumer {
     private static final String CONFLICT = "SEARCH_INDEX_SOURCE_CONFLICT";
     private static final String REBUILD_FAILED = "SEARCH_INDEX_REBUILD_FAILED";
 
@@ -11,6 +14,7 @@ public final class SkillSearchRefreshCoordinator {
     private final SkillSearchDocumentSource source;
     private volatile String sourceRevision = "";
     private volatile String reasonCode = "";
+    private final Set<String> appliedRefreshEvents = new LinkedHashSet<>();
 
     public SkillSearchRefreshCoordinator(SkillSearchIndex index, SkillSearchDocumentSource source) {
         if (index == null || source == null) {
@@ -30,8 +34,26 @@ public final class SkillSearchRefreshCoordinator {
     }
 
     @EventListener
+    @Override
     public void onRefresh(SkillSearchRefreshEvent event) {
+        if (event == null) {
+            throw new IllegalArgumentException("event is required");
+        }
+        synchronized (appliedRefreshEvents) {
+            if (!appliedRefreshEvents.add(event.eventKey())) {
+                return;
+            }
+            while (appliedRefreshEvents.size() > 4_096) {
+                appliedRefreshEvents.remove(appliedRefreshEvents.iterator().next());
+            }
+        }
         invalidate(event);
+    }
+
+    int appliedRefreshEventCount() {
+        synchronized (appliedRefreshEvents) {
+            return appliedRefreshEvents.size();
+        }
     }
 
     public synchronized SkillSearchRebuildResult ensureReady() {
