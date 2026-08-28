@@ -78,20 +78,22 @@ class SkillSearchCatalogConfiguration {
             @org.springframework.beans.factory.annotation.Value(
                     "${skill-center.search-index-events.retention.cleanup-batch-size:1000}") int batchSize,
             @org.springframework.beans.factory.annotation.Value(
+                    "${skill-center.search-index-events.retention.consumer-stale-after-ms:900000}") long consumerStaleAfterMs,
+            @org.springframework.beans.factory.annotation.Value(
                     "${skill-center.search-index-events.retention.cleanup-interval-ms:3600000}") long cleanupIntervalMs,
             @org.springframework.beans.factory.annotation.Value(
                     "${skill-center.search-index-events.retention.cleanup-initial-delay-ms:3600000}") long cleanupInitialDelayMs) {
         requireRetentionSchema(persistence);
         return new SkillSearchRefreshEventRetentionScheduler(store, retentionDays, batchSize, Clock.systemUTC(),
-                cleanupIntervalMs, cleanupInitialDelayMs);
+                consumerStaleAfterMs, cleanupIntervalMs, cleanupInitialDelayMs);
     }
 
     private void requireRetentionSchema(com.huawei.skillcenter.persistence.PersistenceBackend persistence) {
         com.huawei.skillcenter.persistence.PersistenceBackendStatus status = persistence.status();
         if (status == null || !"READY".equals(status.state())
                 || !"postgresql".equalsIgnoreCase(status.backendId())
-                || !hasSchemaAtLeast(status.schemaVersion(), 19)) {
-            throw new IllegalStateException("search refresh retention requires READY PostgreSQL V19 schema");
+                || !hasSchemaAtLeast(status.schemaVersion(), 20)) {
+            throw new IllegalStateException("search refresh retention requires READY PostgreSQL V20 schema");
         }
     }
 

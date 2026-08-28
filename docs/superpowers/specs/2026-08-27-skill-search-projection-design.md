@@ -8,7 +8,7 @@
 - API 已接入 `GET /api/v1/admin/search/index/status` 与 `POST /api/v1/admin/search/index/rebuild`，默认 backend 为进程内 JSON；普通 `GET /api/v1/skills` 使用索引候选并在分页前执行 actor-aware 授权。
 - 发布、废弃、下架和范围保存成功后发布有界 `SkillSearchRefreshEvent`；协调器保留上一版命中并标记 `STALE`。
 - 新增显式 `search-index-backend=json|postgresql` 选择、V16 schema 和 `JdbcSkillSearchIndex`；PostgreSQL 使用事务内 advisory lock + 全量替换，故障以 `SEARCH_INDEX_PERSISTENCE_UNAVAILABLE` fail-closed，并纳入平台 readiness。
-- 新增可选 V17 `skill_search_refresh_events` 刷新日志、V18 `skill_search_refresh_event_consumers` 消费位点和 V19 retention 索引：PostgreSQL 治理聚合和 Skill 范围写入会在各自主事务内先落治理事实与 metadata-only 刷新事件，再提交；启用轮询器的实例按序消费并在消费失败时保留位点，协调器对重复投递做有界幂等；消费者身份由部署配置注入，避免重启后把历史日志重新当作新事件。可选 retention scheduler 只清理早于 cutoff 且不超过所有已登记 consumer 最小 cursor 的事件；无 consumer 时删除 0 条，停滞 consumer 会安全阻塞清理。已有成功写入后的事件监听仍作为兼容性幂等补偿路径。
+- 新增可选 V17 `skill_search_refresh_events` 刷新日志、V18 `skill_search_refresh_event_consumers` 消费位点、V19 retention 索引和 V20 consumer lifecycle：PostgreSQL 治理聚合和 Skill 范围写入会在各自主事务内先落治理事实与 metadata-only 刷新事件，再提交；启用轮询器的实例按序消费并在消费失败时保留位点，协调器对重复投递做有界幂等；消费者身份由部署配置注入，首次注册不会复活 RETIRED 身份，心跳维护 ACTIVE 实例的新鲜度，管理员可显式 activate/retire。可选 retention scheduler 只清理早于 cutoff 且不超过仍活跃 consumer 保护水位的事件；stale consumer 只有在已追平 cutoff 内全部事件时才会被安全排除，否则继续阻塞清理，避免丢失未消费事件。已有成功写入后的事件监听仍作为兼容性幂等补偿路径。
 - 搜索后端/平台 readiness 聚焦回归通过；API 全量本轮报告汇总 1073 项，0 failure、0 error、43 capability skips；Web 163/163 通过，生产构建通过。
 - 当前限制：本地环境未安装 Docker，因此 PostgreSQL/Redis 真实集成尚未形成证据；未接入 OpenSearch 或消息总线。当前 transactional outbox 已覆盖 PostgreSQL 治理聚合和 Skill 范围写入，但治理聚合与范围/审计等跨聚合写入仍不是单一数据库事务；retention scheduler 不负责自动退休停滞 consumer；尚未完成真实容量/性能压测或外部 Provider 验收。
 
@@ -75,7 +75,7 @@ List<SkillSearchHit> search(SkillSearchQuery query);
 
 索引 revision 单调递增；相同 `sourceHash` 重建幂等，不增加 revision。重建采用“新快照全部构建成功后一次替换”，失败时保留上一版可读索引并报告 `SEARCH_INDEX_REBUILD_FAILED`，不留下半成品。
 
-以下事实变化必须触发失效或重建：版本发布、版本废弃、版本下架、Skill 范围保存、Skill 元数据更新以及管理员显式 rebuild。发布/生命周期/范围服务构造内部 `SkillSearchRefreshEvent`；启用 PostgreSQL V17/V18 时，治理聚合或范围写入会把事件与对应事实写入同一数据库事务，随后由应用内 `SkillSearchRefreshCoordinator` 调用失效。事件日志以 `skillId/sourceRevision/reasonCode` 生成稳定 key，轮询器按 `event_seq` 顺序以至少一次语义投递到各实例，消费成功后持久化该实例的 consumer cursor，协调器使用有界去重集合吸收重复事件。可选 V19 retention scheduler 以最慢已登记 consumer cursor 为删除上界，并以时间 cutoff 做第二重保护；未登记 consumer 时不删除。非 PostgreSQL/事件关闭的兼容实现仍由成功写入后的内部事件监听刷新；后续接入消息平台时，事件仍只携带 Skill ID、source revision 和稳定动作码，不携带正文。
+以下事实变化必须触发失效或重建：版本发布、版本废弃、版本下架、Skill 范围保存、Skill 元数据更新以及管理员显式 rebuild。发布/生命周期/范围服务构造内部 `SkillSearchRefreshEvent`；启用 PostgreSQL V17/V18/V20 时，治理聚合或范围写入会把事件与对应事实写入同一数据库事务，随后由应用内 `SkillSearchRefreshCoordinator` 调用失效。事件日志以 `skillId/sourceRevision/reasonCode` 生成稳定 key，轮询器按 `event_seq` 顺序以至少一次语义投递到各实例，消费成功后持久化该实例的 consumer cursor，协调器使用有界去重集合吸收重复事件。可选 V20 retention scheduler 以仍活跃 consumer 保护水位为删除上界；stale consumer 只有在已追平 cutoff 内全部事件时才会被安全排除，管理员通过 activate/retire 控制生命周期。非 PostgreSQL/事件关闭的兼容实现仍由成功写入后的内部事件监听刷新；后续接入消息平台时，事件仍只携带 Skill ID、source revision 和稳定动作码，不携带正文。
 
 索引状态至少包括 `READY`、`STALE`、`REBUILDING`、`DEGRADED`、`NOT_READY`、`sourceRevision`、`documentCount`、`indexedAt`、`reasonCode`，不包含异常正文或路径。
 

@@ -24,12 +24,13 @@ class SkillSearchRefreshEventRetentionSchedulerTest {
         SkillSearchRefreshEventStore store = mock(SkillSearchRefreshEventStore.class);
         SkillSearchRefreshCleanupResult expected = new SkillSearchRefreshCleanupResult(
                 4, 21L, Instant.parse("2026-07-29T12:00:00Z"));
-        when(store.purgeConsumedBefore(expected.cutoff(), 250)).thenReturn(expected);
+        when(store.purgeConsumedBefore(expected.cutoff(), Instant.parse("2026-08-28T11:45:00Z"), 250))
+                .thenReturn(expected);
         SkillSearchRefreshEventRetentionScheduler scheduler = new SkillSearchRefreshEventRetentionScheduler(
                 store, 30, 250, NOW);
 
         assertThat(scheduler.runOnce()).isEqualTo(expected);
-        verify(store).purgeConsumedBefore(expected.cutoff(), 250);
+        verify(store).purgeConsumedBefore(expected.cutoff(), Instant.parse("2026-08-28T11:45:00Z"), 250);
     }
 
     @Test
@@ -53,7 +54,7 @@ class SkillSearchRefreshEventRetentionSchedulerTest {
     @Test
     void scheduledExecutionContainsStoreFailure() {
         SkillSearchRefreshEventStore store = mock(SkillSearchRefreshEventStore.class);
-        when(store.purgeConsumedBefore(any(Instant.class), eq(100)))
+        when(store.purgeConsumedBefore(any(Instant.class), any(Instant.class), eq(100)))
                 .thenThrow(new IllegalStateException("temporary"));
         SkillSearchRefreshEventRetentionScheduler scheduler = new SkillSearchRefreshEventRetentionScheduler(
                 store, 30, 100, NOW);
@@ -62,14 +63,24 @@ class SkillSearchRefreshEventRetentionSchedulerTest {
     }
 
     @Test
-    void configurationDoesNotCreateRetentionSchedulerBeforeV19() {
+    void invalidStaleConsumerWindowFailsClosed() {
+        SkillSearchRefreshEventStore store = mock(SkillSearchRefreshEventStore.class);
+
+        assertThatThrownBy(() -> new SkillSearchRefreshEventRetentionScheduler(
+                store, 30, 100, NOW, 0, 3600000L, 3600000L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("consumerStaleAfterMs must be between 1000 and 2592000000");
+    }
+
+    @Test
+    void configurationDoesNotCreateRetentionSchedulerBeforeV20() {
         PersistenceBackend persistence = mock(PersistenceBackend.class);
         when(persistence.status()).thenReturn(PersistenceBackendStatus.ready("postgresql", "18", null));
 
         assertThatThrownBy(() -> new SkillSearchCatalogConfiguration()
                 .skillSearchRefreshEventRetentionScheduler(mock(SkillSearchRefreshEventStore.class), persistence,
-                        30, 100, 3600000L, 3600000L))
+                        30, 100, 900000L, 3600000L, 3600000L))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("search refresh retention requires READY PostgreSQL V19 schema");
+                .hasMessage("search refresh retention requires READY PostgreSQL V20 schema");
     }
 }

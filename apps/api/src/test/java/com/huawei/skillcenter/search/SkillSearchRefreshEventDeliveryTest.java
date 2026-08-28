@@ -3,6 +3,7 @@ package com.huawei.skillcenter.search;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,6 +69,31 @@ class SkillSearchRefreshEventDeliveryTest {
     }
 
     @Test
+    void pollerDoesNotResurrectRetiredConsumer() {
+        LifecycleEventStore store = new LifecycleEventStore();
+        SkillSearchRefreshEventPoller poller = new SkillSearchRefreshEventPoller(store,
+                event -> { }, "api-retired", 10);
+
+        poller.runOnce();
+
+        assertThat(store.registerCalls).isEqualTo(1);
+        assertThat(store.findAfterCalls).isZero();
+        assertThat(poller.cursor()).isZero();
+    }
+
+    @Test
+    void pollerDoesNotJumpItsLocalCursorWhenSharedCursorAdvances() {
+        AdvancingCursorEventStore store = new AdvancingCursorEventStore();
+        SkillSearchRefreshEventPoller poller = new SkillSearchRefreshEventPoller(store,
+                event -> { }, "api-1", 10);
+
+        poller.runOnce();
+        poller.runOnce();
+
+        assertThat(store.lastFindAfterSequence).isEqualTo(1L);
+    }
+
+    @Test
     void journalDoesNotBreakSuccessfulGovernanceEventPublicationWhenStoreIsUnavailable() {
         SkillSearchRefreshEventStore store = mock(SkillSearchRefreshEventStore.class);
         doThrow(new IllegalStateException("temporary persistence failure"))
@@ -98,6 +124,17 @@ class SkillSearchRefreshEventDeliveryTest {
                 .contains("CREATE TABLE skill_search_refresh_event_consumers")
                 .contains("PRIMARY KEY (consumer_id)")
                 .contains("last_event_seq");
+
+        String lifecycleMigration = new org.springframework.core.io.ClassPathResource(
+                "db/migration/V20__add_skill_search_refresh_consumer_lifecycle.sql")
+                .getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+
+        assertThat(lifecycleMigration)
+                .contains("status")
+                .contains("last_seen_at")
+                .contains("retired_at")
+                .contains("retirement_consistent")
+                .contains("skill_search_refresh_event_consumers_lifecycle");
 
         String retentionMigration = new org.springframework.core.io.ClassPathResource(
                 "db/migration/V19__index_skill_search_refresh_event_retention.sql")
@@ -135,6 +172,57 @@ class SkillSearchRefreshEventDeliveryTest {
         public void saveCursor(String consumerId, long sequence) {
             savedConsumerId = consumerId;
             savedSequence = sequence;
+        }
+    }
+
+    private static final class LifecycleEventStore implements SkillSearchRefreshEventStore {
+        private int registerCalls;
+        private int findAfterCalls;
+
+        @Override
+        public void append(SkillSearchRefreshEvent event) {
+        }
+
+        @Override
+        public List<StoredSkillSearchRefreshEvent> findAfter(long sequence, int limit) {
+            findAfterCalls++;
+            return List.of();
+        }
+
+        @Override
+        public SkillSearchRefreshConsumerState registerConsumer(String consumerId, Instant now) {
+            registerCalls++;
+            return new SkillSearchRefreshConsumerState(consumerId, 0L,
+                    SkillSearchRefreshConsumerStatus.RETIRED, now, now);
+        }
+
+        @Override
+        public SkillSearchRefreshConsumerState heartbeat(String consumerId, Instant now) {
+            return new SkillSearchRefreshConsumerState(consumerId, 0L,
+                    SkillSearchRefreshConsumerStatus.RETIRED, now, now);
+        }
+    }
+
+    private static final class AdvancingCursorEventStore implements SkillSearchRefreshEventStore {
+        private long lastFindAfterSequence = -1L;
+
+        @Override
+        public void append(SkillSearchRefreshEvent event) {
+        }
+
+        @Override
+        public List<StoredSkillSearchRefreshEvent> findAfter(long sequence, int limit) {
+            lastFindAfterSequence = sequence;
+            return sequence == 0L
+                    ? List.of(new StoredSkillSearchRefreshEvent(1L,
+                    new SkillSearchRefreshEvent("skill-a", 7L, "VERSION_PUBLISHED")))
+                    : List.of();
+        }
+
+        @Override
+        public SkillSearchRefreshConsumerState heartbeat(String consumerId, Instant now) {
+            return new SkillSearchRefreshConsumerState(consumerId, 5L,
+                    SkillSearchRefreshConsumerStatus.ACTIVE, now, null);
         }
     }
 

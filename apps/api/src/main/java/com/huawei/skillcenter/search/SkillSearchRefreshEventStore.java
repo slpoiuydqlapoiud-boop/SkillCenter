@@ -18,6 +18,48 @@ public interface SkillSearchRefreshEventStore {
     default void saveCursor(String consumerId, long sequence) {
     }
 
+    /** Registers a consumer if absent, but never resurrects a retired identity. */
+    default SkillSearchRefreshConsumerState registerConsumer(String consumerId, Instant now) {
+        String bounded = SkillSearchDocument.boundedRequired(consumerId, "consumerId", 128);
+        Instant checkedNow = requireInstant(now);
+        return new SkillSearchRefreshConsumerState(bounded, loadCursor(bounded),
+                SkillSearchRefreshConsumerStatus.ACTIVE, checkedNow, null);
+    }
+
+    /** Records liveness for an active consumer; durable implementations return RETIRED when applicable. */
+    default SkillSearchRefreshConsumerState heartbeat(String consumerId, Instant now) {
+        String bounded = SkillSearchDocument.boundedRequired(consumerId, "consumerId", 128);
+        Instant checkedNow = requireInstant(now);
+        return new SkillSearchRefreshConsumerState(bounded, loadCursor(bounded),
+                SkillSearchRefreshConsumerStatus.ACTIVE, checkedNow, null);
+    }
+
+    /** Explicit administrative reactivation; this is intentionally separate from poller registration. */
+    default SkillSearchRefreshConsumerState activateConsumer(String consumerId, Instant now) {
+        String bounded = SkillSearchDocument.boundedRequired(consumerId, "consumerId", 128);
+        Instant checkedNow = requireInstant(now);
+        return new SkillSearchRefreshConsumerState(bounded, loadCursor(bounded),
+                SkillSearchRefreshConsumerStatus.ACTIVE, checkedNow, null);
+    }
+
+    /** Explicit administrative retirement. */
+    default SkillSearchRefreshConsumerState retireConsumer(String consumerId, Instant now) {
+        String bounded = SkillSearchDocument.boundedRequired(consumerId, "consumerId", 128);
+        Instant checkedNow = requireInstant(now);
+        return new SkillSearchRefreshConsumerState(bounded, loadCursor(bounded),
+                SkillSearchRefreshConsumerStatus.RETIRED, checkedNow, checkedNow);
+    }
+
+    /** Lists only metadata needed by the administrative control plane. */
+    default List<SkillSearchRefreshConsumerState> listConsumers() {
+        return List.of();
+    }
+
+    /** Cleanup variant that may exclude only stale consumers already caught up to the deletion cutoff. */
+    default SkillSearchRefreshCleanupResult purgeConsumedBefore(Instant cutoff, Instant activeSince, int limit) {
+        return purgeConsumedBefore(cutoff, limit);
+    }
+
     /**
      * Deletes only events that are older than the retention cutoff and already
      * acknowledged by every registered consumer. Implementations must keep the
@@ -32,5 +74,10 @@ public interface SkillSearchRefreshEventStore {
             if (sequence < 1) throw new IllegalArgumentException("sequence must be positive");
             if (event == null) throw new IllegalArgumentException("event is required");
         }
+    }
+
+    private static Instant requireInstant(Instant value) {
+        if (value == null) throw new IllegalArgumentException("timestamp is required");
+        return value;
     }
 }

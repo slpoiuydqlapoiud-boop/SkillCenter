@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -50,6 +51,18 @@ class JdbcSkillSearchRefreshEventStoreTest {
         store.saveCursor("api-1", 13L);
 
         verify(jdbc).update(org.mockito.ArgumentMatchers.contains("greatest"), any(Object[].class));
+    }
+
+    @Test
+    void savingCursorCanCreateAV20ConsumerRow() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        when(jdbc.update(anyString(), any(Object[].class))).thenReturn(1);
+        JdbcSkillSearchRefreshEventStore store = new JdbcSkillSearchRefreshEventStore(jdbc);
+
+        store.saveCursor("api-1", 13L);
+
+        verify(jdbc).update(argThat(sql -> sql.contains("status") && sql.contains("last_seen_at")
+                        && sql.contains("'ACTIVE'")), any(Object[].class));
     }
 
     @Test
@@ -99,5 +112,46 @@ class JdbcSkillSearchRefreshEventStoreTest {
         verify(jdbc, org.mockito.Mockito.times(2)).update(
                 org.mockito.ArgumentMatchers.contains("pg_advisory_xact_lock"), any(Object[].class));
         verify(transactions, org.mockito.Mockito.times(2)).commit(status);
+    }
+
+    @Test
+    void consumerLifecycleUsesSafeStatusAndHeartbeatFields() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        PlatformTransactionManager transactions = mock(PlatformTransactionManager.class);
+        TransactionStatus status = mock(TransactionStatus.class);
+        when(transactions.getTransaction(any())).thenReturn(status);
+        when(jdbc.update(anyString(), any(Object[].class))).thenReturn(1);
+        when(jdbc.queryForObject(anyString(), eq(Long.class), any(Object[].class))).thenReturn(7L);
+        Instant now = Instant.parse("2026-08-28T12:00:00Z");
+        doReturn(java.util.List.of(new SkillSearchRefreshConsumerState("api-1", 7L,
+                SkillSearchRefreshConsumerStatus.ACTIVE, now, null)))
+                .when(jdbc).query(anyString(), any(org.springframework.jdbc.core.RowMapper.class), any(Object[].class));
+        JdbcSkillSearchRefreshEventStore store = new JdbcSkillSearchRefreshEventStore(jdbc, transactions);
+
+        assertThat(store.registerConsumer("api-1", now).status())
+                .isEqualTo(SkillSearchRefreshConsumerStatus.ACTIVE);
+        assertThat(store.heartbeat("api-1", now).lastSeenAt()).isEqualTo(now);
+        store.retireConsumer("api-1", now);
+        store.activateConsumer("api-1", now);
+
+        verify(jdbc, org.mockito.Mockito.atLeastOnce()).update(
+                org.mockito.ArgumentMatchers.contains("last_seen_at"), any(Object[].class));
+        verify(jdbc, org.mockito.Mockito.atLeastOnce()).update(
+                org.mockito.ArgumentMatchers.contains("retired_at"), any(Object[].class));
+    }
+
+    @Test
+    void staleConsumersStillHoldTheCleanupWatermarkUntilRetired() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        when(jdbc.queryForObject(anyString(), eq(Long.class), any(Object[].class))).thenReturn(42L);
+        when(jdbc.update(anyString(), any(Object[].class))).thenReturn(3);
+        JdbcSkillSearchRefreshEventStore store = new JdbcSkillSearchRefreshEventStore(jdbc);
+
+        store.purgeConsumedBefore(Instant.parse("2026-08-01T00:00:00Z"),
+                Instant.parse("2026-08-20T00:00:00Z"), 100);
+
+        verify(jdbc).queryForObject(org.mockito.ArgumentMatchers.argThat(sql -> sql.contains("status = 'ACTIVE'")
+                        && sql.contains("last_seen_at >= ?")
+                        && sql.contains("last_event_seq < coalesce")), eq(Long.class), any(Object[].class));
     }
 }

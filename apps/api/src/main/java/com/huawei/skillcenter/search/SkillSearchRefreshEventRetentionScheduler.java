@@ -16,6 +16,7 @@ public final class SkillSearchRefreshEventRetentionScheduler {
     private final int retentionDays;
     private final int batchSize;
     private final Clock clock;
+    private final long consumerStaleAfterMs;
     private final long cleanupIntervalMs;
     private final long cleanupInitialDelayMs;
 
@@ -23,13 +24,23 @@ public final class SkillSearchRefreshEventRetentionScheduler {
                                                      int retentionDays,
                                                      int batchSize,
                                                      Clock clock) {
-        this(store, retentionDays, batchSize, clock, 3_600_000L, 3_600_000L);
+        this(store, retentionDays, batchSize, clock, 900_000L, 3_600_000L, 3_600_000L);
     }
 
     public SkillSearchRefreshEventRetentionScheduler(SkillSearchRefreshEventStore store,
                                                      int retentionDays,
                                                      int batchSize,
                                                      Clock clock,
+                                                     long cleanupIntervalMs,
+                                                     long cleanupInitialDelayMs) {
+        this(store, retentionDays, batchSize, clock, 900_000L, cleanupIntervalMs, cleanupInitialDelayMs);
+    }
+
+    public SkillSearchRefreshEventRetentionScheduler(SkillSearchRefreshEventStore store,
+                                                     int retentionDays,
+                                                     int batchSize,
+                                                     Clock clock,
+                                                     long consumerStaleAfterMs,
                                                      long cleanupIntervalMs,
                                                      long cleanupInitialDelayMs) {
         if (store == null) throw new IllegalArgumentException("store is required");
@@ -40,6 +51,9 @@ public final class SkillSearchRefreshEventRetentionScheduler {
             throw new IllegalArgumentException("batchSize must be between 1 and 10000");
         }
         if (clock == null) throw new IllegalArgumentException("clock is required");
+        if (consumerStaleAfterMs < 1_000L || consumerStaleAfterMs > 2_592_000_000L) {
+            throw new IllegalArgumentException("consumerStaleAfterMs must be between 1000 and 2592000000");
+        }
         if (cleanupIntervalMs < 1_000L || cleanupIntervalMs > MAX_SCHEDULE_INTERVAL_MS) {
             throw new IllegalArgumentException("cleanupIntervalMs must be between 1000 and 86400000");
         }
@@ -50,6 +64,7 @@ public final class SkillSearchRefreshEventRetentionScheduler {
         this.retentionDays = retentionDays;
         this.batchSize = batchSize;
         this.clock = clock;
+        this.consumerStaleAfterMs = consumerStaleAfterMs;
         this.cleanupIntervalMs = cleanupIntervalMs;
         this.cleanupInitialDelayMs = cleanupInitialDelayMs;
     }
@@ -70,7 +85,9 @@ public final class SkillSearchRefreshEventRetentionScheduler {
     }
 
     SkillSearchRefreshCleanupResult runOnce() {
-        Instant cutoff = Instant.now(clock).minus(retentionDays, ChronoUnit.DAYS);
-        return store.purgeConsumedBefore(cutoff, batchSize);
+        Instant now = Instant.now(clock);
+        Instant cutoff = now.minus(retentionDays, ChronoUnit.DAYS);
+        Instant activeSince = now.minus(consumerStaleAfterMs, ChronoUnit.MILLIS);
+        return store.purgeConsumedBefore(cutoff, activeSince, batchSize);
     }
 }

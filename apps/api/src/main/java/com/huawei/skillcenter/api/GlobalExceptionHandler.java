@@ -538,12 +538,14 @@ public class GlobalExceptionHandler {
         HttpStatus status = switch (code) {
             case "SEARCH_INDEX_SOURCE_CONFLICT" -> HttpStatus.CONFLICT;
             case "SEARCH_INDEX_REBUILD_FAILED" -> HttpStatus.SERVICE_UNAVAILABLE;
+            case "SEARCH_INDEX_CONSUMER_NOT_FOUND" -> HttpStatus.NOT_FOUND;
             default -> HttpStatus.BAD_REQUEST;
         };
         String message = switch (code) {
             case "SEARCH_INDEX_SOURCE_CONFLICT" -> "Search index source changed; retry the rebuild";
             case "SEARCH_INDEX_REBUILD_FAILED" -> "Search index rebuild is temporarily unavailable";
             case "SEARCH_INDEX_REQUEST_ID_REQUIRED" -> "Request ID is required";
+            case "SEARCH_INDEX_CONSUMER_NOT_FOUND" -> "Search refresh consumer was not found";
             default -> "Search index request is invalid";
         };
         return error(status, code, message, request, List.of());
