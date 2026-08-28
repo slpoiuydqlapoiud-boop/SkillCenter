@@ -26,6 +26,7 @@ class HttpSkillSearchIndexTest {
                     Duration.ofSeconds(1), Duration.ofSeconds(2), 16_384, HttpClient.newHttpClient(),
                     new ObjectMapper(), reference -> "token-value", Clock.systemUTC());
 
+            index.probe();
             List<SkillSearchHit> hits = index.search(new SkillSearchQuery("skill-a", "", "", "", "updated"));
 
             assertThat(hits).containsExactly(new SkillSearchHit("skill-a", 12.5, List.of("id", "name")));
@@ -40,6 +41,7 @@ class HttpSkillSearchIndexTest {
                     Duration.ofSeconds(1), Duration.ofSeconds(2), 64, HttpClient.newHttpClient(),
                     new ObjectMapper(), reference -> "token-value", Clock.systemUTC());
 
+            index.probe();
             var failure = org.junit.jupiter.api.Assertions.assertThrows(SkillSearchIndexRemoteException.class,
                     () -> index.search(new SkillSearchQuery("skill-a", "", "", "", "updated")));
 
@@ -97,6 +99,23 @@ class HttpSkillSearchIndexTest {
             assertThat(lines).hasSize(2);
             assertThat(lines[0]).contains("\"index\"").contains("\"_id\":\"skill-a\"");
             assertThat(lines[1]).contains("\"skillId\":\"skill-a\"").doesNotContain("\"doc\"");
+        }
+    }
+
+    @Test
+    void refusesSearchUntilARecentReachableProbeExists() throws Exception {
+        try (var server = new SearchHttpServer(200,
+                "{\"hits\":{\"hits\":[{\"_id\":\"skill-a\",\"_score\":1,\"matchedFields\":[\"id\"]}]}}")) {
+            HttpSkillSearchIndex index = new HttpSkillSearchIndex(server.endpoint(), "skills-v1", "secret://search",
+                    Duration.ofSeconds(1), Duration.ofSeconds(2), 16_384, HttpClient.newHttpClient(),
+                    new ObjectMapper(), reference -> "token-value", Clock.systemUTC());
+
+            var failure = org.junit.jupiter.api.Assertions.assertThrows(SkillSearchIndexRemoteException.class,
+                    () -> index.search(new SkillSearchQuery("skill-a", "", "", "", "updated")));
+
+            assertThat(failure.reasonCode()).isEqualTo("SEARCH_INDEX_PROBE_EXPIRED");
+            index.probe();
+            assertThat(index.search(new SkillSearchQuery("skill-a", "", "", "", "updated"))).hasSize(1);
         }
     }
 

@@ -36,10 +36,12 @@ class SkillSearchCatalogConfiguration {
             @org.springframework.beans.factory.annotation.Value("${skill-center.search-index.connect-timeout-ms:1000}") long connectTimeoutMs,
             @org.springframework.beans.factory.annotation.Value("${skill-center.search-index.request-timeout-ms:5000}") long requestTimeoutMs,
             @org.springframework.beans.factory.annotation.Value("${skill-center.search-index.max-response-bytes:256000}") int maxResponseBytes,
+            @org.springframework.beans.factory.annotation.Value("${skill-center.search-index.probe-ttl-seconds:300}") long probeTtlSeconds,
             ProviderCredentialResolver credentials, ObjectMapper mapper) {
         return new HttpSkillSearchIndex(endpoint, index, credentialRef,
                 java.time.Duration.ofMillis(connectTimeoutMs), java.time.Duration.ofMillis(requestTimeoutMs),
-                maxResponseBytes, null, mapper, credentials, Clock.systemUTC());
+                maxResponseBytes, null, mapper, credentials, Clock.systemUTC(),
+                java.time.Duration.ofSeconds(Math.max(1, probeTtlSeconds)));
     }
 
     @Bean

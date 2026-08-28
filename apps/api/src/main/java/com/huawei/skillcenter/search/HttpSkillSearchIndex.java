@@ -130,6 +130,7 @@ public final class HttpSkillSearchIndex implements SkillSearchIndex, SkillSearch
     public List<SkillSearchHit> search(SkillSearchQuery query) {
         if (query == null) throw new IllegalArgumentException("query is required");
         validateConfiguration();
+        if (!probeFresh()) throw remote("SEARCH_INDEX_PROBE_EXPIRED");
         try {
             JsonNode response = post("_search", searchBody(query));
             JsonNode hits = response.path("hits").path("hits");
