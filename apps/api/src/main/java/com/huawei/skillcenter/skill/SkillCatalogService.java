@@ -2,8 +2,19 @@ package com.huawei.skillcenter.skill;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.huawei.skillcenter.access.SkillAuthorizationService;
+import com.huawei.skillcenter.access.SkillNotVisibleException;
+import com.huawei.skillcenter.access.SkillScopeNotFoundException;
+import com.huawei.skillcenter.access.SkillVisibilityContext;
+import com.huawei.skillcenter.distribution.ArtifactStorage;
+import com.huawei.skillcenter.governance.Actor;
 import com.huawei.skillcenter.governance.GovernanceStore;
 import com.huawei.skillcenter.governance.SkillVersion;
+import com.huawei.skillcenter.search.SkillSearchDocumentSource;
+import com.huawei.skillcenter.search.SkillSearchHit;
+import com.huawei.skillcenter.search.SkillSearchIndex;
+import com.huawei.skillcenter.search.SkillSearchQuery;
+import com.huawei.skillcenter.search.SkillSearchRefreshCoordinator;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -20,26 +31,62 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 @Service
 public class SkillCatalogService {
     private final SkillRepository repository;
     private final GovernanceStore governanceStore;
     private final ObjectMapper objectMapper;
+    private final SkillAuthorizationService authorizationService;
+    private final ArtifactStorage artifactStorage;
+    private final SkillSearchIndex searchIndex;
+    private final SkillSearchDocumentSource searchSource;
+    private final SkillSearchRefreshCoordinator searchRefreshCoordinator;
 
     public SkillCatalogService(SkillRepository repository) {
-        this(repository, null, null);
+        this(repository, null, null, null, null, null, null, null);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
-    public SkillCatalogService(SkillRepository repository, GovernanceStore governanceStore, ObjectMapper objectMapper) {
+    public SkillCatalogService(SkillRepository repository, GovernanceStore governanceStore, ObjectMapper objectMapper,
+                               SkillAuthorizationService authorizationService, ArtifactStorage artifactStorage,
+                               SkillSearchIndex searchIndex, SkillSearchDocumentSource searchSource,
+                               SkillSearchRefreshCoordinator searchRefreshCoordinator) {
         this.repository = repository;
         this.governanceStore = governanceStore;
         this.objectMapper = objectMapper;
+        this.authorizationService = authorizationService;
+        this.artifactStorage = artifactStorage;
+        this.searchIndex = searchIndex;
+        this.searchSource = searchSource;
+        this.searchRefreshCoordinator = searchRefreshCoordinator;
+    }
+
+    public SkillCatalogService(SkillRepository repository, GovernanceStore governanceStore, ObjectMapper objectMapper,
+                               SkillAuthorizationService authorizationService, ArtifactStorage artifactStorage) {
+        this(repository, governanceStore, objectMapper, authorizationService, artifactStorage, null, null, null);
+    }
+
+    public SkillCatalogService(SkillRepository repository, GovernanceStore governanceStore, ObjectMapper objectMapper,
+                               SkillAuthorizationService authorizationService) {
+        this(repository, governanceStore, objectMapper, authorizationService, null, null, null, null);
+    }
+
+    public SkillCatalogService(SkillRepository repository, GovernanceStore governanceStore, ObjectMapper objectMapper) {
+        this(repository, governanceStore, objectMapper, null, null, null, null, null);
     }
 
     public PageResult<SkillSummary> list(SkillQuery query) {
         PageResult<SkillRecord> page = governedPage(query);
+        return new PageResult<>(page.items().stream().map(SkillSummary::from).toList(), page.page(), page.pageSize(), page.total());
+    }
+
+    public PageResult<SkillSummary> list(SkillQuery query, Actor actor) {
+        if (indexedActorAwarePathAvailable()) {
+            return indexedActorAwarePage(query, actor);
+        }
+        PageResult<SkillRecord> page = actorAwarePage(query, actor);
         return new PageResult<>(page.items().stream().map(SkillSummary::from).toList(), page.page(), page.pageSize(), page.total());
     }
 
@@ -58,6 +105,11 @@ public class SkillCatalogService {
             }
         }
         return repository.findDetail(skillId).orElseThrow(() -> new SkillNotFoundException(skillId));
+    }
+
+    public SkillRecord detail(String skillId, Actor actor) {
+        requireCatalogVisible(skillId, actor, SkillVisibilityContext.CATALOG);
+        return detail(skillId);
     }
 
     public String content(String skillId) {
@@ -82,6 +134,11 @@ public class SkillCatalogService {
         throw new SkillNotFoundException(skillId);
     }
 
+    public String content(String skillId, Actor actor) {
+        requireCatalogVisible(skillId, actor, SkillVisibilityContext.CONTENT);
+        return content(skillId);
+    }
+
     private PageResult<SkillRecord> governedPage(SkillQuery query) {
         if (governanceStore == null) {
             return repository.findPublished(query);
@@ -99,6 +156,88 @@ public class SkillCatalogService {
         int from = Math.min((query.page() - 1) * query.pageSize(), filtered.size());
         int to = Math.min(from + query.pageSize(), filtered.size());
         return new PageResult<>(filtered.subList(from, to), query.page(), query.pageSize(), filtered.size());
+    }
+
+    private PageResult<SkillRecord> actorAwarePage(SkillQuery query, Actor actor) {
+        if (authorizationService == null) {
+            return governedPage(query);
+        }
+        if (governanceStore == null) {
+            return repository.findPublished(query);
+        }
+        if (unknownGovernanceCategory(query.category())) {
+            return new PageResult<>(List.of(), query.page(), query.pageSize(), 0);
+        }
+        List<SkillRecord> filtered = governedRecords(query).stream()
+                .filter(skill -> visibleInCatalog(skill.id(), actor))
+                .filter(matchesText(query.query()))
+                .filter(matches(query.category(), SkillRecord::category))
+                .filter(matches(query.status(), SkillRecord::status))
+                .filter(matchesRisk(query.risk()))
+                .sorted(SkillSort.comparator(query.sort()))
+                .toList();
+        int from = Math.min((query.page() - 1) * query.pageSize(), filtered.size());
+        int to = Math.min(from + query.pageSize(), filtered.size());
+        return new PageResult<>(filtered.subList(from, to), query.page(), query.pageSize(), filtered.size());
+    }
+
+    private boolean indexedActorAwarePathAvailable() {
+        return governanceStore != null && authorizationService != null && searchIndex != null && searchSource != null
+                && searchRefreshCoordinator != null;
+    }
+
+    private PageResult<SkillSummary> indexedActorAwarePage(SkillQuery query, Actor actor) {
+        if (unknownGovernanceCategory(query.category())) {
+            return new PageResult<>(List.of(), query.page(), query.pageSize(), 0);
+        }
+        searchRefreshCoordinator.ensureReady();
+        boolean textQuery = query.query() != null && !query.query().isBlank();
+        List<IndexedSkill> visible = new ArrayList<>();
+        for (SkillSearchHit hit : searchIndex.search(searchQuery(query))) {
+            Optional<SkillRecord> resolved = searchSource.findRecord(hit.skillId());
+            if (resolved.isEmpty() || !catalogStatus(resolved.get().status()) || !visibleInIndexedCatalog(hit.skillId(), actor)) {
+                continue;
+            }
+            visible.add(new IndexedSkill(resolved.get(), textQuery
+                    ? new SkillSearchMetadata(hit.score(), hit.matchedFields()) : null));
+        }
+        if (!"relevance".equals(query.sort())) {
+            visible.sort(Comparator.comparing(IndexedSkill::record, SkillSort.comparator(query.sort())));
+        }
+        int from = Math.min((query.page() - 1) * query.pageSize(), visible.size());
+        int to = Math.min(from + query.pageSize(), visible.size());
+        List<SkillSummary> items = visible.subList(from, to).stream()
+                .map(candidate -> summary(candidate.record(), candidate.search()))
+                .toList();
+        return new PageResult<>(items, query.page(), query.pageSize(), visible.size());
+    }
+
+    private SkillSearchQuery searchQuery(SkillQuery query) {
+        return new SkillSearchQuery(query.query(), searchFilter(query.category()), searchFilter(query.status()),
+                searchFilter(query.risk()), query.sort());
+    }
+
+    private String searchFilter(String value) {
+        return value == null || value.isBlank() || "all".equalsIgnoreCase(value) ? "" : value;
+    }
+
+    private boolean catalogStatus(String status) {
+        return status != null && Set.of("published", "deprecated").contains(status.toLowerCase(Locale.ROOT));
+    }
+
+    private boolean visibleInIndexedCatalog(String skillId, Actor actor) {
+        try {
+            authorizationService.requireVisible(skillId, actor, SkillVisibilityContext.CATALOG);
+            return true;
+        } catch (SkillNotVisibleException hidden) {
+            return false;
+        }
+    }
+
+    private SkillSummary summary(SkillRecord skill, SkillSearchMetadata search) {
+        return new SkillSummary(skill.id(), skill.name(), skill.version(), skill.description(), skill.category(),
+                skill.tags(), skill.risk(), skill.riskTone(), skill.team(), skill.owner(), skill.icon(), skill.iconTone(),
+                skill.status(), skill.lastUpdated(), skill.metrics(), search);
     }
 
     private boolean unknownGovernanceCategory(String category) {
@@ -138,15 +277,41 @@ public class SkillCatalogService {
         return new ArrayList<>(records.values());
     }
 
+    private boolean visibleInCatalog(String skillId, Actor actor) {
+        try {
+            authorizationService.requireVisible(skillId, actor, SkillVisibilityContext.CATALOG);
+            return true;
+        } catch (SkillNotVisibleException hidden) {
+            return isHistoricalRepositorySkill(skillId);
+        }
+    }
+
+    private void requireCatalogVisible(String skillId, Actor actor, SkillVisibilityContext context) {
+        if (authorizationService == null || isHistoricalRepositorySkill(skillId)) {
+            return;
+        }
+        authorizationService.requireVisible(skillId, actor, context);
+    }
+
+    private boolean isHistoricalRepositorySkill(String skillId) {
+        if (authorizationService == null || repository.findDetail(skillId).isEmpty()) {
+            return false;
+        }
+        try {
+            authorizationService.effectiveScope(skillId);
+            return false;
+        } catch (SkillScopeNotFoundException missing) {
+            return true;
+        }
+    }
+
     private SkillRecord readUploadedSkill(SkillVersion version) {
-        try (ZipFile zip = new ZipFile(Path.of(version.artifactPath()).toFile())) {
-            ZipEntry skillEntry = zip.stream()
-                    .filter(entry -> !entry.isDirectory() && entry.getName().endsWith("/skill.json"))
-                    .findFirst().orElse(null);
-            if (skillEntry == null) {
+        try {
+            byte[] skillJson = readEntry(version, "/skill.json");
+            if (skillJson == null) {
                 return fallback(version);
             }
-            JsonNode node = objectMapper.readTree(zip.getInputStream(skillEntry));
+            JsonNode node = objectMapper.readTree(skillJson);
             if (!version.skillId().equals(node.path("id").asText())) {
                 return fallback(version);
             }
@@ -174,16 +339,34 @@ public class SkillCatalogService {
         if (version.artifactPath() == null || version.artifactPath().isBlank()) {
             return "";
         }
-        try (ZipFile zip = new ZipFile(Path.of(version.artifactPath()).toFile())) {
-            ZipEntry skillEntry = zip.stream()
-                    .filter(entry -> !entry.isDirectory() && entry.getName().endsWith("/SKILL.md"))
-                    .findFirst().orElse(null);
-            if (skillEntry == null) {
-                return "";
-            }
-            return new String(zip.getInputStream(skillEntry).readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        try {
+            byte[] markdown = readEntry(version, "/SKILL.md");
+            return markdown == null ? "" : new String(markdown, java.nio.charset.StandardCharsets.UTF_8);
         } catch (IOException | RuntimeException ignored) {
             return "";
+        }
+    }
+
+    private byte[] readEntry(SkillVersion version, String suffix) throws IOException {
+        if (artifactStorage != null) {
+            ArtifactStorage.ArtifactResource artifact = artifactStorage.open(
+                    version.artifactPath(), version.sha256());
+            try (var input = artifact.resource().getInputStream();
+                 ZipInputStream zip = new ZipInputStream(input)) {
+                ZipEntry entry;
+                while ((entry = zip.getNextEntry()) != null) {
+                    if (!entry.isDirectory() && entry.getName().endsWith(suffix)) {
+                        return zip.readAllBytes();
+                    }
+                }
+                return null;
+            }
+        }
+        try (ZipFile zip = new ZipFile(Path.of(version.artifactPath()).toFile())) {
+            ZipEntry entry = zip.stream()
+                    .filter(candidate -> !candidate.isDirectory() && candidate.getName().endsWith(suffix))
+                    .findFirst().orElse(null);
+            return entry == null ? null : zip.getInputStream(entry).readAllBytes();
         }
     }
 
@@ -253,5 +436,8 @@ public class SkillCatalogService {
         }
         return skill -> expected.equalsIgnoreCase(skill.risk())
                 || expected.replace("风险", "").equalsIgnoreCase(skill.risk().replace("风险", ""));
+    }
+
+    private record IndexedSkill(SkillRecord record, SkillSearchMetadata search) {
     }
 }

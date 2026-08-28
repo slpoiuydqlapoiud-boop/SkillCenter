@@ -14,7 +14,7 @@ final class SkillSort {
         }
         String value = sort.trim().toLowerCase(Locale.ROOT);
         return switch (value) {
-            case "downloads", "calls", "favorites", "updated" -> value;
+            case "downloads", "calls", "favorites", "updated", "relevance" -> value;
             default -> "updated";
         };
     }
