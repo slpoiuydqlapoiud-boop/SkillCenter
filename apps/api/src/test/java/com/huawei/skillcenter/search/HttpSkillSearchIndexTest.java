@@ -119,6 +119,21 @@ class HttpSkillSearchIndexTest {
         }
     }
 
+    @Test
+    void acceptsStandardOpenSearchHitWithoutSyntheticMatchedFields() throws Exception {
+        try (var server = new SearchHttpServer(200,
+                "{\"hits\":{\"hits\":[{\"_id\":\"skill-a\",\"_score\":1}]}}")) {
+            HttpSkillSearchIndex index = new HttpSkillSearchIndex(server.endpoint(), "skills-v1", "secret://search",
+                    Duration.ofSeconds(1), Duration.ofSeconds(2), 16_384, HttpClient.newHttpClient(),
+                    new ObjectMapper(), reference -> "token-value", Clock.systemUTC());
+
+            index.probe();
+
+            assertThat(index.search(new SkillSearchQuery("skill-a", "", "", "", "updated")))
+                    .containsExactly(new SkillSearchHit("skill-a", 1, List.of()));
+        }
+    }
+
     private static final class SearchHttpServer implements AutoCloseable {
         private final com.sun.net.httpserver.HttpServer server;
         private final AtomicInteger requestCount = new AtomicInteger();

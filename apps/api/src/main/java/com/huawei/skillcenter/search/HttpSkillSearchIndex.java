@@ -384,7 +384,8 @@ public final class HttpSkillSearchIndex implements SkillSearchIndex, SkillSearch
     private List<String> matchedFields(JsonNode hit) {
         JsonNode fields = hit.get("matchedFields");
         if (fields == null) fields = hit.get("matched_fields");
-        if (fields == null || !fields.isArray() || fields.size() > 6) {
+        if (fields == null) return List.of();
+        if (!fields.isArray() || fields.size() > 6) {
             throw remote("SEARCH_INDEX_RESPONSE_INVALID");
         }
         List<String> result = new ArrayList<>();
