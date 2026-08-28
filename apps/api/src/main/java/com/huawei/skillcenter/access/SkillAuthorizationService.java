@@ -9,7 +9,9 @@ import com.huawei.skillcenter.governance.RoleGuard;
 import com.huawei.skillcenter.governance.SkillVersion;
 import com.huawei.skillcenter.governance.TeamDefinition;
 import com.huawei.skillcenter.governance.OrganizationDirectorySyncService;
+import com.huawei.skillcenter.search.SkillSearchRefreshEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -32,27 +34,36 @@ public class SkillAuthorizationService {
     private final GovernanceStore governanceStore;
     private final Clock clock;
     private final OrganizationDirectorySyncService organizationDirectory;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Autowired
     public SkillAuthorizationService(SkillScopeRepository scopeStore, GovernanceStore governanceStore,
-                                     OrganizationDirectorySyncService organizationDirectory) {
-        this(scopeStore, governanceStore, Clock.systemUTC(), organizationDirectory);
+                                     OrganizationDirectorySyncService organizationDirectory,
+                                     ApplicationEventPublisher eventPublisher) {
+        this(scopeStore, governanceStore, Clock.systemUTC(), organizationDirectory, eventPublisher);
     }
 
     public SkillAuthorizationService(SkillScopeRepository scopeStore, GovernanceStore governanceStore) {
-        this(scopeStore, governanceStore, Clock.systemUTC(), null);
+        this(scopeStore, governanceStore, Clock.systemUTC(), null, event -> { });
     }
 
     SkillAuthorizationService(SkillScopeRepository scopeStore, GovernanceStore governanceStore, Clock clock) {
-        this(scopeStore, governanceStore, clock, null);
+        this(scopeStore, governanceStore, clock, null, event -> { });
     }
 
     public SkillAuthorizationService(SkillScopeRepository scopeStore, GovernanceStore governanceStore, Clock clock,
                                       OrganizationDirectorySyncService organizationDirectory) {
+        this(scopeStore, governanceStore, clock, organizationDirectory, event -> { });
+    }
+
+    public SkillAuthorizationService(SkillScopeRepository scopeStore, GovernanceStore governanceStore, Clock clock,
+                                     OrganizationDirectorySyncService organizationDirectory,
+                                     ApplicationEventPublisher eventPublisher) {
         this.scopeStore = scopeStore;
         this.governanceStore = governanceStore;
         this.clock = clock;
         this.organizationDirectory = organizationDirectory;
+        this.eventPublisher = eventPublisher == null ? event -> { } : eventPublisher;
     }
 
     public SkillScope effectiveScope(String skillId) {
@@ -195,6 +206,7 @@ public class SkillAuthorizationService {
                         "maintainerCount", Integer.toString(updated.maintainerUserIds().size()),
                         "revision", Integer.toString(updated.revision())
                 )));
+        eventPublisher.publishEvent(new SkillSearchRefreshEvent(updated.skillId(), updated.revision(), "SKILL_SCOPE_SAVED"));
         return updated;
     }
 

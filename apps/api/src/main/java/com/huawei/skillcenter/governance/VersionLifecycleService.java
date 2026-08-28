@@ -4,8 +4,10 @@ import com.huawei.skillcenter.access.SkillAuthorizationService;
 import com.huawei.skillcenter.access.SkillVisibilityContext;
 import com.huawei.skillcenter.events.InvocationEvent;
 import com.huawei.skillcenter.events.InvocationEventService;
+import com.huawei.skillcenter.search.SkillSearchRefreshEvent;
 import com.huawei.skillcenter.skill.SkillCatalogService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -21,24 +23,33 @@ public class VersionLifecycleService {
     private final InvocationEventService invocationEventService;
     private final SkillCatalogService catalogService;
     private final SkillAuthorizationService authorizationService;
+    private final ApplicationEventPublisher eventPublisher;
+
+    public VersionLifecycleService(GovernanceStore store, InvocationEventService invocationEventService,
+                                   SkillCatalogService catalogService,
+                                   SkillAuthorizationService authorizationService) {
+        this(store, invocationEventService, catalogService, authorizationService, event -> { });
+    }
 
     @Autowired
     public VersionLifecycleService(GovernanceStore store, InvocationEventService invocationEventService,
                                    SkillCatalogService catalogService,
-                                   SkillAuthorizationService authorizationService) {
+                                   SkillAuthorizationService authorizationService,
+                                   ApplicationEventPublisher eventPublisher) {
         this.store = store;
         this.invocationEventService = invocationEventService;
         this.catalogService = catalogService;
         this.authorizationService = authorizationService;
+        this.eventPublisher = eventPublisher == null ? event -> { } : eventPublisher;
     }
 
     public VersionLifecycleService(GovernanceStore store, InvocationEventService invocationEventService,
                                    SkillCatalogService catalogService) {
-        this(store, invocationEventService, catalogService, null);
+        this(store, invocationEventService, catalogService, null, event -> { });
     }
 
     public VersionLifecycleService(GovernanceStore store, InvocationEventService invocationEventService) {
-        this(store, invocationEventService, null, null);
+        this(store, invocationEventService, null, null, event -> { });
     }
 
     public SkillVersion deprecate(String skillId, String version, VersionLifecycleRequest request,
@@ -125,6 +136,7 @@ public class VersionLifecycleService {
         GovernanceStore.VersionTransitionResult result = store.transitionVersion(updated, lifecycleAudit,
                 "withdrawn".equals(targetStatus) ? "VERSION_WITHDRAWN" : null,
                 "lifecycle", notificationTitle, notificationDetail, now);
+        eventPublisher.publishEvent(new SkillSearchRefreshEvent(updated.skillId(), Math.max(0L, now.toEpochMilli()), auditAction));
         return result.snapshot().versions().stream()
                 .filter(item -> item.packageId().equals(updated.packageId()))
                 .findFirst()

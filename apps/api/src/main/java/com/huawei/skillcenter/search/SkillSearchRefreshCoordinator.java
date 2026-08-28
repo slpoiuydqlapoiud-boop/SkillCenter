@@ -1,5 +1,7 @@
 package com.huawei.skillcenter.search;
 
+import org.springframework.context.event.EventListener;
+
 /** Coordinates bounded, in-process refreshes while preserving the last committed index. */
 public final class SkillSearchRefreshCoordinator {
     private static final String CONFLICT = "SEARCH_INDEX_SOURCE_CONFLICT";
@@ -25,6 +27,11 @@ public final class SkillSearchRefreshCoordinator {
         index.invalidate(event.reasonCode());
         sourceRevision = Long.toString(event.sourceRevision());
         reasonCode = "";
+    }
+
+    @EventListener
+    public void onRefresh(SkillSearchRefreshEvent event) {
+        invalidate(event);
     }
 
     public synchronized SkillSearchRebuildResult ensureReady() {
@@ -60,7 +67,7 @@ public final class SkillSearchRefreshCoordinator {
         SkillSearchIndexStatus current = index.status();
         String state = reasonCode.isEmpty() ? current.state() : "DEGRADED";
         return new SkillSearchIndexStatus(state, current.revision(), current.documentCount(), current.sourceHash(),
-                sourceRevision.isEmpty() ? current.sourceRevision() : sourceRevision, reasonCode);
+                sourceRevision.isEmpty() ? current.sourceRevision() : sourceRevision, current.indexedAt(), reasonCode);
     }
 
     private static SkillSearchRebuildResult result(SkillSearchIndexStatus current, String revision, String reason) {

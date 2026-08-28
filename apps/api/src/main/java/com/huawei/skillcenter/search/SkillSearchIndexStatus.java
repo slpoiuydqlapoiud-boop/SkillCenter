@@ -1,14 +1,20 @@
 package com.huawei.skillcenter.search;
 
-import java.util.Set;
 import java.util.Locale;
+import java.util.Set;
+import java.time.Instant;
 
 public record SkillSearchIndexStatus(String state, int revision, int documentCount, String sourceHash, String sourceRevision,
-                                     String reasonCode) {
+                                     Instant indexedAt, String reasonCode) {
     private static final Set<String> STATES = Set.of("READY", "STALE", "REBUILDING", "DEGRADED", "NOT_READY");
 
     public SkillSearchIndexStatus(String state, int revision, int documentCount, String sourceHash, String sourceRevision) {
-        this(state, revision, documentCount, sourceHash, sourceRevision, "");
+        this(state, revision, documentCount, sourceHash, sourceRevision, null, "");
+    }
+
+    public SkillSearchIndexStatus(String state, int revision, int documentCount, String sourceHash, String sourceRevision,
+                                  String reasonCode) {
+        this(state, revision, documentCount, sourceHash, sourceRevision, null, reasonCode);
     }
 
     public SkillSearchIndexStatus {

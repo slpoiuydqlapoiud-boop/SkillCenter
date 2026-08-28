@@ -57,6 +57,7 @@ import com.huawei.skillcenter.persistence.PersistenceControlException;
 import com.huawei.skillcenter.quality.QualityRunNotFoundException;
 import com.huawei.skillcenter.lifecycle.SkillLifecycleProjectionSourceInvalidException;
 import com.huawei.skillcenter.lifecycle.SkillLifecycleProjectionQueryInvalidException;
+import com.huawei.skillcenter.search.SkillSearchIndexControlException;
 import com.huawei.skillcenter.quality.EvaluationSuiteVersionConflictException;
 import com.huawei.skillcenter.quality.EvaluationSuiteVersionNotFoundException;
 import com.huawei.skillcenter.quality.EvaluationSuiteNotEnabledException;
@@ -527,6 +528,24 @@ public class GlobalExceptionHandler {
     ResponseEntity<ErrorEnvelope> lifecycleProjectionQueryInvalid(SkillLifecycleProjectionQueryInvalidException exception,
                                                                     HttpServletRequest request) {
         return error(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", exception.getMessage(), request, List.of());
+    }
+
+    @ExceptionHandler(SkillSearchIndexControlException.class)
+    ResponseEntity<ErrorEnvelope> searchIndexControl(SkillSearchIndexControlException exception,
+                                                       HttpServletRequest request) {
+        String code = exception.code();
+        HttpStatus status = switch (code) {
+            case "SEARCH_INDEX_SOURCE_CONFLICT" -> HttpStatus.CONFLICT;
+            case "SEARCH_INDEX_REBUILD_FAILED" -> HttpStatus.SERVICE_UNAVAILABLE;
+            default -> HttpStatus.BAD_REQUEST;
+        };
+        String message = switch (code) {
+            case "SEARCH_INDEX_SOURCE_CONFLICT" -> "Search index source changed; retry the rebuild";
+            case "SEARCH_INDEX_REBUILD_FAILED" -> "Search index rebuild is temporarily unavailable";
+            case "SEARCH_INDEX_REQUEST_ID_REQUIRED" -> "Request ID is required";
+            default -> "Search index request is invalid";
+        };
+        return error(status, code, message, request, List.of());
     }
 
     @ExceptionHandler(ForbiddenException.class)

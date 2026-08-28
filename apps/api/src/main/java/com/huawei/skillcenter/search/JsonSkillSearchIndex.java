@@ -26,14 +26,14 @@ public final class JsonSkillSearchIndex implements SkillSearchIndex {
             new Field("team", 20),
             new Field("category", 20));
 
-    private volatile Snapshot snapshot = new Snapshot(Map.of(), "", 0);
+    private volatile Snapshot snapshot = new Snapshot(Map.of(), "", 0, null);
     private volatile String state = "NOT_READY";
 
     @Override
     public SkillSearchIndexStatus status() {
         Snapshot current = snapshot;
         return new SkillSearchIndexStatus(state, current.revision(), current.documents().size(), current.sourceHash(),
-                Integer.toString(current.revision()));
+                Integer.toString(current.revision()), current.indexedAt(), "");
     }
 
     @Override
@@ -60,7 +60,7 @@ public final class JsonSkillSearchIndex implements SkillSearchIndex {
             }
         }
 
-        Snapshot committed = new Snapshot(Map.copyOf(next), validatedHash, current.revision() + 1);
+        Snapshot committed = new Snapshot(Map.copyOf(next), validatedHash, current.revision() + 1, Instant.now());
         snapshot = committed;
         state = "READY";
         return result(committed);
@@ -190,7 +190,7 @@ public final class JsonSkillSearchIndex implements SkillSearchIndex {
     private record Field(String name, int weight) {
     }
 
-    private record Snapshot(Map<String, IndexedDocument> documents, String sourceHash, int revision) {
+    private record Snapshot(Map<String, IndexedDocument> documents, String sourceHash, int revision, Instant indexedAt) {
     }
 
     private record IndexedDocument(SkillSearchDocument document, Map<String, Set<String>> tokens) {

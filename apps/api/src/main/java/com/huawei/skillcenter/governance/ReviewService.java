@@ -6,6 +6,8 @@ import com.huawei.skillcenter.packageupload.StoredPackage;
 import com.huawei.skillcenter.notification.NotificationRecord;
 import com.huawei.skillcenter.release.ReleaseGateSnapshot;
 import com.huawei.skillcenter.release.ReleaseService;
+import com.huawei.skillcenter.search.SkillSearchRefreshEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -20,26 +22,34 @@ public class ReviewService {
     private final QualityReleaseGate qualityReleaseGate;
     private final ReleaseService releaseService;
     private final SkillAuthorizationService authorizationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ReviewService(GovernanceStore store) {
-        this(store, (skillId, version) -> { }, null, null);
+        this(store, (skillId, version) -> { }, null, null, event -> { });
     }
 
     public ReviewService(GovernanceStore store, QualityReleaseGate qualityReleaseGate) {
-        this(store, qualityReleaseGate, null, null);
+        this(store, qualityReleaseGate, null, null, event -> { });
     }
 
     public ReviewService(GovernanceStore store, QualityReleaseGate qualityReleaseGate, ReleaseService releaseService) {
-        this(store, qualityReleaseGate, releaseService, null);
+        this(store, qualityReleaseGate, releaseService, null, event -> { });
+    }
+
+    public ReviewService(GovernanceStore store, QualityReleaseGate qualityReleaseGate,
+                         ReleaseService releaseService, SkillAuthorizationService authorizationService) {
+        this(store, qualityReleaseGate, releaseService, authorizationService, event -> { });
     }
 
     @org.springframework.beans.factory.annotation.Autowired
     public ReviewService(GovernanceStore store, QualityReleaseGate qualityReleaseGate,
-                         ReleaseService releaseService, SkillAuthorizationService authorizationService) {
+                         ReleaseService releaseService, SkillAuthorizationService authorizationService,
+                         ApplicationEventPublisher eventPublisher) {
         this.store = store;
         this.qualityReleaseGate = qualityReleaseGate == null ? (skillId, version) -> { } : qualityReleaseGate;
         this.releaseService = releaseService;
         this.authorizationService = authorizationService;
+        this.eventPublisher = eventPublisher == null ? event -> { } : eventPublisher;
     }
 
     public GovernanceSnapshot snapshot() {
@@ -124,6 +134,7 @@ public class ReviewService {
         store.updateReview(reviewId, approved, published,
                 audit("PACKAGE_APPROVED", "SKILL_VERSION", currentVersion.packageId(), actor, requestId,
                         Map.of("skillId", currentVersion.skillId(), "version", currentVersion.version(), "status", "published")));
+        publishRefresh(published, "VERSION_PUBLISHED");
         enrollStagingRelease(published, gateSnapshot, actor, currentReview.reviewId());
         notify(currentVersion.uploadedBy(), "review", "Skill 已发布",
                 currentVersion.skillId() + " v" + currentVersion.version() + " 已进入技能市场", "check");
@@ -174,6 +185,11 @@ public class ReviewService {
         }
         store.addNotification(new NotificationRecord(UUID.randomUUID().toString(), userId, type, title,
                 detail, icon, Instant.now(), false, null));
+    }
+
+    private void publishRefresh(SkillVersion version, String reasonCode) {
+        long sourceRevision = version.statusChangedAt() == null ? 0L : Math.max(0L, version.statusChangedAt().toEpochMilli());
+        eventPublisher.publishEvent(new SkillSearchRefreshEvent(version.skillId(), sourceRevision, reasonCode));
     }
 
     private ReviewTask findReview(String reviewId) {
