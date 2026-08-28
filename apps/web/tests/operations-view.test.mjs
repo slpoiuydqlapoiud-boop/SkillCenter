@@ -165,6 +165,34 @@ test("operations center shows release target probe history and failure count", a
   }
 });
 
+test("operations center exposes the external search index probe safely", async () => {
+  document.body.innerHTML = "<div id=\"root\"></div>";
+  const root = createRoot(document.getElementById("root"));
+  let probeCount = 0;
+  const api = {
+    getOperationsMetrics: async () => ({ data: { health: { status: "UP" } } }),
+    getOperationsAlerts: async () => ({ data: [] }),
+    getPlatformReadiness: async () => ({ data: { overall: "NOT_READY", scope: "PRODUCTION_HANDOFF", components: [], blockingReasonCodes: [] } }),
+    probeSearchIndex: async () => { probeCount += 1; return { data: { backend: "opensearch", status: "REACHABLE", reasonCode: "SEARCH_INDEX_PROBE_OK", httpStatus: 200, latencyMs: 7, endpoint: "https://secret.example" } }; },
+    getSkillRuntimeMetrics: async () => ({ data: { totals: {}, latency: {}, errors: [], sources: [], versionAdoption: [], trend: [] } }),
+    getTraces: async () => ({ data: [] }),
+  };
+
+  await act(async () => root.render(React.createElement(OperationsMetricsView, { api, role: "admin" })));
+  try {
+    await waitFor(() => assert.ok(document.querySelector('[data-testid="platform-readiness"]')));
+    const panel = document.querySelector('[data-testid="platform-readiness"]');
+    const probe = panel.querySelector("[data-testid=search-index-probe]");
+    assert.ok(probe);
+    await act(async () => probe.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })));
+    await waitFor(() => assert.equal(probeCount, 1));
+    await waitFor(() => assert.match(panel.textContent, /SEARCH_INDEX_PROBE_OK/));
+    assert.equal(panel.textContent.includes("https://"), false);
+  } finally {
+    await act(async () => root.unmount());
+  }
+});
+
 test("operations center shows evidence ledger and saves only after explicit action", async () => {
   document.body.innerHTML = "<div id=\"root\"></div>";
   const root = createRoot(document.getElementById("root"));

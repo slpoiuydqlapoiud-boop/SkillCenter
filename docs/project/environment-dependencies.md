@@ -31,6 +31,7 @@ py -3.11 -m unittest discover -s tests -p "test_*.py"
 | PostgreSQL | 16+ | 5432 | 治理、质量、Benchmark、发布、执行环境等共享持久化 |
 | Redis | 7+ | 6379 | 运行摘要、告警状态、分布式上传会话 |
 | MinIO 或 S3-compatible 存储 | 当前稳定版 | 9000/9001 | Skill 制品与分片对象存储联调 |
+| OpenSearch | 2.17.1（本地 Compose 固定镜像） | 9200 | 外部 Skill 元数据搜索适配器联调；仅在显式选择 `opensearch` 且 readiness 探测通过后使用 |
 
 数据库和 Redis 只绑定宿主机 loopback；密码、Access Key 和连接串通过 Workbuddy 的 Secret/环境变量注入，不提交仓库。
 
@@ -50,6 +51,7 @@ py -3.11 -m unittest discover -s tests -p "test_*.py"
 
 - API 默认配置：`apps/api/src/main/resources/application.yml`
 - 搜索共享后端 selector：`SKILL_CENTER_SEARCH_INDEX_BACKEND=postgresql`（需同时开启全局 PostgreSQL，并通过 V16/readiness）
+- OpenSearch 搜索联调：`SKILL_CENTER_SEARCH_INDEX_BACKEND=opensearch`，并配置 `SKILL_CENTER_SEARCH_INDEX_ENDPOINT`、`SKILL_CENTER_SEARCH_INDEX_NAME`、可选 `SKILL_CENTER_SEARCH_INDEX_CREDENTIAL_REF`；必须先执行管理员搜索索引探测并通过 readiness，不可用时不会回退到 JSON
 - 跨实例搜索刷新：`SKILL_CENTER_SEARCH_INDEX_EVENTS_ENABLED=true`（需同时开启 PostgreSQL 搜索后端；治理聚合和 Skill 范围写入会将 V17 metadata-only refresh outbox 与各自主事务绑定，V18 持久化 consumer cursor + poller 提供 at-least-once 重放，V20 增加 ACTIVE/RETIRED 生命周期和 heartbeat；`SKILL_CENTER_SEARCH_INDEX_EVENTS_CONSUMER_ID` 应为每个实例稳定且唯一的部署标识）
 - 搜索刷新日志清理：`SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_SCHEDULER_ENABLED=true`（显式开启，需 V20；仅按 retention cutoff 和仍活跃 consumer 的保护水位清理；stale consumer 只有在已追平 cutoff 内全部事件时才会被安全排除，否则继续阻塞清理；下线实例应通过管理员控制 API 显式 retire）
 - 本地依赖编排：`deploy/local/compose.yaml`，变量模板：`deploy/local/.env.example`

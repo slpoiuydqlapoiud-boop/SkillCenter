@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
-/** Selects the local JSON or explicitly shared PostgreSQL search projection. */
+/** Selects one explicit local or shared Skill search projection backend. */
 abstract class SkillSearchBackendCondition implements Condition {
     private final String expectedBackend;
 
@@ -35,6 +35,12 @@ abstract class SkillSearchBackendCondition implements Condition {
     static final class Postgresql extends SkillSearchBackendCondition {
         Postgresql() {
             super("postgresql");
+        }
+    }
+
+    static final class Opensearch extends SkillSearchBackendCondition {
+        Opensearch() {
+            super("opensearch");
         }
     }
 }

@@ -59,6 +59,7 @@ import com.huawei.skillcenter.lifecycle.SkillLifecycleProjectionSourceInvalidExc
 import com.huawei.skillcenter.lifecycle.SkillLifecycleProjectionQueryInvalidException;
 import com.huawei.skillcenter.search.SkillSearchIndexControlException;
 import com.huawei.skillcenter.search.SkillSearchIndexPersistenceException;
+import com.huawei.skillcenter.search.SkillSearchIndexRemoteException;
 import com.huawei.skillcenter.quality.EvaluationSuiteVersionConflictException;
 import com.huawei.skillcenter.quality.EvaluationSuiteVersionNotFoundException;
 import com.huawei.skillcenter.quality.EvaluationSuiteNotEnabledException;
@@ -549,6 +550,13 @@ public class GlobalExceptionHandler {
             default -> "Search index request is invalid";
         };
         return error(status, code, message, request, List.of());
+    }
+
+    @ExceptionHandler(SkillSearchIndexRemoteException.class)
+    ResponseEntity<ErrorEnvelope> searchIndexRemote(SkillSearchIndexRemoteException exception,
+                                                     HttpServletRequest request) {
+        return error(HttpStatus.SERVICE_UNAVAILABLE, exception.reasonCode(),
+                "External search index is temporarily unavailable", request, List.of());
     }
 
     @ExceptionHandler(SkillSearchIndexPersistenceException.class)

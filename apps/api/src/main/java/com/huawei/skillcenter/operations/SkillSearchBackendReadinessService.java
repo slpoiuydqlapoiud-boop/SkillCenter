@@ -5,6 +5,9 @@ import com.huawei.skillcenter.persistence.PersistenceBackendStatus;
 import com.huawei.skillcenter.persistence.PersistenceControlProperties;
 import com.huawei.skillcenter.search.SkillSearchIndex;
 import com.huawei.skillcenter.search.SkillSearchIndexStatus;
+import com.huawei.skillcenter.search.SkillSearchRemoteHealth;
+import com.huawei.skillcenter.search.SkillSearchConnectivityProbeService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /** Evaluates shared PostgreSQL schema and current search projection readiness. */
@@ -16,13 +19,23 @@ public class SkillSearchBackendReadinessService implements SkillSearchBackendHea
     private final PersistenceControlProperties properties;
     private final PersistenceBackend persistence;
     private final SkillSearchIndex index;
+    private final SkillSearchConnectivityProbeService connectivityProbe;
 
     public SkillSearchBackendReadinessService(PersistenceControlProperties properties,
                                               PersistenceBackend persistence,
                                               SkillSearchIndex index) {
+        this(properties, persistence, index, null);
+    }
+
+    @Autowired
+    public SkillSearchBackendReadinessService(PersistenceControlProperties properties,
+                                              PersistenceBackend persistence,
+                                              SkillSearchIndex index,
+                                              SkillSearchConnectivityProbeService connectivityProbe) {
         this.properties = require(properties, "properties");
         this.persistence = require(persistence, "persistence");
         this.index = require(index, "index");
+        this.connectivityProbe = connectivityProbe;
     }
 
     @Override
@@ -33,6 +46,21 @@ public class SkillSearchBackendReadinessService implements SkillSearchBackendHea
             if ("json".equals(selected)) {
                 return new SkillSearchBackendReadiness("json", "DEGRADED", "SEARCH_INDEX_JSON_ONLY",
                         "Skill 搜索索引仅使用本地 JSON，不支持多实例共享");
+            }
+            if ("opensearch".equals(selected)) {
+                boolean probeFresh = connectivityProbe != null
+                        ? connectivityProbe.probeFresh()
+                        : index instanceof SkillSearchRemoteHealth remoteHealth && remoteHealth.probeFresh();
+                if (!probeFresh) {
+                    return notReady("opensearch", "SEARCH_INDEX_PROBE_REQUIRED",
+                            "外部 Skill 搜索索引尚未完成新鲜连通性探测");
+                }
+                SkillSearchIndexStatus indexStatus = index.status();
+                if (indexStatus == null || !"READY".equals(indexStatus.state())) {
+                    return notReady("opensearch", "SEARCH_INDEX_NOT_READY", "外部 Skill 搜索索引尚未完成最新投影");
+                }
+                return new SkillSearchBackendReadiness("opensearch", "READY", "SEARCH_INDEX_OPENSEARCH_READY",
+                        "外部 Skill 搜索索引已通过新鲜连通性探测并完成投影");
             }
             if (!"postgresql".equals(selected)) {
                 return notReady(selected.isBlank() ? "unknown" : selected,

@@ -8,6 +8,7 @@ import com.huawei.skillcenter.governance.ActorResolver;
 import com.huawei.skillcenter.governance.RoleGuard;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,10 +22,18 @@ import java.util.Set;
 public class SkillSearchIndexController {
     private final SkillSearchRefreshCoordinator coordinator;
     private final ActorResolver actorResolver;
+    private final SkillSearchConnectivityProbeService connectivityProbe;
 
     public SkillSearchIndexController(SkillSearchRefreshCoordinator coordinator, ActorResolver actorResolver) {
+        this(coordinator, actorResolver, null);
+    }
+
+    @Autowired
+    public SkillSearchIndexController(SkillSearchRefreshCoordinator coordinator, ActorResolver actorResolver,
+                                      SkillSearchConnectivityProbeService connectivityProbe) {
         this.coordinator = coordinator;
         this.actorResolver = actorResolver;
+        this.connectivityProbe = connectivityProbe;
     }
 
     @GetMapping("/status")
@@ -47,6 +56,16 @@ public class SkillSearchIndexController {
             throw new SkillSearchIndexControlException(result.reasonCode());
         }
         return ResponseEntity.ok(new ApiResponse<>(SkillSearchIndexAdminView.from(coordinator.index(), coordinator.status()), requestId));
+    }
+
+    @PostMapping("/probe")
+    ResponseEntity<ApiResponse<SkillSearchProbeResult>> probe(HttpServletRequest request) {
+        Actor actor = requireAdmin(request);
+        if (connectivityProbe == null) {
+            throw new SkillSearchIndexControlException("SEARCH_INDEX_PROBE_UNAVAILABLE");
+        }
+        String requestId = requestId(request);
+        return ResponseEntity.ok(new ApiResponse<>(connectivityProbe.probe(actor, requestId), requestId));
     }
 
     private String parseExpectedSourceHash(JsonNode body) {

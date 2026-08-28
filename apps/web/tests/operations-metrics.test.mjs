@@ -1,10 +1,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { createSkillApi } from "../src/api/skillApi.js";
 import { getNavigationForRole } from "../src/state.js";
-import { normalizeLifecycleProjectionReconciliation, normalizeOperationsAlerts, normalizeOperationsMetrics, normalizePlatformReadiness, normalizeProductionEvidence, normalizeReleaseTargetProbe, normalizeReleaseTargetProbes, normalizeRuntimeOperations, normalizeTraceObservations } from "../src/operationsMetrics.js";
+import { normalizeLifecycleProjectionReconciliation, normalizeOperationsAlerts, normalizeOperationsMetrics, normalizePlatformReadiness, normalizeProductionEvidence, normalizeReleaseTargetProbe, normalizeReleaseTargetProbes, normalizeRuntimeOperations, normalizeSearchIndexProbe, normalizeTraceObservations } from "../src/operationsMetrics.js";
 import { normalizeExecutionEnvironmentSnapshot, normalizeOptimizationSuggestionThresholds, normalizeQualityEvaluationRun, normalizeQualityRules, normalizeQualitySnapshot, normalizeSkillExecutionRecord } from "../src/quality.js";
 import { normalizeQualityBenchmarks, normalizeQualityComparison, normalizeQualitySuggestions, normalizeSkillQualityDetail } from "../src/qualityDetail.js";
+
+test("local compose declares a bounded OpenSearch dependency", () => {
+  const compose = readFileSync(new URL("../../../deploy/local/compose.yaml", import.meta.url), "utf8");
+
+  assert.match(compose, /\n  opensearch:\r?\n/);
+  assert.match(compose, /opensearchproject\/opensearch:/);
+  assert.match(compose, /SKILL_CENTER_OPENSEARCH_PORT/);
+  assert.match(compose, /skillcenter-opensearch/);
+  assert.match(compose, /_cluster\/health/);
+});
 
 test("skillApi exposes aggregated platform readiness", async () => {
   let capturedPath = "";
@@ -39,6 +50,33 @@ test("skillApi probes release target connectivity without a request body", async
   assert.equal(calls[0].path, "/api/v1/admin/platform/release-target/probe");
   assert.equal(calls[0].options.method, "POST");
   assert.equal(calls[0].options.body, undefined);
+});
+
+test("skillApi probes search index connectivity without exposing configuration", async () => {
+  const calls = [];
+  const api = createSkillApi((path, options = {}) => {
+    calls.push({ path, options });
+    return Promise.resolve({ data: {} });
+  });
+
+  await api.probeSearchIndex();
+
+  assert.equal(calls[0].path, "/api/v1/admin/search/index/probe");
+  assert.equal(calls[0].options.method, "POST");
+  assert.equal(calls[0].options.body, undefined);
+});
+
+test("search index probe normalization keeps safe status fields only", () => {
+  const result = normalizeSearchIndexProbe({ data: {
+    backend: "opensearch", status: "REACHABLE", reasonCode: "SEARCH_INDEX_PROBE_OK",
+    httpStatus: 200, latencyMs: 8, checkedAt: "2026-08-28T00:00:00Z",
+    endpoint: "https://secret.example", credential: "super-secret",
+  } });
+
+  assert.equal(result.backend, "opensearch");
+  assert.equal(result.status, "REACHABLE");
+  assert.equal(result.endpoint, undefined);
+  assert.equal(result.credential, undefined);
 });
 
 test("skillApi lists bounded release target probe history", async () => {

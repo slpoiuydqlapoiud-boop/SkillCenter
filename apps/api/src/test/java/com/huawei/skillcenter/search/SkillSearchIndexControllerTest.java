@@ -17,6 +17,9 @@ import java.util.Optional;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -154,6 +157,54 @@ class SkillSearchIndexControllerTest {
                 .andExpect(jsonPath("$.error.code").value("SEARCH_INDEX_REBUILD_FAILED"))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
                         .string(not(containsString("secret source path"))));
+    }
+
+    @Test
+    void probeIsAdminOnlyAndReturnsSafeMetadata() throws Exception {
+        SkillSearchConnectivityProbeService probe = mock(SkillSearchConnectivityProbeService.class);
+        when(probe.probe(any(), eq("req-probe"))).thenReturn(new SkillSearchProbeResult(
+                "opensearch", "REACHABLE", "SEARCH_INDEX_PROBE_OK", 200, 4, Instant.parse("2026-08-28T00:00:00Z")));
+        mockMvc = mockMvc(new SkillSearchRefreshCoordinator(new JsonSkillSearchIndex(), new TestSource()), probe);
+
+        mockMvc.perform(post("/api/v1/admin/search/index/probe")
+                        .header(ActorResolver.USER_ID_HEADER, "viewer-1")
+                        .header(ActorResolver.ROLE_HEADER, "viewer")
+                        .header(RequestIdFilter.REQUEST_ID_HEADER, "req-probe"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/v1/admin/search/index/probe")
+                        .header(ActorResolver.USER_ID_HEADER, "admin-1")
+                        .header(ActorResolver.ROLE_HEADER, "admin")
+                        .header(RequestIdFilter.REQUEST_ID_HEADER, "req-probe"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("REACHABLE"))
+                .andExpect(jsonPath("$.data.reasonCode").value("SEARCH_INDEX_PROBE_OK"))
+                .andExpect(jsonPath("$.data.endpoint").doesNotExist())
+                .andExpect(jsonPath("$.data.body").doesNotExist())
+                .andExpect(jsonPath("$.requestId").value("req-probe"));
+    }
+
+    @Test
+    void probeRemoteFailureUsesStableUnavailableError() throws Exception {
+        SkillSearchConnectivityProbeService probe = mock(SkillSearchConnectivityProbeService.class);
+        when(probe.probe(any(), eq("req-error"))).thenThrow(
+                new SkillSearchIndexRemoteException("SEARCH_INDEX_UPSTREAM_UNAVAILABLE"));
+        mockMvc = mockMvc(new SkillSearchRefreshCoordinator(new JsonSkillSearchIndex(), new TestSource()), probe);
+
+        mockMvc.perform(post("/api/v1/admin/search/index/probe")
+                        .header(ActorResolver.USER_ID_HEADER, "admin-1")
+                        .header(ActorResolver.ROLE_HEADER, "admin")
+                        .header(RequestIdFilter.REQUEST_ID_HEADER, "req-error"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error.code").value("SEARCH_INDEX_UPSTREAM_UNAVAILABLE"))
+                .andExpect(jsonPath("$.error.message", not(containsString("endpoint"))));
+    }
+
+    private MockMvc mockMvc(SkillSearchRefreshCoordinator coordinator, SkillSearchConnectivityProbeService probe) {
+        return MockMvcBuilders.standaloneSetup(new SkillSearchIndexController(coordinator, new ActorResolver(), probe))
+                .addFilters(new RequestIdFilter())
+                .setControllerAdvice(new GlobalExceptionHandler(mock(OperationsMetricsService.class)))
+                .build();
     }
 
     private static final class TestSource implements SkillSearchDocumentSource {

@@ -152,6 +152,22 @@ export function normalizeReleaseTargetProbes(payload) {
   return value.map((item) => normalizeReleaseTargetProbe(item));
 }
 
+export function normalizeSearchIndexProbe(payload) {
+  const value = payload?.data ?? payload ?? {};
+  const text = (candidate, fallback = "") => typeof candidate === "string"
+    ? candidate.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 128)
+    : fallback;
+  const httpStatus = value.httpStatus == null ? null : Number(value.httpStatus);
+  return {
+    backend: text(value.backend, "unknown"),
+    status: text(value.status, "UNKNOWN"),
+    reasonCode: text(value.reasonCode),
+    httpStatus: Number.isInteger(httpStatus) && httpStatus >= 100 && httpStatus <= 599 ? httpStatus : null,
+    latencyMs: Math.max(0, Number(value.latencyMs) || 0),
+    checkedAt: text(value.checkedAt),
+  };
+}
+
 export function normalizeProductionEvidence(payload) {
   const value = payload?.data ?? payload ?? [];
   if (!Array.isArray(value)) return [];

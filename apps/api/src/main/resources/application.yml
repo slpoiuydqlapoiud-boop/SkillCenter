@@ -72,6 +72,15 @@ skill-center:
       cleanup-interval-ms: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_CLEANUP_INTERVAL_MS:3600000}
       cleanup-initial-delay-ms: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_CLEANUP_INITIAL_DELAY_MS:3600000}
       cleanup-batch-size: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_CLEANUP_BATCH_SIZE:1000}
+  search-index:
+    mode: ${SKILL_CENTER_SEARCH_INDEX_MODE:http}
+    endpoint: ${SKILL_CENTER_SEARCH_INDEX_ENDPOINT:}
+    index: ${SKILL_CENTER_SEARCH_INDEX_NAME:skillcenter-skills-v1}
+    credential-ref: ${SKILL_CENTER_SEARCH_INDEX_CREDENTIAL_REF:}
+    connect-timeout-ms: ${SKILL_CENTER_SEARCH_INDEX_CONNECT_TIMEOUT_MS:1000}
+    request-timeout-ms: ${SKILL_CENTER_SEARCH_INDEX_REQUEST_TIMEOUT_MS:5000}
+    max-response-bytes: ${SKILL_CENTER_SEARCH_INDEX_MAX_RESPONSE_BYTES:256000}
+    probe-ttl-seconds: ${SKILL_CENTER_SEARCH_INDEX_PROBE_TTL_SECONDS:300}
   quality-evidence-storage: ./data/governance/quality-evidence.json
   benchmark-storage: ./data/governance/benchmarks.json
   runtime-summary-backend: json

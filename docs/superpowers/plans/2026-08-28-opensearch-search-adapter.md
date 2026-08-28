@@ -42,7 +42,7 @@ void parsesOnlyAllowlistedSearchHits() {
 
 - [ ] **Step 2: Run the focused test to verify RED**
 
-Run: `mvn.cmd -q -DforkCount=0 "-Dtest=HttpSkillSearchIndexTest" test`  
+Run: `mvn.cmd -q -DforkCount=0 "-Dtest=HttpSkillSearchIndexTest" test`
 Expected: compilation failure because `HttpSkillSearchIndex` does not exist.
 
 - [ ] **Step 3: Implement the minimal bounded request/response adapter**
@@ -76,7 +76,7 @@ void preservesPreviousStatusWhenBulkRebuildFails() { }
 
 - [ ] **Step 2: Run the focused tests to verify RED**
 
-Run: `mvn.cmd -q -DforkCount=0 "-Dtest=HttpSkillSearchIndexTest" test`  
+Run: `mvn.cmd -q -DforkCount=0 "-Dtest=HttpSkillSearchIndexTest" test`
 Expected: assertions fail because oversized responses and failed rebuilds are not yet handled by the adapter.
 
 - [ ] **Step 3: Implement minimal state and error behavior**
@@ -85,7 +85,7 @@ Keep the last successful status/document count/source hash in memory, mark `DEGR
 
 - [ ] **Step 4: Run focused and existing search tests**
 
-Run: `mvn.cmd -q -DforkCount=0 "-Dtest=HttpSkillSearchIndexTest,SkillSearch*" test`  
+Run: `mvn.cmd -q -DforkCount=0 "-Dtest=HttpSkillSearchIndexTest,SkillSearch*" test`
 Expected: all focused tests pass and JSON/PostgreSQL search contracts remain green.
 
 ### Task 3: Add explicit configuration, bean selection, and readiness
@@ -110,7 +110,7 @@ Assert `json` remains the default, `opensearch` is explicit, and an unconfigured
 
 - [ ] **Step 2: Run tests to verify RED**
 
-Run: `mvn.cmd -q -DforkCount=0 "-Dtest=SkillSearchCatalogConfigurationTest,SkillSearchBackendReadinessServiceTest" test`  
+Run: `mvn.cmd -q -DforkCount=0 "-Dtest=SkillSearchCatalogConfigurationTest,SkillSearchBackendReadinessServiceTest" test`
 Expected: failure because the selector and properties do not recognize `opensearch`.
 
 - [ ] **Step 3: Implement conditional wiring and safe properties**
@@ -147,7 +147,7 @@ Assert the API rejects non-admin probes, the response has no endpoint or body, t
 
 - [ ] **Step 2: Run focused tests to verify RED**
 
-Run: `mvn.cmd -q -DforkCount=0 "-Dtest=SkillSearchIndexControllerTest,SkillSearchConnectivityProbeServiceTest" test`; then run `npm.cmd test -- tests/operations-view.test.mjs`.  
+Run: `mvn.cmd -q -DforkCount=0 "-Dtest=SkillSearchIndexControllerTest,SkillSearchConnectivityProbeServiceTest" test`; then run `npm.cmd test -- tests/operations-view.test.mjs`.
 Expected: new probe and Compose assertions fail before implementation.
 
 - [ ] **Step 3: Implement probe, audit-safe recovery, client, UI and local service**
@@ -183,4 +183,3 @@ Run from the repository root: `git diff --check` and validate staged names conta
 git add apps/api/src/main/java apps/api/src/test/java apps/api/src/main/resources/application.yml apps/web/src deploy/local docs/project/environment-dependencies.md docs/project/M11-external-integration-runbook.md docs/project/remaining-coding-tasks-status.md
 git commit -m "feat: add external skill search adapter"
 ```
-

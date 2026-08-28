@@ -134,6 +134,9 @@ export function createSkillApi(request) {
     probeArtifactStorage() {
       return request(`${API_PREFIX}/admin/platform/artifact-storage/probe`, { method: "POST" });
     },
+    probeSearchIndex() {
+      return request(`${API_PREFIX}/admin/search/index/probe`, { method: "POST" });
+    },
     listProductionEvidence() {
       return request(`${API_PREFIX}/admin/platform/evidence`);
     },

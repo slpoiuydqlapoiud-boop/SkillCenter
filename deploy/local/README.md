@@ -14,6 +14,7 @@ docker compose --env-file .\deploy\local\.env -f .\deploy\local\compose.yaml ps
 
 - PostgreSQL：`jdbc:postgresql://127.0.0.1:5432/skillcenter`
 - Redis：`redis://127.0.0.1:6379`
+- OpenSearch：`http://127.0.0.1:9200`（本地单节点、已关闭 Security 插件，仅用于联调）
 - MinIO API：`http://127.0.0.1:9000`
 - MinIO Console：`http://127.0.0.1:9001`
 - 默认 bucket：`skill-packages`
@@ -32,7 +33,12 @@ skill-center:
       password: ${SKILL_CENTER_POSTGRES_PASSWORD}
   runtime-summary-backend: redis
   runtime-summary-redis-key: skill-center:runtime:summaries
-  search-index-backend: postgresql
+  search-index-backend: opensearch
+  search-index:
+    mode: http
+    endpoint: http://127.0.0.1:9200
+    index: skillcenter-skills-v1
+    credential-ref: ""
   search-index-events:
     enabled: true
     consumer-id: workbuddy-api-1
@@ -54,7 +60,7 @@ consumer 的保护水位”的事件；stale consumer 只有在已追平 cutoff 
 否则仍会阻塞清理，避免删除它尚未消费的事件。下线实例应通过管理员控制 API 显式 retire 其身份；
 retire 不会自动恢复，实例重新上线时必须显式 activate。
 
-不要把这段配置直接用于生产：MinIO 开发凭据、HTTP endpoint、单节点 PostgreSQL/Redis 和 named volume 都不满足生产高可用、TLS、密钥管理、备份/PITR 或容量/SLO 要求。
+不要把这段配置直接用于生产：MinIO 开发凭据、未加密 OpenSearch HTTP endpoint、单节点 OpenSearch/PostgreSQL/Redis 和 named volume 都不满足生产高可用、TLS、密钥管理、备份/PITR 或容量/SLO 要求。启用 OpenSearch 后还必须先执行管理员搜索索引探测，并通过平台 readiness；应用不会自动回退到 JSON。
 
 ## 停止与清理
 
@@ -62,4 +68,4 @@ retire 不会自动恢复，实例重新上线时必须显式 activate。
 docker compose --env-file .\deploy\local\.env -f .\deploy\local\compose.yaml down
 ```
 
-默认 `down` 保留 named volumes。确认不再需要本地数据后再显式执行 `down -v`；该操作会删除本地 PostgreSQL、Redis 和 MinIO 数据。
+默认 `down` 保留 named volumes。确认不再需要本地数据后再显式执行 `down -v`；该操作会删除本地 PostgreSQL、Redis、OpenSearch 和 MinIO 数据。

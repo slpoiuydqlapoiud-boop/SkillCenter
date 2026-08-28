@@ -3,6 +3,7 @@ package com.huawei.skillcenter.search;
 import com.huawei.skillcenter.access.SkillScopeRepository;
 import com.huawei.skillcenter.governance.GovernanceStore;
 import com.huawei.skillcenter.skill.SkillRepository;
+import com.huawei.skillcenter.quality.ProviderCredentialResolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +25,21 @@ class SkillSearchCatalogConfiguration {
                                                    ObjectMapper mapper,
                                                    org.springframework.transaction.PlatformTransactionManager transactionManager) {
         return new JdbcSkillSearchIndex(jdbc, mapper, transactionManager);
+    }
+
+    @Bean
+    @Conditional(SkillSearchBackendCondition.Opensearch.class)
+    HttpSkillSearchIndex opensearchSkillSearchIndex(
+            @org.springframework.beans.factory.annotation.Value("${skill-center.search-index.endpoint:}") String endpoint,
+            @org.springframework.beans.factory.annotation.Value("${skill-center.search-index.index:}") String index,
+            @org.springframework.beans.factory.annotation.Value("${skill-center.search-index.credential-ref:}") String credentialRef,
+            @org.springframework.beans.factory.annotation.Value("${skill-center.search-index.connect-timeout-ms:1000}") long connectTimeoutMs,
+            @org.springframework.beans.factory.annotation.Value("${skill-center.search-index.request-timeout-ms:5000}") long requestTimeoutMs,
+            @org.springframework.beans.factory.annotation.Value("${skill-center.search-index.max-response-bytes:256000}") int maxResponseBytes,
+            ProviderCredentialResolver credentials, ObjectMapper mapper) {
+        return new HttpSkillSearchIndex(endpoint, index, credentialRef,
+                java.time.Duration.ofMillis(connectTimeoutMs), java.time.Duration.ofMillis(requestTimeoutMs),
+                maxResponseBytes, null, mapper, credentials, Clock.systemUTC());
     }
 
     @Bean

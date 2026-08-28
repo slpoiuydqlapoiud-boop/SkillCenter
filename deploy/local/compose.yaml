@@ -32,6 +32,24 @@ services:
       retries: 12
     networks: [skillcenter]
 
+  opensearch:
+    image: opensearchproject/opensearch:2.17.1
+    environment:
+      discovery.type: single-node
+      plugins.security.disabled: "true"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "127.0.0.1:${SKILL_CENTER_OPENSEARCH_PORT:-9200}:9200"
+    volumes:
+      - skillcenter-opensearch:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9200/_cluster/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+    networks: [skillcenter]
+
   minio:
     image: minio/minio:RELEASE.2024-06-13T19-44-22Z
     command: ["server", "/data", "--console-address", ":9001"]
@@ -63,6 +81,7 @@ services:
 volumes:
   skillcenter-postgres:
   skillcenter-redis:
+  skillcenter-opensearch:
   skillcenter-minio:
 
 networks:

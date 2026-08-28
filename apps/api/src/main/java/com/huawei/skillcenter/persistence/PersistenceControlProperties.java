@@ -223,8 +223,8 @@ public class PersistenceControlProperties {
         if (!isSupportedBackend(normalizedSkillRelationBackend())) {
             throw new IllegalArgumentException("skillRelationBackend must be json or postgresql");
         }
-        if (!isSupportedBackend(normalizedSearchIndexBackend())) {
-            throw new IllegalArgumentException("searchIndexBackend must be json or postgresql");
+        if (!isSupportedSearchBackend(normalizedSearchIndexBackend())) {
+            throw new IllegalArgumentException("searchIndexBackend must be json, postgresql or opensearch");
         }
         if ("postgresql".equals(normalizedQualityEvidenceBackend())
                 && !"postgresql".equals(normalizedBackend())) {
@@ -374,6 +374,10 @@ public class PersistenceControlProperties {
 
     private boolean isSupportedBackend(String value) {
         return "json".equals(value) || "postgresql".equals(value);
+    }
+
+    private boolean isSupportedSearchBackend(String value) {
+        return isSupportedBackend(value) || "opensearch".equals(value);
     }
 
     public static String normalizeBackendValue(String value) {

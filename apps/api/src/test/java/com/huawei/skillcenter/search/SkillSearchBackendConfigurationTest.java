@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.huawei.skillcenter.access.SkillScopeRepository;
 import com.huawei.skillcenter.governance.GovernanceStore;
 import com.huawei.skillcenter.persistence.PersistenceControlProperties;
+import com.huawei.skillcenter.quality.EnvironmentProviderCredentialResolver;
+import com.huawei.skillcenter.quality.ProviderCredentialResolver;
 import com.huawei.skillcenter.skill.SkillRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -19,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.mock;
 
 class SkillSearchBackendConfigurationTest {
@@ -44,6 +47,14 @@ class SkillSearchBackendConfigurationTest {
     }
 
     @Test
+    void opensearchSearchBackendIsAValidExplicitChoice() {
+        PersistenceControlProperties properties = new PersistenceControlProperties();
+        properties.setSearchIndexBackend("opensearch");
+
+        assertThatCode(() -> properties.validate(null)).doesNotThrowAnyException();
+    }
+
+    @Test
     void migrationCreatesVersionedSharedSearchProjection() throws Exception {
         String migration = new ClassPathResource("db/migration/V16__create_skill_search_index.sql")
                 .getContentAsString(StandardCharsets.UTF_8);
@@ -62,6 +73,19 @@ class SkillSearchBackendConfigurationTest {
                     assertThat(application).hasNotFailed();
                     assertThat(application.getBeansOfType(SkillSearchIndex.class)).hasSize(1);
                     assertThat(application).hasSingleBean(JsonSkillSearchIndex.class);
+                    assertThat(application.getBeansOfType(JdbcSkillSearchIndex.class)).isEmpty();
+                });
+
+        context.withPropertyValues(
+                        "skill-center.search-index-backend=opensearch",
+                        "skill-center.search-index.endpoint=http://127.0.0.1:9200",
+                        "skill-center.search-index.index=skills-v1",
+                        "skill-center.search-index.credential-ref=secret://search")
+                .run(application -> {
+                    assertThat(application).hasNotFailed();
+                    assertThat(application.getBeansOfType(SkillSearchIndex.class)).hasSize(1);
+                    assertThat(application).hasSingleBean(HttpSkillSearchIndex.class);
+                    assertThat(application.getBeansOfType(JsonSkillSearchIndex.class)).isEmpty();
                     assertThat(application.getBeansOfType(JdbcSkillSearchIndex.class)).isEmpty();
                 });
 
@@ -128,6 +152,11 @@ class SkillSearchBackendConfigurationTest {
         @Bean
         SkillScopeRepository skillScopeRepository() {
             return mock(SkillScopeRepository.class);
+        }
+
+        @Bean
+        ProviderCredentialResolver providerCredentialResolver() {
+            return new EnvironmentProviderCredentialResolver(java.util.Map.of("SEARCH", "token"));
         }
     }
 }
