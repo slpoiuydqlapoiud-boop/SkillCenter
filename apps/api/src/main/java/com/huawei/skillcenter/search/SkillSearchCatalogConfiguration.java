@@ -54,7 +54,9 @@ class SkillSearchCatalogConfiguration {
     SkillSearchRefreshEventPoller skillSearchRefreshEventPoller(SkillSearchRefreshEventStore store,
                                                                  SkillSearchRefreshCoordinator coordinator,
                                                                  @org.springframework.beans.factory.annotation.Value(
+                                                                         "${skill-center.search-index-events.consumer-id:local}") String consumerId,
+                                                                 @org.springframework.beans.factory.annotation.Value(
                                                                          "${skill-center.search-index-events.batch-size:100}") int batchSize) {
-        return new SkillSearchRefreshEventPoller(store, coordinator, batchSize);
+        return new SkillSearchRefreshEventPoller(store, coordinator, consumerId, batchSize);
     }
 }

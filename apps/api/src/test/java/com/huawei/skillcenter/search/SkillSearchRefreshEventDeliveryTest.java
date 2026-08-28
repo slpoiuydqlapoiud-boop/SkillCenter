@@ -54,6 +54,20 @@ class SkillSearchRefreshEventDeliveryTest {
     }
 
     @Test
+    void pollerRestoresAndPersistsCursorForItsConsumerIdentity() {
+        CursorEventStore store = new CursorEventStore();
+        SkillSearchRefreshEventPoller poller = new SkillSearchRefreshEventPoller(store,
+                event -> { }, "api-1", 10);
+
+        poller.runOnce();
+
+        assertThat(store.loadedConsumerId).isEqualTo("api-1");
+        assertThat(store.savedConsumerId).isEqualTo("api-1");
+        assertThat(store.savedSequence).isEqualTo(5L);
+        assertThat(poller.cursor()).isEqualTo(5L);
+    }
+
+    @Test
     void journalDoesNotBreakSuccessfulGovernanceEventPublicationWhenStoreIsUnavailable() {
         SkillSearchRefreshEventStore store = mock(SkillSearchRefreshEventStore.class);
         doThrow(new IllegalStateException("temporary persistence failure"))
@@ -75,6 +89,45 @@ class SkillSearchRefreshEventDeliveryTest {
                 .contains("PRIMARY KEY (event_id)")
                 .contains("UNIQUE (event_seq)")
                 .contains("source_revision");
+
+        String cursorMigration = new org.springframework.core.io.ClassPathResource(
+                "db/migration/V18__create_skill_search_refresh_event_consumers.sql")
+                .getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+
+        assertThat(cursorMigration)
+                .contains("CREATE TABLE skill_search_refresh_event_consumers")
+                .contains("PRIMARY KEY (consumer_id)")
+                .contains("last_event_seq");
+    }
+
+    private static final class CursorEventStore implements SkillSearchRefreshEventStore {
+        private String loadedConsumerId;
+        private String savedConsumerId;
+        private long savedSequence;
+
+        @Override
+        public void append(SkillSearchRefreshEvent event) {
+        }
+
+        @Override
+        public List<StoredSkillSearchRefreshEvent> findAfter(long sequence, int limit) {
+            return sequence == 4L
+                    ? List.of(new StoredSkillSearchRefreshEvent(5L,
+                    new SkillSearchRefreshEvent("skill-a", 8L, "VERSION_WITHDRAWN")))
+                    : List.of();
+        }
+
+        @Override
+        public long loadCursor(String consumerId) {
+            loadedConsumerId = consumerId;
+            return 4L;
+        }
+
+        @Override
+        public void saveCursor(String consumerId, long sequence) {
+            savedConsumerId = consumerId;
+            savedSequence = sequence;
+        }
     }
 
     private static final class InMemoryEventStore implements SkillSearchRefreshEventStore {

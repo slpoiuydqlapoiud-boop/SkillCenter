@@ -13,6 +13,7 @@ import java.util.List;
 @Conditional(SkillSearchBackendCondition.Postgresql.class)
 public final class JdbcSkillSearchRefreshEventStore implements SkillSearchRefreshEventStore {
     private static final String TABLE = "skill_search_refresh_events";
+    private static final String CONSUMER_TABLE = "skill_search_refresh_event_consumers";
     private final JdbcTemplate jdbc;
 
     public JdbcSkillSearchRefreshEventStore(JdbcTemplate jdbc) {
@@ -47,6 +48,38 @@ public final class JdbcSkillSearchRefreshEventStore implements SkillSearchRefres
             return jdbc.query("select event_seq, skill_id, source_revision, reason_code from " + TABLE
                             + " where event_seq > ? order by event_seq asc limit ?",
                     this::map, sequence, limit);
+        } catch (RuntimeException exception) {
+            throw new SkillSearchIndexPersistenceException(exception);
+        }
+    }
+
+    @Override
+    public long loadCursor(String consumerId) {
+        String boundedConsumerId = SkillSearchDocument.boundedRequired(consumerId, "consumerId", 128);
+        try {
+            jdbc.update("insert into " + CONSUMER_TABLE
+                    + " (consumer_id, last_event_seq, updated_at) values (?, 0, ?)"
+                    + " on conflict (consumer_id) do nothing",
+                    boundedConsumerId, Timestamp.from(java.time.Instant.now()));
+            Long sequence = jdbc.queryForObject("select last_event_seq from " + CONSUMER_TABLE
+                    + " where consumer_id = ?", Long.class, boundedConsumerId);
+            return sequence == null ? 0L : sequence;
+        } catch (RuntimeException exception) {
+            throw new SkillSearchIndexPersistenceException(exception);
+        }
+    }
+
+    @Override
+    public void saveCursor(String consumerId, long sequence) {
+        String boundedConsumerId = SkillSearchDocument.boundedRequired(consumerId, "consumerId", 128);
+        if (sequence < 0) throw new IllegalArgumentException("sequence must be non-negative");
+        try {
+            jdbc.update("insert into " + CONSUMER_TABLE
+                    + " (consumer_id, last_event_seq, updated_at) values (?, ?, ?)"
+                    + " on conflict (consumer_id) do update set"
+                    + " last_event_seq = greatest(" + CONSUMER_TABLE + ".last_event_seq, excluded.last_event_seq),"
+                    + " updated_at = excluded.updated_at",
+                    boundedConsumerId, sequence, Timestamp.from(java.time.Instant.now()));
         } catch (RuntimeException exception) {
             throw new SkillSearchIndexPersistenceException(exception);
         }

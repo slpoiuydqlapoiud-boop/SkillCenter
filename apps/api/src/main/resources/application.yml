@@ -61,6 +61,7 @@ skill-center:
   search-index-backend: ${SKILL_CENTER_SEARCH_INDEX_BACKEND:json}
   search-index-events:
     enabled: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_ENABLED:false}
+    consumer-id: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_CONSUMER_ID:${HOSTNAME:local}}
     poll-interval-ms: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_POLL_INTERVAL_MS:5000}
     batch-size: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_BATCH_SIZE:100}
   quality-evidence-storage: ./data/governance/quality-evidence.json

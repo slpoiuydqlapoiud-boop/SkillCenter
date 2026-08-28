@@ -55,14 +55,14 @@ class SkillSearchBackendReadinessServiceTest {
     }
 
     @Test
-    void enabledCrossInstanceRefreshRequiresV17Schema() {
+    void enabledCrossInstanceRefreshRequiresV18Schema() {
         PersistenceControlProperties properties = mock(PersistenceControlProperties.class);
         PersistenceBackend persistence = mock(PersistenceBackend.class);
         SkillSearchIndex index = mock(SkillSearchIndex.class);
         when(properties.normalizedSearchIndexBackend()).thenReturn("postgresql");
         when(properties.normalizedBackend()).thenReturn("postgresql");
         when(properties.searchIndexEventsEnabled()).thenReturn(true);
-        when(persistence.status()).thenReturn(PersistenceBackendStatus.ready("postgresql", "16", null));
+        when(persistence.status()).thenReturn(PersistenceBackendStatus.ready("postgresql", "17", null));
 
         SkillSearchBackendReadiness readiness = new SkillSearchBackendReadinessService(properties, persistence, index)
                 .readiness();
