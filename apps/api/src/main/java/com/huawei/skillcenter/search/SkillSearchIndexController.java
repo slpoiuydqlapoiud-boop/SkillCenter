@@ -1,6 +1,6 @@
 package com.huawei.skillcenter.search;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.huawei.skillcenter.api.ApiResponse;
 import com.huawei.skillcenter.api.RequestIdFilter;
 import com.huawei.skillcenter.governance.Actor;
@@ -34,11 +34,11 @@ public class SkillSearchIndexController {
     }
 
     @PostMapping("/rebuild")
-    ResponseEntity<ApiResponse<SkillSearchIndexAdminView>> rebuild(@RequestBody RebuildRequest body,
+    ResponseEntity<ApiResponse<SkillSearchIndexAdminView>> rebuild(@RequestBody JsonNode body,
                                                                      HttpServletRequest request) {
         Actor actor = requireAdmin(request);
         String requestId = requiredRequestId(request);
-        String expectedSourceHash = body == null ? "" : body.expectedSourceHash();
+        String expectedSourceHash = parseExpectedSourceHash(body);
         if (expectedSourceHash != null && expectedSourceHash.length() > 256) {
             throw new SkillSearchIndexControlException("SEARCH_INDEX_INVALID_REQUEST");
         }
@@ -47,6 +47,26 @@ public class SkillSearchIndexController {
             throw new SkillSearchIndexControlException(result.reasonCode());
         }
         return ResponseEntity.ok(new ApiResponse<>(SkillSearchIndexAdminView.from(coordinator.status()), requestId));
+    }
+
+    private String parseExpectedSourceHash(JsonNode body) {
+        if (body == null || !body.isObject()) {
+            throw new SkillSearchIndexControlException("EVENT_SCHEMA_INVALID");
+        }
+        var fields = body.fieldNames();
+        while (fields.hasNext()) {
+            if (!"expectedSourceHash".equals(fields.next())) {
+                throw new SkillSearchIndexControlException("EVENT_SCHEMA_INVALID");
+            }
+        }
+        JsonNode value = body.get("expectedSourceHash");
+        if (value == null || value.isNull()) {
+            return "";
+        }
+        if (!value.isTextual()) {
+            throw new SkillSearchIndexControlException("EVENT_SCHEMA_INVALID");
+        }
+        return value.textValue();
     }
 
     private Actor requireAdmin(HttpServletRequest request) {
@@ -68,7 +88,4 @@ public class SkillSearchIndexController {
         return requestId == null ? "unknown" : requestId.toString();
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = false)
-    record RebuildRequest(String expectedSourceHash) {
-    }
 }

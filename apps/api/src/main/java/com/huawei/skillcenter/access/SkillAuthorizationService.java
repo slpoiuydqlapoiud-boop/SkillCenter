@@ -43,6 +43,12 @@ public class SkillAuthorizationService {
         this(scopeStore, governanceStore, Clock.systemUTC(), organizationDirectory, eventPublisher);
     }
 
+    /** Compatibility constructor retained for direct callers that do not need event injection. */
+    public SkillAuthorizationService(SkillScopeRepository scopeStore, GovernanceStore governanceStore,
+                                     OrganizationDirectorySyncService organizationDirectory) {
+        this(scopeStore, governanceStore, Clock.systemUTC(), organizationDirectory, event -> { });
+    }
+
     public SkillAuthorizationService(SkillScopeRepository scopeStore, GovernanceStore governanceStore) {
         this(scopeStore, governanceStore, Clock.systemUTC(), null, event -> { });
     }

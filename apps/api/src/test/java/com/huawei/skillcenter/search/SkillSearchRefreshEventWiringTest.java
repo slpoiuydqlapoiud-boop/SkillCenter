@@ -21,6 +21,7 @@ import com.huawei.skillcenter.packageupload.StoredPackage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.nio.file.Path;
 import java.time.Instant;
@@ -95,6 +96,28 @@ class SkillSearchRefreshEventWiringTest {
         assertThat(publisher.refreshEvents()).isEmpty();
     }
 
+    @Test
+    void springDiscoversCoordinatorEventListenerAndPreservesCommittedHits() {
+        JsonSkillSearchIndex index = new JsonSkillSearchIndex();
+        SkillSearchDocument document = new SkillSearchDocument("event-skill", "Event skill", "summary",
+                List.of("event"), "platform", "other", "published", "low", Instant.now(), Instant.now(),
+                "1.0.0", "PUBLIC", "");
+        index.rebuild(List.of(document), "event-hash");
+        SkillSearchRefreshCoordinator coordinator = new SkillSearchRefreshCoordinator(index,
+                new GovernedSkillSearchDocumentSource(new GovernanceStore(tempDir.resolve("listener.json"), List.of()),
+                        new EmptyRepository()));
+
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            context.registerBean(SkillSearchRefreshCoordinator.class, () -> coordinator);
+            context.refresh();
+            context.publishEvent(new SkillSearchRefreshEvent("event-skill", 9L, "VERSION_WITHDRAWN"));
+
+            assertThat(index.status().state()).isEqualTo("STALE");
+            assertThat(index.search(new SkillSearchQuery("event", "", "", "", "relevance")))
+                    .extracting(SkillSearchHit::skillId).containsExactly("event-skill");
+        }
+    }
+
     private static final class RecordingPublisher implements ApplicationEventPublisher {
         private final List<Object> events = new ArrayList<>();
 
@@ -139,6 +162,19 @@ class SkillSearchRefreshEventWiringTest {
                     scope.updatedBy(), scope.updatedAt());
             values.put(updated.skillId(), updated);
             return updated;
+        }
+    }
+
+    private static final class EmptyRepository implements com.huawei.skillcenter.skill.SkillRepository {
+        @Override
+        public com.huawei.skillcenter.skill.PageResult<com.huawei.skillcenter.skill.SkillRecord> findPublished(
+                com.huawei.skillcenter.skill.SkillQuery query) {
+            return new com.huawei.skillcenter.skill.PageResult<>(List.of(), query.page(), query.pageSize(), 0);
+        }
+
+        @Override
+        public Optional<com.huawei.skillcenter.skill.SkillRecord> findDetail(String skillId) {
+            return Optional.empty();
         }
     }
 }

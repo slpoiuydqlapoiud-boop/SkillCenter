@@ -28,8 +28,11 @@ class SkillSearchIndexControllerTest {
     @BeforeEach
     void setUp() {
         JsonSkillSearchIndex index = new JsonSkillSearchIndex();
-        SkillSearchRefreshCoordinator coordinator = new SkillSearchRefreshCoordinator(index, new TestSource());
-        mockMvc = MockMvcBuilders.standaloneSetup(new SkillSearchIndexController(coordinator, new ActorResolver()))
+        mockMvc = mockMvc(new SkillSearchRefreshCoordinator(index, new TestSource()));
+    }
+
+    private MockMvc mockMvc(SkillSearchRefreshCoordinator coordinator) {
+        return MockMvcBuilders.standaloneSetup(new SkillSearchIndexController(coordinator, new ActorResolver()))
                 .addFilters(new RequestIdFilter())
                 .setControllerAdvice(new GlobalExceptionHandler(mock(OperationsMetricsService.class)))
                 .build();
@@ -103,6 +106,54 @@ class SkillSearchIndexControllerTest {
                 .andExpect(jsonPath("$.data.reasonCode").value(""))
                 .andExpect(jsonPath("$.data.sourceHash").doesNotExist())
                 .andExpect(jsonPath("$.requestId").value("req-rebuild"));
+    }
+
+    @Test
+    void rejectsUnknownAndOversizedRebuildFields() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/search/index/rebuild")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"unexpected\":true}")
+                        .header(ActorResolver.USER_ID_HEADER, "admin-1")
+                        .header(ActorResolver.ROLE_HEADER, "admin")
+                        .header(RequestIdFilter.REQUEST_ID_HEADER, "req-unknown"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("EVENT_SCHEMA_INVALID"));
+
+        mockMvc.perform(post("/api/v1/admin/search/index/rebuild")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"expectedSourceHash\":\"" + "x".repeat(257) + "\"}")
+                        .header(ActorResolver.USER_ID_HEADER, "admin-1")
+                        .header(ActorResolver.ROLE_HEADER, "admin")
+                        .header(RequestIdFilter.REQUEST_ID_HEADER, "req-long"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("SEARCH_INDEX_INVALID_REQUEST"));
+    }
+
+    @Test
+    void rebuildFailureUsesStableErrorWithoutExceptionText() throws Exception {
+        SkillSearchDocumentSource failing = new SkillSearchDocumentSource() {
+            @Override
+            public SkillSearchDocumentSnapshot snapshot() {
+                throw new IllegalStateException("secret source path");
+            }
+
+            @Override
+            public Optional<com.huawei.skillcenter.skill.SkillRecord> findRecord(String skillId) {
+                return Optional.empty();
+            }
+        };
+        mockMvc = mockMvc(new SkillSearchRefreshCoordinator(new JsonSkillSearchIndex(), failing));
+
+        mockMvc.perform(post("/api/v1/admin/search/index/rebuild")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}")
+                        .header(ActorResolver.USER_ID_HEADER, "admin-1")
+                        .header(ActorResolver.ROLE_HEADER, "admin")
+                        .header(RequestIdFilter.REQUEST_ID_HEADER, "req-failed"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error.code").value("SEARCH_INDEX_REBUILD_FAILED"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(not(containsString("secret source path"))));
     }
 
     private static final class TestSource implements SkillSearchDocumentSource {
