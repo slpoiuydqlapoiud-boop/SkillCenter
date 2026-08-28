@@ -68,3 +68,19 @@ py -3.11 -m unittest discover -s tests -p "test_*.py"
 5. 完成多实例、故障转移、备份恢复、容量/SLO、脱敏和 UAT 证据后，才允许生产发布门禁变为 READY。
 
 当前本机未安装 Docker，因此 PostgreSQL/Redis 集成项尚未形成真实环境证据；平台侧 API/Web 自动化回归通过不等价于生产环境就绪。
+
+## 6. 一键环境验收
+
+Workbuddy 完成安装和启动后，在仓库根目录执行：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-environment.ps1 -CheckServices
+```
+
+脚本只读检查 JDK/Maven/Node/npm/Python、`jsonschema`、Docker/Compose，以及 PostgreSQL、Redis、MinIO、OpenSearch 的本机可达性；不会安装、启动、删除或修改服务。结果状态为 `READY`、`MISSING` 或 `UNAVAILABLE`。
+
+供自动化门禁使用时追加 `-FailOnMissing`，任何未就绪项都会以退出码 1 结束；供 Workbuddy 解析时追加 `-Json` 输出机器可读报告：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-environment.ps1 -CheckServices -FailOnMissing -Json
+```
