@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.huawei.skillcenter.access.SkillAuthorizationService;
 import com.huawei.skillcenter.access.SkillNotVisibleException;
 import com.huawei.skillcenter.governance.Actor;
+import com.huawei.skillcenter.governance.GovernanceSnapshot;
 import com.huawei.skillcenter.governance.GovernanceStore;
+import com.huawei.skillcenter.governance.SkillVersion;
 import com.huawei.skillcenter.search.SkillSearchDocument;
 import com.huawei.skillcenter.search.SkillSearchDocumentSnapshot;
 import com.huawei.skillcenter.search.SkillSearchDocumentSource;
@@ -32,6 +34,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class SkillCatalogSearchIndexTest {
     @TempDir
@@ -93,6 +96,48 @@ class SkillCatalogSearchIndexTest {
     }
 
     @Test
+    void omitsSourceRecordWhoseVersionDoesNotMatchTheCurrentGovernanceVersion() {
+        SkillRecord stale = record("versioned", "Versioned", "1.0.0", "published", "2026-08-01");
+        RecordingSource source = new RecordingSource(Map.of(stale.id(), stale));
+        SkillCatalogService catalog = catalog(new RecordingRepository(), source,
+                new RecordingIndex(List.of(new SkillSearchHit(stale.id(), 1, List.of("name")))),
+                mock(SkillAuthorizationService.class), governance(version("versioned", "2.0.0", "published")));
+
+        PageResult<SkillSummary> result = catalog.list(new SkillQuery("versioned", "", "", "", 1, 12), actor());
+
+        assertThat(result.items()).isEmpty();
+        assertThat(result.total()).isZero();
+    }
+
+    @Test
+    void omitsCandidateWhenTheCurrentGovernanceVersionIsWithdrawn() {
+        SkillRecord staleIndexRecord = record("withdrawn-current", "Withdrawn current", "2.0.0", "published", "2026-08-01");
+        RecordingSource source = new RecordingSource(Map.of(staleIndexRecord.id(), staleIndexRecord));
+        SkillCatalogService catalog = catalog(new RecordingRepository(), source,
+                new RecordingIndex(List.of(new SkillSearchHit(staleIndexRecord.id(), 1, List.of("name")))),
+                mock(SkillAuthorizationService.class), governance(version("withdrawn-current", "2.0.0", "withdrawn")));
+
+        PageResult<SkillSummary> result = catalog.list(new SkillQuery("withdrawn", "", "", "", 1, 12), actor());
+
+        assertThat(result.items()).isEmpty();
+        assertThat(result.total()).isZero();
+    }
+
+    @Test
+    void omitsSourceRecordWhoseStatusDoesNotMatchTheCurrentGovernanceVersion() {
+        SkillRecord staleStatus = record("status-current", "Status current", "2.0.0", "published", "2026-08-01");
+        RecordingSource source = new RecordingSource(Map.of(staleStatus.id(), staleStatus));
+        SkillCatalogService catalog = catalog(new RecordingRepository(), source,
+                new RecordingIndex(List.of(new SkillSearchHit(staleStatus.id(), 1, List.of("name")))),
+                mock(SkillAuthorizationService.class), governance(version("status-current", "2.0.0", "deprecated")));
+
+        PageResult<SkillSummary> result = catalog.list(new SkillQuery("status", "", "", "", 1, 12), actor());
+
+        assertThat(result.items()).isEmpty();
+        assertThat(result.total()).isZero();
+    }
+
+    @Test
     void includesSearchMetadataOnlyForTextQueries() {
         SkillRecord matching = skill("matching", "Matching");
         RecordingSource source = new RecordingSource(Map.of(matching.id(), matching));
@@ -123,7 +168,13 @@ class SkillCatalogSearchIndexTest {
 
     private SkillCatalogService catalog(RecordingRepository repository, RecordingSource source, RecordingIndex index,
                                         SkillAuthorizationService authorization) {
-        return new SkillCatalogService(repository, new GovernanceStore(tempDir.resolve("state.json"), List.of()),
+        return catalog(repository, source, index, authorization,
+                new GovernanceStore(tempDir.resolve("state.json"), List.copyOf(source.records.values())));
+    }
+
+    private SkillCatalogService catalog(RecordingRepository repository, RecordingSource source, RecordingIndex index,
+                                        SkillAuthorizationService authorization, GovernanceStore governanceStore) {
+        return new SkillCatalogService(repository, governanceStore,
                 new ObjectMapper().findAndRegisterModules(), authorization, null, index, source,
                 new SkillSearchRefreshCoordinator(index, source));
     }
@@ -137,9 +188,25 @@ class SkillCatalogSearchIndexTest {
     }
 
     private static SkillRecord record(String id, String name, String status, String updated) {
-        return new SkillRecord(id, name, "1.0.0", "description", "other", List.of("tag"), "low", "low",
+        return record(id, name, "1.0.0", status, updated);
+    }
+
+    private static SkillRecord record(String id, String name, String version, String status, String updated) {
+        return new SkillRecord(id, name, version, "description", "other", List.of("tag"), "low", "low",
                 "team", "owner", "", "blue", status, updated, updated, "Java", "Java", "none",
                 List.of(), List.of(), List.of(), "", "", "", List.of(), new SkillMetrics(0, 0, 0, 0, 0));
+    }
+
+    private static GovernanceStore governance(SkillVersion version) {
+        GovernanceStore store = mock(GovernanceStore.class);
+        when(store.snapshot()).thenReturn(new GovernanceSnapshot(List.of(version), List.of(), List.of(), List.of()));
+        return store;
+    }
+
+    private static SkillVersion version(String skillId, String version, String status) {
+        Instant timestamp = Instant.parse("2026-08-01T00:00:00Z");
+        return new SkillVersion("package-" + skillId, skillId, version, status, "0".repeat(64), 0, "", "owner",
+                timestamp, "owner", timestamp, "review-" + skillId);
     }
 
     private static final class RecordingRepository implements SkillRepository {

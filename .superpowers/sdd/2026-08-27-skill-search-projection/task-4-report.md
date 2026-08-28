@@ -74,3 +74,56 @@ The Maven runs emit pre-existing Mockito/JDK dynamic-agent warnings; no test fai
 
 - Maven reports Mockito/JDK dynamic-agent deprecation warnings from the existing test setup; they are unrelated to Task 4.
 - Lifecycle refresh event wiring remains intentionally deferred to Task 5. The coordinator's `ensureReady()` provides initial readiness and is a no-op after the index is ready.
+
+## Lifecycle identity follow-up
+
+### Changed paths
+
+- `apps/api/src/main/java/com/huawei/skillcenter/search/GovernedSkillSearchDocumentSource.java`
+  - Removes the fallback to an arbitrary record when the selected governed version has no exact-version record. Such a version now produces no search document.
+- `apps/api/src/main/java/com/huawei/skillcenter/skill/SkillCatalogService.java`
+  - Requires every source-resolved indexed candidate to match the current latest governance version by skill ID, version, and normalized lifecycle status. A latest withdrawn version therefore suppresses any stale index hit.
+- `apps/api/src/test/java/com/huawei/skillcenter/search/SkillSearchDocumentSourceTest.java`
+  - Adds the no-exact-version source regression.
+- `apps/api/src/test/java/com/huawei/skillcenter/skill/SkillCatalogSearchIndexTest.java`
+  - Adds fake-source regressions for stale version, withdrawn current version, and stale lifecycle status.
+
+### TDD evidence
+
+RED command:
+
+```powershell
+mvn.cmd -q -DforkCount=0 "-Dtest=SkillCatalogSearchIndexTest,SkillSearchDocumentSourceTest" test
+```
+
+Result: 4 expected assertion failures: an arbitrary fallback record produced a document, and the indexed catalog returned source records with stale version, withdrawn governance status, and mismatched status.
+
+GREEN command:
+
+```powershell
+mvn.cmd -q -DforkCount=0 "-Dtest=SkillCatalogSearchIndexTest,SkillSearchDocumentSourceTest" test
+```
+
+Result: exit code 0.
+
+Focused regression command:
+
+```powershell
+mvn.cmd -q -DforkCount=0 "-Dtest=SkillCatalogSearchIndexTest,SkillControllerTest,SkillSearchContractTest,JsonSkillSearchIndexTest,SkillSearchDocumentSourceTest,SkillSearchRefreshCoordinatorTest" test
+```
+
+Result: exit code 0. `SkillController` continues to resolve the ordinary GET actor and call `service.list(query, actor)`.
+
+API compile command:
+
+```powershell
+mvn.cmd -q -DskipTests compile
+```
+
+Result: exit code 0.
+
+### Self-review
+
+- The ordinary controller GET actor-aware route was inspected and left unchanged.
+- The catalog guard chooses the same deterministic lifecycle ordering as the source, but considers the latest version regardless of status so a newer withdrawal suppresses stale published/deprecated candidates.
+- The indexed path performs the identity check before authorization, result totals, ordering, and pagination; no source record is treated as trusted solely because an index hit exists.

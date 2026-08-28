@@ -104,6 +104,17 @@ class SkillSearchDocumentSourceTest {
         assertThat(snapshot.documents().getFirst().risk()).isEqualTo("high");
     }
 
+    @Test
+    void snapshotOmitsGovernedVersionsWithoutAnExactVersionRecord() {
+        GovernanceStore governance = governance("missing-exact-version", List.of(
+                version("pkg-a", "skill-a", "2.0.0", "published", "2026-01-01T00:00:00Z")));
+        TrackingRepository repository = new TrackingRepository(List.of(record("skill-a", "1.0.0")));
+
+        SkillSearchDocumentSnapshot snapshot = new GovernedSkillSearchDocumentSource(governance, repository).snapshot();
+
+        assertThat(snapshot.documents()).isEmpty();
+    }
+
     private GovernanceStore governance(String name, List<SkillVersion> versions) {
         GovernanceStore store = new GovernanceStore(tempDir.resolve(name + ".json"), List.of());
         for (SkillVersion version : versions) {

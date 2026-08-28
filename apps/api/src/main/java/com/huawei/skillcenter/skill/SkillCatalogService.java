@@ -35,6 +35,11 @@ import java.util.zip.ZipInputStream;
 
 @Service
 public class SkillCatalogService {
+    private static final Comparator<SkillVersion> CURRENT_GOVERNANCE_VERSION = Comparator
+            .comparing(SkillCatalogService::lifecycleTimestamp)
+            .thenComparing(SkillVersion::version, Comparator.nullsFirst(Comparator.naturalOrder()))
+            .thenComparing(SkillVersion::packageId, Comparator.nullsFirst(Comparator.naturalOrder()));
+
     private final SkillRepository repository;
     private final GovernanceStore governanceStore;
     private final ObjectMapper objectMapper;
@@ -195,7 +200,8 @@ public class SkillCatalogService {
         List<IndexedSkill> visible = new ArrayList<>();
         for (SkillSearchHit hit : searchIndex.search(searchQuery(query))) {
             Optional<SkillRecord> resolved = searchSource.findRecord(hit.skillId());
-            if (resolved.isEmpty() || !catalogStatus(resolved.get().status()) || !visibleInIndexedCatalog(hit.skillId(), actor)) {
+            if (resolved.isEmpty() || !matchesCurrentGovernanceVersion(hit.skillId(), resolved.get())
+                    || !visibleInIndexedCatalog(hit.skillId(), actor)) {
                 continue;
             }
             visible.add(new IndexedSkill(resolved.get(), textQuery
@@ -223,6 +229,31 @@ public class SkillCatalogService {
 
     private boolean catalogStatus(String status) {
         return status != null && Set.of("published", "deprecated").contains(status.toLowerCase(Locale.ROOT));
+    }
+
+    private boolean matchesCurrentGovernanceVersion(String skillId, SkillRecord record) {
+        if (record.id() == null || !skillId.equals(record.id())) {
+            return false;
+        }
+        return governanceStore.snapshot().versions().stream()
+                .filter(version -> skillId.equals(version.skillId()))
+                .max(CURRENT_GOVERNANCE_VERSION)
+                .filter(version -> catalogStatus(version.status()))
+                .filter(version -> version.version() != null && version.version().equals(record.version()))
+                .filter(version -> normalizedStatus(version.status()).equals(normalizedStatus(record.status())))
+                .isPresent();
+    }
+
+    private static Instant lifecycleTimestamp(SkillVersion version) {
+        Instant uploadedAt = version.uploadedAt() == null ? Instant.EPOCH : version.uploadedAt();
+        if (version.publishedAt() == null || !version.publishedAt().isAfter(uploadedAt)) {
+            return uploadedAt;
+        }
+        return version.publishedAt();
+    }
+
+    private String normalizedStatus(String status) {
+        return status == null ? "" : status.trim().toLowerCase(Locale.ROOT);
     }
 
     private boolean visibleInIndexedCatalog(String skillId, Actor actor) {

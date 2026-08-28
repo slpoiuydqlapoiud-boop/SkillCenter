@@ -153,9 +153,7 @@ public final class GovernedSkillSearchDocumentSource implements SkillSearchDocum
                 .filter(record -> version.version().equals(record.version()))
                 .sorted(RECORD_ORDER)
                 .findFirst()
-                .orElseGet(() -> candidates.stream()
-                        .sorted(RECORD_ORDER)
-                        .findFirst().orElse(null));
+                .orElse(null);
     }
 
     private SkillSearchDocument document(SkillVersion version, SkillRecord record) {
