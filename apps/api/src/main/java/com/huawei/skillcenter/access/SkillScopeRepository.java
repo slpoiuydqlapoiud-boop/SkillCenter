@@ -1,5 +1,7 @@
 package com.huawei.skillcenter.access;
 
+import com.huawei.skillcenter.search.SkillSearchRefreshEvent;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -11,5 +13,13 @@ public interface SkillScopeRepository {
 
     SkillScope create(SkillScope scope);
 
+    default SkillScope create(SkillScope scope, SkillSearchRefreshEvent refreshEvent) {
+        return create(scope);
+    }
+
     SkillScope replace(SkillScope scope, int expectedRevision);
+
+    default SkillScope replace(SkillScope scope, int expectedRevision, SkillSearchRefreshEvent refreshEvent) {
+        return replace(scope, expectedRevision);
+    }
 }

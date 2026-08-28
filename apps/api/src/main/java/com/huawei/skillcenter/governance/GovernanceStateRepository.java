@@ -1,5 +1,7 @@
 package com.huawei.skillcenter.governance;
 
+import com.huawei.skillcenter.search.SkillSearchRefreshEvent;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -11,6 +13,11 @@ public interface GovernanceStateRepository {
     GovernanceState loadOrSeed(Supplier<GovernanceSnapshot> seed);
 
     GovernanceState replace(long expectedRevision, GovernanceSnapshot snapshot);
+
+    default GovernanceState replace(long expectedRevision, GovernanceSnapshot snapshot,
+                                    List<SkillSearchRefreshEvent> refreshEvents) {
+        return replace(expectedRevision, snapshot);
+    }
 
     record GovernanceState(long revision, GovernanceSnapshot snapshot) {
         public GovernanceState {

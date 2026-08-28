@@ -1,5 +1,6 @@
 package com.huawei.skillcenter.governance;
 
+import com.huawei.skillcenter.search.SkillSearchRefreshEvent;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -24,8 +25,28 @@ class GovernanceStoreRepositoryTest {
         assertThat(restarted.snapshot().audits().get(0).auditId()).isEqualTo("audit-1");
     }
 
+    @Test
+    void eventAwareReviewWriteForwardsRefreshIntentToTheRepository() {
+        RecordingRepository repository = new RecordingRepository();
+        GovernanceStore store = new GovernanceStore(repository, List.of());
+        Instant now = Instant.parse("2026-08-25T00:00:00Z");
+        SkillVersion version = new SkillVersion("package-1", "skill-1", "1.0.0", "published",
+                "0".repeat(64), 1, "", "owner", now, "admin", now, "review-1");
+        ReviewTask review = new ReviewTask("review-1", "package-1", "skill-1", "1.0.0", "approved",
+                "owner", now, "admin", now, null);
+        SkillSearchRefreshEvent event = new SkillSearchRefreshEvent("skill-1", 7L, "VERSION_PUBLISHED");
+
+        store.updateReview("review-1", review, version,
+                new AuditEvent("audit-2", "PACKAGE_APPROVED", "SKILL_VERSION", "package-1", "admin", "admin",
+                        "request-2", now, Map.of()), event);
+
+        assertThat(repository.refreshEvents).extracting(SkillSearchRefreshEvent::eventKey)
+                .containsExactly(event.eventKey());
+    }
+
     private static final class RecordingRepository implements GovernanceStateRepository {
         private GovernanceStateRepository.GovernanceState state;
+        private List<com.huawei.skillcenter.search.SkillSearchRefreshEvent> refreshEvents = List.of();
 
         @Override
         public Optional<GovernanceStateRepository.GovernanceState> load() {
@@ -45,6 +66,13 @@ class GovernanceStoreRepositoryTest {
             }
             state = new GovernanceStateRepository.GovernanceState(expectedRevision + 1, snapshot);
             return state;
+        }
+
+        @Override
+        public GovernanceStateRepository.GovernanceState replace(long expectedRevision, GovernanceSnapshot snapshot,
+                                                                  List<com.huawei.skillcenter.search.SkillSearchRefreshEvent> events) {
+            refreshEvents = List.copyOf(events);
+            return replace(expectedRevision, snapshot);
         }
     }
 }

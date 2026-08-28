@@ -1,6 +1,9 @@
 package com.huawei.skillcenter.governance;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.huawei.skillcenter.search.JdbcSkillSearchRefreshEventStore;
+import com.huawei.skillcenter.search.SkillSearchRefreshEvent;
+import com.huawei.skillcenter.search.SkillSearchRefreshEventStore;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
@@ -17,6 +20,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class JdbcGovernanceStateRepositoryTest {
@@ -120,6 +126,55 @@ class JdbcGovernanceStateRepositoryTest {
     }
 
     @Test
+    void refreshEventIsWrittenWithTheGovernanceRevisionTransaction() {
+        requireDocker();
+        JdbcSkillSearchRefreshEventStore refreshStore = new JdbcSkillSearchRefreshEventStore(jdbc);
+        org.springframework.beans.factory.ObjectProvider<SkillSearchRefreshEventStore> provider = mock(
+                org.springframework.beans.factory.ObjectProvider.class);
+        when(provider.getIfAvailable()).thenReturn(refreshStore);
+        JdbcGovernanceStateRepository store = store(provider);
+        GovernanceStateRepository.GovernanceState seeded = store.loadOrSeed(GovernanceSnapshot::empty);
+        SkillSearchRefreshEvent event = new SkillSearchRefreshEvent("skill-1", 7L, "VERSION_PUBLISHED");
+
+        store.replace(seeded.revision(), GovernanceSnapshot.empty(), List.of(event));
+
+        assertThat(jdbc.queryForObject("select count(*) from skill_search_refresh_events where event_id = ?",
+                Long.class, event.eventKey())).isEqualTo(1L);
+    }
+
+    @Test
+    void refreshOutboxFailureRollsBackTheGovernanceRevision() {
+        requireDocker();
+        SkillSearchRefreshEventStore failingStore = mock(SkillSearchRefreshEventStore.class);
+        doThrow(new IllegalStateException("outbox unavailable")).when(failingStore).append(
+                org.mockito.ArgumentMatchers.any());
+        org.springframework.beans.factory.ObjectProvider<SkillSearchRefreshEventStore> provider = mock(
+                org.springframework.beans.factory.ObjectProvider.class);
+        when(provider.getIfAvailable()).thenReturn(failingStore);
+        JdbcGovernanceStateRepository store = store(provider);
+        GovernanceStateRepository.GovernanceState seeded = store.loadOrSeed(GovernanceSnapshot::empty);
+
+        assertThatThrownBy(() -> store.replace(seeded.revision(), GovernanceSnapshot.empty(),
+                List.of(new SkillSearchRefreshEvent("skill-1", 7L, "VERSION_PUBLISHED"))))
+                .isInstanceOf(GovernanceStore.GovernancePersistenceException.class);
+        assertThat(store.load()).contains(seeded);
+        assertThat(jdbc.queryForObject("select revision from skill_governance_state where state_key = ?",
+                Long.class, "governance-state")).isEqualTo(0L);
+    }
+
+    @Test
+    void eventAwareWriteRemainsCompatibleWhenRefreshOutboxIsDisabled() {
+        requireDocker();
+        JdbcGovernanceStateRepository store = store();
+        GovernanceStateRepository.GovernanceState seeded = store.loadOrSeed(GovernanceSnapshot::empty);
+
+        GovernanceStateRepository.GovernanceState saved = store.replace(seeded.revision(), GovernanceSnapshot.empty(),
+                List.of(new SkillSearchRefreshEvent("skill-a", 1L, "VERSION_PUBLISHED")));
+
+        assertThat(saved.revision()).isEqualTo(1L);
+    }
+
+    @Test
     void reviewsRoundTripThroughRelationalFactsAndBackfillLegacyAggregate() {
         requireDocker();
         JdbcGovernanceStateRepository store = store();
@@ -186,8 +241,13 @@ class JdbcGovernanceStateRepositoryTest {
     }
 
     private JdbcGovernanceStateRepository store() {
+        return store(null);
+    }
+
+    private JdbcGovernanceStateRepository store(
+            org.springframework.beans.factory.ObjectProvider<SkillSearchRefreshEventStore> provider) {
         return new JdbcGovernanceStateRepository(jdbc, new ObjectMapper().findAndRegisterModules(),
-                new DataSourceTransactionManager(jdbc.getDataSource()));
+                new DataSourceTransactionManager(jdbc.getDataSource()), provider);
     }
 
     private SkillVersion version(String status) {

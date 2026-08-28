@@ -3,7 +3,10 @@ package com.huawei.skillcenter.access;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.huawei.skillcenter.search.SkillSearchRefreshEvent;
+import com.huawei.skillcenter.search.SkillSearchRefreshEventStore;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -26,12 +29,21 @@ public class JdbcSkillScopeStore implements SkillScopeRepository {
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper;
     private final TransactionTemplate transactions;
+    private final ObjectProvider<SkillSearchRefreshEventStore> refreshEventStoreProvider;
 
     public JdbcSkillScopeStore(JdbcTemplate jdbc, ObjectMapper mapper,
                                PlatformTransactionManager transactionManager) {
+        this(jdbc, mapper, transactionManager, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public JdbcSkillScopeStore(JdbcTemplate jdbc, ObjectMapper mapper,
+                               PlatformTransactionManager transactionManager,
+                               ObjectProvider<SkillSearchRefreshEventStore> refreshEventStoreProvider) {
         this.jdbc = require(jdbc, "jdbcTemplate");
         this.mapper = require(mapper, "objectMapper");
         this.transactions = new TransactionTemplate(require(transactionManager, "transactionManager"));
+        this.refreshEventStoreProvider = refreshEventStoreProvider;
     }
 
     @Override
@@ -57,11 +69,17 @@ public class JdbcSkillScopeStore implements SkillScopeRepository {
 
     @Override
     public SkillScope create(SkillScope scope) {
+        return create(scope, null);
+    }
+
+    @Override
+    public SkillScope create(SkillScope scope, SkillSearchRefreshEvent refreshEvent) {
         require(scope, "scope");
         try {
             transactions.execute(status -> {
                 try {
                     insert(scope);
+                    appendRefreshEvent(refreshEvent);
                     return null;
                 } catch (DuplicateKeyException exception) {
                     status.setRollbackOnly();
@@ -81,6 +99,11 @@ public class JdbcSkillScopeStore implements SkillScopeRepository {
 
     @Override
     public SkillScope replace(SkillScope scope, int expectedRevision) {
+        return replace(scope, expectedRevision, null);
+    }
+
+    @Override
+    public SkillScope replace(SkillScope scope, int expectedRevision, SkillSearchRefreshEvent refreshEvent) {
         require(scope, "scope");
         if (expectedRevision < 1) throw new SkillScopeConflictException("revision conflict");
         try {
@@ -103,6 +126,7 @@ public class JdbcSkillScopeStore implements SkillScopeRepository {
                         status.setRollbackOnly();
                         throw new SkillScopeConflictException("revision conflict");
                     }
+                    appendRefreshEvent(refreshEvent);
                     return next;
                 } catch (SkillScopeConflictException exception) {
                     status.setRollbackOnly();
@@ -127,6 +151,14 @@ public class JdbcSkillScopeStore implements SkillScopeRepository {
                 scope.skillId(), scope.visibility().name(), nullable(scope.ownerTeamId()), maintainers(scope),
                 scope.revision(), scope.declaredBy(), Timestamp.from(scope.declaredAt()), scope.updatedBy(),
                 Timestamp.from(scope.updatedAt()));
+    }
+
+    private void appendRefreshEvent(SkillSearchRefreshEvent refreshEvent) {
+        if (refreshEvent == null) return;
+        SkillSearchRefreshEventStore store = refreshEventStoreProvider == null
+                ? null : refreshEventStoreProvider.getIfAvailable();
+        if (store == null) return;
+        store.append(refreshEvent);
     }
 
     private SkillScope map(ResultSet resultSet, int ignored) throws SQLException {

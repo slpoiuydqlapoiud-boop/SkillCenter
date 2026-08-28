@@ -1,16 +1,16 @@
 # A4.1 权限感知 Skill 搜索投影设计
 
 日期：2026-08-27  
-状态：已实现（本地 JSON + PostgreSQL 共享投影 + PostgreSQL 刷新日志；消息总线/外部搜索未接入）
+状态：已实现（本地 JSON + PostgreSQL 共享投影 + PostgreSQL 事务绑定刷新 outbox；消息总线/外部搜索未接入）
 
 实现证据（2026-08-28）：
 
 - API 已接入 `GET /api/v1/admin/search/index/status` 与 `POST /api/v1/admin/search/index/rebuild`，默认 backend 为进程内 JSON；普通 `GET /api/v1/skills` 使用索引候选并在分页前执行 actor-aware 授权。
 - 发布、废弃、下架和范围保存成功后发布有界 `SkillSearchRefreshEvent`；协调器保留上一版命中并标记 `STALE`。
 - 新增显式 `search-index-backend=json|postgresql` 选择、V16 schema 和 `JdbcSkillSearchIndex`；PostgreSQL 使用事务内 advisory lock + 全量替换，故障以 `SEARCH_INDEX_PERSISTENCE_UNAVAILABLE` fail-closed，并纳入平台 readiness。
-- 新增可选 V17 `skill_search_refresh_events` 刷新日志与 V18 `skill_search_refresh_event_consumers` 消费位点：治理成功后的内部事件以稳定 metadata-only key 幂等落库，启用轮询器的实例按序消费并在消费失败时保留位点，协调器对重复投递做有界幂等；消费者身份由部署配置注入，避免重启后把历史日志重新当作新事件。
+- 新增可选 V17 `skill_search_refresh_events` 刷新日志与 V18 `skill_search_refresh_event_consumers` 消费位点：PostgreSQL 治理聚合和 Skill 范围写入会在各自主事务内先落治理事实与 metadata-only 刷新事件，再提交；启用轮询器的实例按序消费并在消费失败时保留位点，协调器对重复投递做有界幂等；消费者身份由部署配置注入，避免重启后把历史日志重新当作新事件。已有成功写入后的事件监听仍作为兼容性幂等补偿路径。
 - 搜索后端/平台 readiness 聚焦回归通过；API 全量本轮报告汇总 1073 项，0 failure、0 error、43 capability skips；Web 163/163 通过，生产构建通过。
-- 当前限制：本地环境未安装 Docker，因此 PostgreSQL/Redis 真实集成尚未形成证据；未接入 OpenSearch 或消息总线。V17/V18 日志是在治理事件已发布后的 at-least-once 补偿链路，尚未形成与治理主事务绑定的完整 transactional outbox，也未完成真实容量/性能压测或外部 Provider 验收。
+- 当前限制：本地环境未安装 Docker，因此 PostgreSQL/Redis 真实集成尚未形成证据；未接入 OpenSearch 或消息总线。当前 transactional outbox 已覆盖 PostgreSQL 治理聚合和 Skill 范围写入，但治理聚合与范围/审计等跨聚合写入仍不是单一数据库事务；尚未完成真实容量/性能压测或外部 Provider 验收。
 
 ## 1. 背景与目标
 
@@ -75,7 +75,7 @@ List<SkillSearchHit> search(SkillSearchQuery query);
 
 索引 revision 单调递增；相同 `sourceHash` 重建幂等，不增加 revision。重建采用“新快照全部构建成功后一次替换”，失败时保留上一版可读索引并报告 `SEARCH_INDEX_REBUILD_FAILED`，不留下半成品。
 
-以下事实变化必须触发失效或重建：版本发布、版本废弃、版本下架、Skill 范围保存、Skill 元数据更新以及管理员显式 rebuild。发布/生命周期/范围服务在事实写入成功后发布内部 `SkillSearchRefreshEvent`，由应用内 `SkillSearchRefreshCoordinator` 调用失效；当显式开启 PostgreSQL V17/V18 事件日志时，事件日志以 `skillId/sourceRevision/reasonCode` 生成稳定 key，轮询器按 `event_seq` 顺序以至少一次语义投递到各实例，消费成功后持久化该实例的 consumer cursor，协调器使用有界去重集合吸收重复事件。事件日志写入失败不会回滚已成功的治理写入，readiness 和重建 API 负责暴露/恢复这类缺口。后续接入消息平台时，事件仍只携带 Skill ID、source revision 和稳定动作码，不携带正文。
+以下事实变化必须触发失效或重建：版本发布、版本废弃、版本下架、Skill 范围保存、Skill 元数据更新以及管理员显式 rebuild。发布/生命周期/范围服务构造内部 `SkillSearchRefreshEvent`；启用 PostgreSQL V17/V18 时，治理聚合或范围写入会把事件与对应事实写入同一数据库事务，随后由应用内 `SkillSearchRefreshCoordinator` 调用失效。事件日志以 `skillId/sourceRevision/reasonCode` 生成稳定 key，轮询器按 `event_seq` 顺序以至少一次语义投递到各实例，消费成功后持久化该实例的 consumer cursor，协调器使用有界去重集合吸收重复事件。非 PostgreSQL/事件关闭的兼容实现仍由成功写入后的内部事件监听刷新；后续接入消息平台时，事件仍只携带 Skill ID、source revision 和稳定动作码，不携带正文。
 
 索引状态至少包括 `READY`、`STALE`、`REBUILDING`、`DEGRADED`、`NOT_READY`、`sourceRevision`、`documentCount`、`indexedAt`、`reasonCode`，不包含异常正文或路径。
 
@@ -115,9 +115,9 @@ List<SkillSearchHit> search(SkillSearchQuery query);
 
 ## 9. 非目标与后续阶段
 
-本阶段不实现中文专业分词、OpenSearch 集群、搜索结果自动推荐、Prompt/正文全文索引、搜索索引成为主数据、事务型 Outbox 与消息总线投递保证或 Skill 在线编辑。
+本阶段不实现中文专业分词、OpenSearch 集群、搜索结果自动推荐、Prompt/正文全文索引、搜索索引成为主数据、完整跨聚合事务或 Skill 在线编辑。
 
-后续 A4.2 可在 Skill 元数据 PostgreSQL 主数据迁移完成后继续增强 PostgreSQL 搜索实现；A4.3 再将刷新日志与治理主事务绑定并接入消息平台/outbox，补齐进程崩溃窗口、持久化消费位点、消息保留/清理和跨实例容量验收。
+后续 A4.2 可在 Skill 元数据 PostgreSQL 主数据迁移完成后继续增强 PostgreSQL 搜索实现；后续阶段接入消息平台，补齐消息保留/清理、跨聚合事务边界、跨实例容量验收和真实环境验证。
 
 ## 10. 验收标准
 

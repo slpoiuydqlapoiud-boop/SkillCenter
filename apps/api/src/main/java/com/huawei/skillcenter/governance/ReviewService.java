@@ -131,10 +131,12 @@ public class ReviewService {
                 currentReview.securityEvidence());
         SkillVersion published = withStatus(currentVersion, "published", actor.userId(), now, null, null, now,
                 currentVersion.riskLevel());
+        SkillSearchRefreshEvent refreshEvent = refreshEvent(published, "VERSION_PUBLISHED");
         store.updateReview(reviewId, approved, published,
                 audit("PACKAGE_APPROVED", "SKILL_VERSION", currentVersion.packageId(), actor, requestId,
-                        Map.of("skillId", currentVersion.skillId(), "version", currentVersion.version(), "status", "published")));
-        publishRefresh(published, "VERSION_PUBLISHED");
+                        Map.of("skillId", currentVersion.skillId(), "version", currentVersion.version(), "status", "published")),
+                refreshEvent);
+        publishRefresh(refreshEvent);
         enrollStagingRelease(published, gateSnapshot, actor, currentReview.reviewId());
         notify(currentVersion.uploadedBy(), "review", "Skill 已发布",
                 currentVersion.skillId() + " v" + currentVersion.version() + " 已进入技能市场", "check");
@@ -187,9 +189,14 @@ public class ReviewService {
                 detail, icon, Instant.now(), false, null));
     }
 
-    private void publishRefresh(SkillVersion version, String reasonCode) {
-        long sourceRevision = version.statusChangedAt() == null ? 0L : Math.max(0L, version.statusChangedAt().toEpochMilli());
-        eventPublisher.publishEvent(new SkillSearchRefreshEvent(version.skillId(), sourceRevision, reasonCode));
+    private SkillSearchRefreshEvent refreshEvent(SkillVersion version, String reasonCode) {
+        return new SkillSearchRefreshEvent(version.skillId(),
+                SkillSearchRefreshEvent.stableSourceRevision(version.packageId(), version.version(), reasonCode),
+                reasonCode);
+    }
+
+    private void publishRefresh(SkillSearchRefreshEvent event) {
+        eventPublisher.publishEvent(event);
     }
 
     private ReviewTask findReview(String reviewId) {

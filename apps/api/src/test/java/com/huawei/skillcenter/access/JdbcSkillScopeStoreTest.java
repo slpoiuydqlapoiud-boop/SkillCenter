@@ -1,6 +1,8 @@
 package com.huawei.skillcenter.access;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.huawei.skillcenter.search.SkillSearchRefreshEvent;
+import com.huawei.skillcenter.search.SkillSearchRefreshEventStore;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DuplicateKeyException;
@@ -16,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class JdbcSkillScopeStoreTest {
@@ -55,6 +58,34 @@ class JdbcSkillScopeStoreTest {
         assertThatThrownBy(() -> store.create(scope("skill-a")))
                 .isInstanceOf(SkillScopePersistenceException.class)
                 .hasMessage("Skill scope state is unavailable");
+    }
+
+    @Test
+    void createAppendsRefreshEventInsideTheScopeWriteBoundary() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        when(jdbc.update(anyString(), any(Object[].class))).thenReturn(1);
+        SkillSearchRefreshEventStore refreshStore = mock(SkillSearchRefreshEventStore.class);
+        org.springframework.beans.factory.ObjectProvider<SkillSearchRefreshEventStore> provider = mock(
+                org.springframework.beans.factory.ObjectProvider.class);
+        when(provider.getIfAvailable()).thenReturn(refreshStore);
+        JdbcSkillScopeStore store = new JdbcSkillScopeStore(
+                jdbc, new ObjectMapper().findAndRegisterModules(), transactionManager(), provider);
+        SkillSearchRefreshEvent event = new SkillSearchRefreshEvent("skill-a", 1L, "SKILL_SCOPE_SAVED");
+
+        assertThat(store.create(scope("skill-a"), event).skillId()).isEqualTo("skill-a");
+        verify(refreshStore).append(event);
+    }
+
+    @Test
+    void eventAwareWriteRemainsCompatibleWhenRefreshOutboxIsDisabled() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        when(jdbc.update(anyString(), any(Object[].class))).thenReturn(1);
+        JdbcSkillScopeStore store = new JdbcSkillScopeStore(
+                jdbc, new ObjectMapper().findAndRegisterModules(), transactionManager());
+
+        assertThat(store.create(scope("skill-a"),
+                new SkillSearchRefreshEvent("skill-a", 1L, "SKILL_SCOPE_SAVED")).skillId())
+                .isEqualTo("skill-a");
     }
 
     private SkillScope scope(String skillId) {

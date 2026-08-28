@@ -55,10 +55,17 @@ class SkillSearchRefreshEventWiringTest {
                 java.time.Clock.systemUTC(), null, publisher);
         authorization.updateScope("event-skill", new SkillScopeMutation(SkillVisibility.RESTRICTED, "",
                 List.of("author"), 0, "admin", "admin"), new Actor("admin", "admin"), "req-scope");
+        authorization.updateScope("event-skill", new SkillScopeMutation(SkillVisibility.PUBLIC, "",
+                List.of(), 1, "admin", "admin"), new Actor("admin", "admin"), "req-scope-update");
 
         List<SkillSearchRefreshEvent> events = publisher.refreshEvents();
         assertThat(events).extracting(SkillSearchRefreshEvent::reasonCode)
-                .containsExactly("VERSION_PUBLISHED", "VERSION_DEPRECATED", "SKILL_SCOPE_SAVED");
+                .containsExactly("VERSION_PUBLISHED", "VERSION_DEPRECATED", "SKILL_SCOPE_SAVED", "SKILL_SCOPE_SAVED");
+        assertThat(events).extracting(SkillSearchRefreshEvent::sourceRevision)
+                .containsExactly(
+                        SkillSearchRefreshEvent.stableSourceRevision("package-event", "1.0.0", "VERSION_PUBLISHED"),
+                        SkillSearchRefreshEvent.stableSourceRevision("package-event", "1.0.0", "VERSION_DEPRECATED"),
+                        1L, 2L);
         assertThat(events).allSatisfy(event -> {
             assertThat(event.skillId()).isEqualTo("event-skill");
             assertThat(event.sourceRevision()).isGreaterThanOrEqualTo(0L);

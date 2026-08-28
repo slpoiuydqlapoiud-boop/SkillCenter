@@ -133,10 +133,13 @@ public class VersionLifecycleService {
         String notificationDetail = "Skill " + skillId + "@" + version + " 已"
                 + ("withdrawn".equals(targetStatus) ? "下架" : "废弃") + "。原因："
                 + request.reason().trim() + (replacement == null ? "" : "；替代版本：" + replacement);
+        SkillSearchRefreshEvent refreshEvent = new SkillSearchRefreshEvent(updated.skillId(),
+                SkillSearchRefreshEvent.stableSourceRevision(updated.packageId(), updated.version(), auditAction),
+                auditAction);
         GovernanceStore.VersionTransitionResult result = store.transitionVersion(updated, lifecycleAudit,
                 "withdrawn".equals(targetStatus) ? "VERSION_WITHDRAWN" : null,
-                "lifecycle", notificationTitle, notificationDetail, now);
-        eventPublisher.publishEvent(new SkillSearchRefreshEvent(updated.skillId(), Math.max(0L, now.toEpochMilli()), auditAction));
+                "lifecycle", notificationTitle, notificationDetail, now, refreshEvent);
+        eventPublisher.publishEvent(refreshEvent);
         return result.snapshot().versions().stream()
                 .filter(item -> item.packageId().equals(updated.packageId()))
                 .findFirst()

@@ -1,7 +1,6 @@
 package com.huawei.skillcenter.search;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,13 +24,15 @@ class JdbcSkillSearchRefreshEventStoreTest {
     }
 
     @Test
-    void duplicateDatabaseKeyDoesNotBreakEventPublication() {
+    void appendUsesDatabaseConflictHandlingForTransactionalIdempotency() {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
-        when(jdbc.update(anyString(), any(Object[].class)))
-                .thenThrow(new DuplicateKeyException("duplicate event"));
+        when(jdbc.update(anyString(), any(Object[].class))).thenReturn(0);
         JdbcSkillSearchRefreshEventStore store = new JdbcSkillSearchRefreshEventStore(jdbc);
 
         store.append(new SkillSearchRefreshEvent("skill-a", 1L, "VERSION_PUBLISHED"));
+
+        verify(jdbc).update(org.mockito.ArgumentMatchers.contains("on conflict (event_id) do nothing"),
+                any(Object[].class));
     }
 
     @Test

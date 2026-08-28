@@ -3,7 +3,10 @@ package com.huawei.skillcenter.governance;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.huawei.skillcenter.search.SkillSearchRefreshEvent;
+import com.huawei.skillcenter.search.SkillSearchRefreshEventStore;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -34,13 +37,23 @@ public class JdbcGovernanceStateRepository implements GovernanceStateRepository 
     private final JdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
     private final TransactionTemplate transactions;
+    private final ObjectProvider<SkillSearchRefreshEventStore> refreshEventStoreProvider;
 
     public JdbcGovernanceStateRepository(JdbcTemplate jdbcTemplate,
                                          ObjectMapper objectMapper,
                                          PlatformTransactionManager transactionManager) {
+        this(jdbcTemplate, objectMapper, transactionManager, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public JdbcGovernanceStateRepository(JdbcTemplate jdbcTemplate,
+                                         ObjectMapper objectMapper,
+                                         PlatformTransactionManager transactionManager,
+                                         ObjectProvider<SkillSearchRefreshEventStore> refreshEventStoreProvider) {
         this.jdbc = require(jdbcTemplate, "jdbcTemplate");
         this.objectMapper = require(objectMapper, "objectMapper");
         this.transactions = new TransactionTemplate(require(transactionManager, "transactionManager"));
+        this.refreshEventStoreProvider = refreshEventStoreProvider;
     }
 
     @Override
@@ -84,6 +97,12 @@ public class JdbcGovernanceStateRepository implements GovernanceStateRepository 
 
     @Override
     public GovernanceState replace(long expectedRevision, GovernanceSnapshot snapshot) {
+        return replace(expectedRevision, snapshot, List.of());
+    }
+
+    @Override
+    public GovernanceState replace(long expectedRevision, GovernanceSnapshot snapshot,
+                                   List<SkillSearchRefreshEvent> refreshEvents) {
         if (expectedRevision < 0) throw new IllegalArgumentException("expectedRevision must not be negative");
         if (snapshot == null) throw new IllegalArgumentException("snapshot must not be null");
         try {
@@ -103,12 +122,24 @@ public class JdbcGovernanceStateRepository implements GovernanceStateRepository 
                                 + "where state_key = ? and revision = ?",
                         json(snapshot), nextRevision, STATE_KEY, expectedRevision);
                 if (updated != 1) throw new GovernanceStateConflictException("governance state revision conflict");
+                appendRefreshEvents(refreshEvents);
                 return new GovernanceState(nextRevision, snapshot);
             });
         } catch (GovernanceStateConflictException | IllegalArgumentException exception) {
             throw exception;
         } catch (RuntimeException exception) {
             throw failure(exception);
+        }
+    }
+
+    private void appendRefreshEvents(List<SkillSearchRefreshEvent> refreshEvents) {
+        if (refreshEvents == null || refreshEvents.isEmpty()) return;
+        SkillSearchRefreshEventStore store = refreshEventStoreProvider == null
+                ? null : refreshEventStoreProvider.getIfAvailable();
+        if (store == null) return;
+        for (SkillSearchRefreshEvent event : refreshEvents) {
+            if (event == null) throw new IllegalArgumentException("refresh event is required");
+            store.append(event);
         }
     }
 

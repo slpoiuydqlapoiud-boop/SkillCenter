@@ -5,6 +5,7 @@ import com.huawei.skillcenter.skill.SkillRecord;
 import com.huawei.skillcenter.skill.SkillRepository;
 import com.huawei.skillcenter.skill.SkillQuery;
 import com.huawei.skillcenter.notification.NotificationRecord;
+import com.huawei.skillcenter.search.SkillSearchRefreshEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -80,6 +81,11 @@ public class GovernanceStore {
     }
 
     public GovernanceSnapshot updateReview(String reviewId, ReviewTask review, SkillVersion version, AuditEvent audit) {
+        return updateReview(reviewId, review, version, audit, null);
+    }
+
+    public GovernanceSnapshot updateReview(String reviewId, ReviewTask review, SkillVersion version, AuditEvent audit,
+                                           SkillSearchRefreshEvent refreshEvent) {
         return mutate(snapshot -> {
             List<ReviewTask> reviews = snapshot.reviews().stream()
                     .map(existing -> existing.reviewId().equals(reviewId) ? review : existing).toList();
@@ -89,7 +95,7 @@ public class GovernanceStore {
             audits.add(audit);
             return copyWith(snapshot, versions, reviews, snapshot.installations(), audits,
                     snapshot.authorizations(), snapshot.favorites(), snapshot.configuration());
-        });
+        }, events(refreshEvent));
     }
 
     public GovernanceSnapshot addInstallation(InstallationRecord installation, AuditEvent audit) {
@@ -181,6 +187,18 @@ public class GovernanceStore {
                                                      String notificationTitle,
                                                      String notificationDetail,
                                                      Instant occurredAt) {
+        return transitionVersion(version, lifecycleAudit, revokeReason, notificationType, notificationTitle,
+                notificationDetail, occurredAt, null);
+    }
+
+    public VersionTransitionResult transitionVersion(SkillVersion version,
+                                                     AuditEvent lifecycleAudit,
+                                                     String revokeReason,
+                                                     String notificationType,
+                                                     String notificationTitle,
+                                                     String notificationDetail,
+                                                     Instant occurredAt,
+                                                     SkillSearchRefreshEvent refreshEvent) {
         if (version == null || lifecycleAudit == null) {
             throw new IllegalArgumentException("version and lifecycleAudit are required");
         }
@@ -251,7 +269,7 @@ public class GovernanceStore {
             int notificationCount = notifications.size() - current.notifications().size();
             GovernanceSnapshot next = copyWith(current, versions, current.reviews(), current.installations(),
                     audits, authorizations, current.favorites(), current.configuration(), notifications);
-            persist(next);
+            persist(next, events(refreshEvent));
             current = next;
             return new VersionTransitionResult(next, revokedCount, notificationCount);
         } finally {
@@ -506,10 +524,15 @@ public class GovernanceStore {
     }
 
     private GovernanceSnapshot mutate(java.util.function.UnaryOperator<GovernanceSnapshot> operation) {
+        return mutate(operation, List.of());
+    }
+
+    private GovernanceSnapshot mutate(java.util.function.UnaryOperator<GovernanceSnapshot> operation,
+                                      List<SkillSearchRefreshEvent> refreshEvents) {
         lock.writeLock().lock();
         try {
             GovernanceSnapshot next = operation.apply(current);
-            persist(next);
+            persist(next, refreshEvents);
             current = next;
             return next;
         } finally {
@@ -594,8 +617,17 @@ public class GovernanceStore {
     }
 
     private void persist(GovernanceSnapshot snapshot) {
-        GovernanceStateRepository.GovernanceState saved = stateRepository.replace(currentRevision, snapshot);
+        persist(snapshot, List.of());
+    }
+
+    private void persist(GovernanceSnapshot snapshot, List<SkillSearchRefreshEvent> refreshEvents) {
+        GovernanceStateRepository.GovernanceState saved = stateRepository.replace(currentRevision, snapshot,
+                refreshEvents == null ? List.of() : List.copyOf(refreshEvents));
         currentRevision = saved.revision();
+    }
+
+    private List<SkillSearchRefreshEvent> events(SkillSearchRefreshEvent event) {
+        return event == null ? List.of() : List.of(event);
     }
 
     public static class GovernancePersistenceException extends RuntimeException {

@@ -191,17 +191,21 @@ public class SkillAuthorizationService {
         SkillScopeMutation safeMutation = validateMutation(mutation);
         validateOwnership(safeMutation, governanceStore.snapshot().configuration());
         Instant now = Instant.now(clock);
+        SkillSearchRefreshEvent refreshEvent;
         Optional<SkillScope> existing = scopeStore.find(normalizedSkillId);
         SkillScope updated;
         if (existing.isPresent()) {
             SkillScope replacement = safeMutation.toScope(normalizedSkillId, existing.get().revision(), now, now);
-            updated = scopeStore.replace(replacement, safeMutation.revision());
+            refreshEvent = new SkillSearchRefreshEvent(normalizedSkillId, existing.get().revision() + 1L,
+                    "SKILL_SCOPE_SAVED");
+            updated = scopeStore.replace(replacement, safeMutation.revision(), refreshEvent);
         } else {
             if (safeMutation.revision() != 0) {
                 throw new SkillScopeConflictException("skill scope does not exist");
             }
             SkillScope created = safeMutation.toScope(normalizedSkillId, 1, now, now);
-            updated = scopeStore.create(created);
+            refreshEvent = new SkillSearchRefreshEvent(normalizedSkillId, created.revision(), "SKILL_SCOPE_SAVED");
+            updated = scopeStore.create(created, refreshEvent);
         }
         governanceStore.addAudit(new AuditEvent(UUID.randomUUID().toString(),
                 existing.isPresent() ? "SKILL_SCOPE_UPDATED" : "SKILL_SCOPE_CREATED",
@@ -212,7 +216,7 @@ public class SkillAuthorizationService {
                         "maintainerCount", Integer.toString(updated.maintainerUserIds().size()),
                         "revision", Integer.toString(updated.revision())
                 )));
-        eventPublisher.publishEvent(new SkillSearchRefreshEvent(updated.skillId(), updated.revision(), "SKILL_SCOPE_SAVED"));
+        eventPublisher.publishEvent(refreshEvent);
         return updated;
     }
 

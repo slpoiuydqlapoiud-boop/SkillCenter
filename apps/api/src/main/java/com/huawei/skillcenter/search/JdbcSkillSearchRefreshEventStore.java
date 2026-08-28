@@ -1,7 +1,6 @@
 package com.huawei.skillcenter.search;
 
 import org.springframework.context.annotation.Conditional;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.ResultSet;
@@ -30,11 +29,10 @@ public final class JdbcSkillSearchRefreshEventStore implements SkillSearchRefres
         try {
             jdbc.update("insert into " + TABLE
                             + " (event_id, skill_id, source_revision, reason_code, created_at)"
-                            + " values (?, ?, ?, ?, ?)",
+                            + " values (?, ?, ?, ?, ?)"
+                            + " on conflict (event_id) do nothing",
                     event.eventKey(), event.skillId(), event.sourceRevision(), event.reasonCode(),
                     Timestamp.from(java.time.Instant.now()));
-        } catch (DuplicateKeyException ignored) {
-            // At-least-once publication is safe: the deterministic event key already exists.
         } catch (RuntimeException exception) {
             throw new SkillSearchIndexPersistenceException(exception);
         }
