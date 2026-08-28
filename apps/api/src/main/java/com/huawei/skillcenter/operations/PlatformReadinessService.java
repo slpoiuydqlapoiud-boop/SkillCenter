@@ -41,6 +41,7 @@ public class PlatformReadinessService implements ProductionReadinessGate {
     private OptimizationExperimentBackendHealth optimizationExperiment;
     private BenchmarkBackendHealth benchmark;
     private SkillAssetBackendHealth skillAssets;
+    private SkillSearchBackendHealth searchIndex;
     private ResumableUploadStore resumableUploads;
     private final Clock clock;
 
@@ -59,6 +60,7 @@ public class PlatformReadinessService implements ProductionReadinessGate {
                                      ObjectProvider<OptimizationExperimentBackendHealth> optimizationExperimentProvider,
                                      ObjectProvider<BenchmarkBackendHealth> benchmarkProvider,
                                      ObjectProvider<SkillAssetBackendHealth> skillAssetProvider,
+                                     ObjectProvider<SkillSearchBackendHealth> searchIndexProvider,
                                      ObjectProvider<ResumableUploadStore> resumableUploadProvider) {
         this(persistence, providers, security, evidence, artifactStorage, organizationDirectory, releaseTarget,
                  runtimeSummaryProvider == null ? null : runtimeSummaryProvider.getIfAvailable(),
@@ -70,6 +72,7 @@ public class PlatformReadinessService implements ProductionReadinessGate {
                 ? null : optimizationExperimentProvider.getIfAvailable();
         this.benchmark = benchmarkProvider == null ? null : benchmarkProvider.getIfAvailable();
         this.skillAssets = skillAssetProvider == null ? null : skillAssetProvider.getIfAvailable();
+        this.searchIndex = searchIndexProvider == null ? null : searchIndexProvider.getIfAvailable();
         this.resumableUploads = resumableUploadProvider == null
                 ? null : resumableUploadProvider.getIfAvailable();
     }
@@ -234,6 +237,15 @@ public class PlatformReadinessService implements ProductionReadinessGate {
     public PlatformReadinessService(PersistenceControlService persistence,
                                     ProviderRegistry providers,
                                     PackageSecurityScanCoordinator security,
+                                    SkillSearchBackendHealth searchIndex,
+                                    Clock clock) {
+        this(persistence, providers, security, null, null, null, null, null, null, null, clock);
+        this.searchIndex = searchIndex;
+    }
+
+    public PlatformReadinessService(PersistenceControlService persistence,
+                                    ProviderRegistry providers,
+                                    PackageSecurityScanCoordinator security,
                                     ProductionEvidenceService evidence,
                                     ArtifactStorageReadinessService artifactStorage,
                                     OrganizationDirectorySyncService organizationDirectory,
@@ -259,6 +271,7 @@ public class PlatformReadinessService implements ProductionReadinessGate {
         if (optimizationExperiment != null) components.add(optimizationExperimentComponent());
         if (benchmark != null) components.add(benchmarkComponent());
         if (skillAssets != null) components.add(skillAssetComponent());
+        if (searchIndex != null) components.add(searchIndexComponent());
         if (resumableUploads != null) components.add(resumableUploadComponent());
         List<String> blockingCodes = components.stream()
                 .filter(component -> !"READY".equals(component.status()))
@@ -478,6 +491,27 @@ public class PlatformReadinessService implements ProductionReadinessGate {
         } catch (RuntimeException exception) {
             return component("SKILL_ASSET_STORE", "NOT_READY",
                     "SKILL_ASSET_READINESS_UNAVAILABLE", "Skill 资产持久化状态不可用");
+        }
+    }
+
+    private PlatformReadiness.Component searchIndexComponent() {
+        try {
+            SkillSearchBackendReadiness readiness = searchIndex.readiness();
+            if (readiness == null) {
+                return component("SKILL_SEARCH_INDEX", "NOT_READY",
+                        "SEARCH_INDEX_READINESS_UNAVAILABLE", "Skill 搜索索引状态不可用");
+            }
+            String status = switch (readiness.status()) {
+                case "READY" -> "READY";
+                case "DEGRADED" -> "DEGRADED";
+                default -> "NOT_READY";
+            };
+            String reason = readiness.reasonCode() == null || readiness.reasonCode().isBlank()
+                    ? "SEARCH_INDEX_READINESS_UNAVAILABLE" : readiness.reasonCode();
+            return component("SKILL_SEARCH_INDEX", status, reason, readiness.summary());
+        } catch (RuntimeException exception) {
+            return component("SKILL_SEARCH_INDEX", "NOT_READY",
+                    "SEARCH_INDEX_READINESS_UNAVAILABLE", "Skill 搜索索引状态不可用");
         }
     }
 

@@ -58,6 +58,7 @@ skill-center:
   execution-environment-backend: ${SKILL_CENTER_EXECUTION_ENVIRONMENT_BACKEND:json}
   skill-scope-backend: ${SKILL_CENTER_SKILL_SCOPE_BACKEND:json}
   skill-relation-backend: ${SKILL_CENTER_SKILL_RELATION_BACKEND:json}
+  search-index-backend: ${SKILL_CENTER_SEARCH_INDEX_BACKEND:json}
   quality-evidence-storage: ./data/governance/quality-evidence.json
   benchmark-storage: ./data/governance/benchmarks.json
   runtime-summary-backend: json

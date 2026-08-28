@@ -21,6 +21,7 @@ public class PersistenceControlProperties {
     private String executionEnvironmentBackend = "json";
     private String skillScopeBackend = "json";
     private String skillRelationBackend = "json";
+    private String searchIndexBackend = "json";
     @Value("${skill-center.quality-evidence-backend:}")
     private String applicationQualityEvidenceBackend = "";
     @Value("${skill-center.benchmark-backend:}")
@@ -41,6 +42,8 @@ public class PersistenceControlProperties {
     private String applicationSkillScopeBackend = "";
     @Value("${skill-center.skill-relation-backend:}")
     private String applicationSkillRelationBackend = "";
+    @Value("${skill-center.search-index-backend:}")
+    private String applicationSearchIndexBackend = "";
     private String controlStorage = "./data/control";
     private String snapshotStorage = "./data/backups";
     private String startupMode = "fail-closed";
@@ -134,6 +137,14 @@ public class PersistenceControlProperties {
         this.skillRelationBackend = skillRelationBackend == null ? "json" : skillRelationBackend.trim();
     }
 
+    public String getSearchIndexBackend() {
+        return searchIndexBackend;
+    }
+
+    public void setSearchIndexBackend(String searchIndexBackend) {
+        this.searchIndexBackend = searchIndexBackend == null ? "json" : searchIndexBackend.trim();
+    }
+
     public String getControlStorage() {
         return controlStorage;
     }
@@ -208,6 +219,9 @@ public class PersistenceControlProperties {
         if (!isSupportedBackend(normalizedSkillRelationBackend())) {
             throw new IllegalArgumentException("skillRelationBackend must be json or postgresql");
         }
+        if (!isSupportedBackend(normalizedSearchIndexBackend())) {
+            throw new IllegalArgumentException("searchIndexBackend must be json or postgresql");
+        }
         if ("postgresql".equals(normalizedQualityEvidenceBackend())
                 && !"postgresql".equals(normalizedBackend())) {
             throw new IllegalArgumentException("qualityEvidenceBackend=postgresql requires backend=postgresql");
@@ -247,6 +261,10 @@ public class PersistenceControlProperties {
         if ("postgresql".equals(normalizedSkillRelationBackend())
                 && !"postgresql".equals(normalizedBackend())) {
             throw new IllegalArgumentException("skillRelationBackend=postgresql requires backend=postgresql");
+        }
+        if ("postgresql".equals(normalizedSearchIndexBackend())
+                && !"postgresql".equals(normalizedBackend())) {
+            throw new IllegalArgumentException("searchIndexBackend=postgresql requires backend=postgresql");
         }
         if (manifestRetention < 1) {
             throw new IllegalArgumentException("manifestRetention must be at least 1");
@@ -324,6 +342,12 @@ public class PersistenceControlProperties {
     public String normalizedSkillRelationBackend() {
         String configured = applicationSkillRelationBackend == null || applicationSkillRelationBackend.isBlank()
                 ? skillRelationBackend : applicationSkillRelationBackend;
+        return normalizeBackendValue(configured);
+    }
+
+    public String normalizedSearchIndexBackend() {
+        String configured = applicationSearchIndexBackend == null || applicationSearchIndexBackend.isBlank()
+                ? searchIndexBackend : applicationSearchIndexBackend;
         return normalizeBackendValue(configured);
     }
 

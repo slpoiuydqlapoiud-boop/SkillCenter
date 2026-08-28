@@ -41,6 +41,20 @@ class SkillSearchRefreshCoordinatorTest {
     }
 
     @Test
+    void ensureReadyRebuildsAfterARefreshInvalidatesTheCommittedIndex() {
+        JsonSkillSearchIndex index = new JsonSkillSearchIndex();
+        CountingSource source = new CountingSource(snapshot("source-a"));
+        SkillSearchRefreshCoordinator coordinator = new SkillSearchRefreshCoordinator(index, source);
+
+        coordinator.ensureReady();
+        coordinator.invalidate(new SkillSearchRefreshEvent("skill-a", 8L, "VERSION_WITHDRAWN"));
+        coordinator.ensureReady();
+
+        assertThat(source.snapshotCalls).isEqualTo(2);
+        assertThat(index.status().state()).isEqualTo("READY");
+    }
+
+    @Test
     void refreshContractsContainOnlyBoundedMetadata() {
         SkillSearchRefreshEvent event = new SkillSearchRefreshEvent("skill-a", 4L, "VERSION_PUBLISHED");
 

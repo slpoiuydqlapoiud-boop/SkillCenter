@@ -30,6 +30,11 @@ public final class JsonSkillSearchIndex implements SkillSearchIndex {
     private volatile String state = "NOT_READY";
 
     @Override
+    public String backend() {
+        return "json";
+    }
+
+    @Override
     public SkillSearchIndexStatus status() {
         Snapshot current = snapshot;
         return new SkillSearchIndexStatus(state, current.revision(), current.documents().size(), current.sourceHash(),

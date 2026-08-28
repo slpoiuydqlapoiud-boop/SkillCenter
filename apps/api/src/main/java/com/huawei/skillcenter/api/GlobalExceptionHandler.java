@@ -58,6 +58,7 @@ import com.huawei.skillcenter.quality.QualityRunNotFoundException;
 import com.huawei.skillcenter.lifecycle.SkillLifecycleProjectionSourceInvalidException;
 import com.huawei.skillcenter.lifecycle.SkillLifecycleProjectionQueryInvalidException;
 import com.huawei.skillcenter.search.SkillSearchIndexControlException;
+import com.huawei.skillcenter.search.SkillSearchIndexPersistenceException;
 import com.huawei.skillcenter.quality.EvaluationSuiteVersionConflictException;
 import com.huawei.skillcenter.quality.EvaluationSuiteVersionNotFoundException;
 import com.huawei.skillcenter.quality.EvaluationSuiteNotEnabledException;
@@ -546,6 +547,13 @@ public class GlobalExceptionHandler {
             default -> "Search index request is invalid";
         };
         return error(status, code, message, request, List.of());
+    }
+
+    @ExceptionHandler(SkillSearchIndexPersistenceException.class)
+    ResponseEntity<ErrorEnvelope> searchIndexPersistence(SkillSearchIndexPersistenceException exception,
+                                                          HttpServletRequest request) {
+        return error(HttpStatus.SERVICE_UNAVAILABLE, "SEARCH_INDEX_PERSISTENCE_UNAVAILABLE",
+                "Search index is temporarily unavailable", request, List.of());
     }
 
     @ExceptionHandler(ForbiddenException.class)

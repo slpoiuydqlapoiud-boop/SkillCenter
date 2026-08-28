@@ -35,10 +35,15 @@ public final class SkillSearchRefreshCoordinator {
     }
 
     public synchronized SkillSearchRebuildResult ensureReady() {
-        if (!index.status().sourceHash().isEmpty()) {
-            return result(index.status(), sourceRevision, reasonCode);
+        SkillSearchIndexStatus current = index.status();
+        if (!current.sourceHash().isEmpty() && "READY".equals(current.state()) && reasonCode.isEmpty()) {
+            return result(current, sourceRevision, reasonCode);
         }
         return rebuild("", "", "");
+    }
+
+    SkillSearchIndex index() {
+        return index;
     }
 
     public synchronized SkillSearchRebuildResult rebuild(String expectedSourceHash, String actor, String requestId) {

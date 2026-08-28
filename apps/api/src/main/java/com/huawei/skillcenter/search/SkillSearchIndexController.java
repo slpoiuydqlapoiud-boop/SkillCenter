@@ -30,7 +30,7 @@ public class SkillSearchIndexController {
     @GetMapping("/status")
     ResponseEntity<ApiResponse<SkillSearchIndexAdminView>> status(HttpServletRequest request) {
         requireAdmin(request);
-        return ResponseEntity.ok(new ApiResponse<>(SkillSearchIndexAdminView.from(coordinator.status()), requestId(request)));
+        return ResponseEntity.ok(new ApiResponse<>(SkillSearchIndexAdminView.from(coordinator.index(), coordinator.status()), requestId(request)));
     }
 
     @PostMapping("/rebuild")
@@ -46,7 +46,7 @@ public class SkillSearchIndexController {
         if (!result.reasonCode().isEmpty()) {
             throw new SkillSearchIndexControlException(result.reasonCode());
         }
-        return ResponseEntity.ok(new ApiResponse<>(SkillSearchIndexAdminView.from(coordinator.status()), requestId));
+        return ResponseEntity.ok(new ApiResponse<>(SkillSearchIndexAdminView.from(coordinator.index(), coordinator.status()), requestId));
     }
 
     private String parseExpectedSourceHash(JsonNode body) {

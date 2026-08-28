@@ -9,8 +9,8 @@ public record SkillSearchIndexAdminView(
         String indexedAt,
         String reasonCode
 ) {
-    static SkillSearchIndexAdminView from(SkillSearchIndexStatus status) {
-        return new SkillSearchIndexAdminView("json", status.state(), status.revision(), status.documentCount(),
+    static SkillSearchIndexAdminView from(SkillSearchIndex index, SkillSearchIndexStatus status) {
+        return new SkillSearchIndexAdminView(index.backend(), status.state(), status.revision(), status.documentCount(),
                 status.indexedAt() == null ? "" : status.indexedAt().toString(), status.reasonCode());
     }
 }

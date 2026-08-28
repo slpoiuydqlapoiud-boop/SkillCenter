@@ -108,6 +108,27 @@ class PlatformReadinessServiceTest {
     }
 
     @Test
+    void searchIndexReadinessIsIncludedInProductionHandoff() {
+        PersistenceControlService persistence = mock(PersistenceControlService.class);
+        ProviderRegistry providers = mock(ProviderRegistry.class);
+        PackageSecurityScanCoordinator security = mock(PackageSecurityScanCoordinator.class);
+        SkillSearchBackendHealth searchIndex = mock(SkillSearchBackendHealth.class);
+        when(persistence.status()).thenReturn(new PersistenceControlService.PersistenceStatusView("READY", List.of()));
+        when(providers.list()).thenReturn(List.of());
+        when(security.readiness(CHECKED_AT)).thenReturn(new PackageSecurityReadiness(
+                "REQUIRED", "READY", "EXTERNAL_SECURITY_SCANNER_READY",
+                "scanner", "1.0", CHECKED_AT, List.of(), List.of()));
+        when(searchIndex.readiness()).thenReturn(new SkillSearchBackendReadiness(
+                "postgresql", "NOT_READY", "SEARCH_INDEX_SCHEMA_REQUIRED", "schema missing"));
+
+        PlatformReadiness readiness = new PlatformReadinessService(
+                persistence, providers, security, searchIndex, Clock.fixed(CHECKED_AT, ZoneOffset.UTC)).readiness();
+
+        assertEquals("NOT_READY", readiness.component("SKILL_SEARCH_INDEX").status());
+        assertTrue(readiness.blockingReasonCodes().contains("SEARCH_INDEX_SCHEMA_REQUIRED"));
+    }
+
+    @Test
     void externalEvidenceReadinessIsConsumedInsteadOfStaticBlocking() {
         PersistenceControlService persistence = mock(PersistenceControlService.class);
         ProviderRegistry providers = mock(ProviderRegistry.class);
