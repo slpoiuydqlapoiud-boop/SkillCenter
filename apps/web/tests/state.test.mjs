@@ -41,7 +41,7 @@ test("search and category filters are deterministic and case insensitive", () =>
 test("navigation follows role permissions without exposing admin links to viewers", () => {
   assert.deepEqual(Object.keys(ROLES), ["developer", "admin"]);
   assert.deepEqual(getNavigationForRole("developer"), ["market", "my-skills", "upload"]);
-  assert.deepEqual(getNavigationForRole("admin"), ["market", "my-skills", "upload", "review", "analytics", "exports", "operations", "settings"]);
+  assert.deepEqual(getNavigationForRole("admin"), ["market", "my-skills", "upload", "review", "analytics", "quality", "exports", "operations", "settings"]);
 });
 
 test("publish entry uses the product wording for both permitted roles", () => {

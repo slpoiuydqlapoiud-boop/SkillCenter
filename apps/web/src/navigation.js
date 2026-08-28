@@ -2,6 +2,7 @@ const PUBLIC_VIEWS = new Set([
   "market",
   "collection",
   "analytics",
+  "quality",
   "review",
   "installations",
   "favorites",

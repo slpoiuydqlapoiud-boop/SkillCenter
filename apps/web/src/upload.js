@@ -8,3 +8,11 @@ export function uploadValidationError(result) {
     ? errors.join("；")
     : "Skill ZIP 校验失败，请检查包结构和 skill.json";
 }
+
+export function uploadSecurityStatusLabel(result) {
+  return ({
+    PASSED: "本地安全扫描通过",
+    BLOCKED: "本地安全扫描阻断",
+    NOT_SCANNED: "本地安全扫描未完成",
+  })[result?.securityStatus] || "";
+}

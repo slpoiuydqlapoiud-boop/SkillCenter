@@ -57,7 +57,7 @@ class OptimizationSuggestionBenchmarkTest {
     void filtersQualityAndRuntimeEvidenceByExecutionEnvironment() {
         QualityEvaluationService quality = mock(QualityEvaluationService.class);
         RuntimeOperationsService runtime = mock(RuntimeOperationsService.class);
-        when(quality.snapshots("skill-a", "openclaw", "mcp-network", "llm-gateway")).thenReturn(List.of(
+        when(quality.snapshots("skill-a", "mock", "openclaw", "mcp-network", "llm-gateway")).thenReturn(List.of(
                 new QualitySnapshot("snapshot-env", "skill-a", "1.0.0", "smoke", "suite-v1", "mock-runner",
                         "mock-evaluation", "mock", Instant.now(), 92, 2, 2, true, "quality-v1", 95, 1.0,
                         QualityGateStatus.PASSED, List.of(), "openclaw", "mcp-network", "llm-gateway")));
@@ -74,11 +74,37 @@ class OptimizationSuggestionBenchmarkTest {
         service.suggestions("skill-a", "1.0.0", RuntimeOperationsWindow.TWENTY_FOUR_HOURS, "mock",
                 "openclaw", "mcp-network", "llm-gateway");
 
-        verify(quality).snapshots("skill-a", "openclaw", "mcp-network", "llm-gateway");
+        verify(quality).snapshots("skill-a", "mock", "openclaw", "mcp-network", "llm-gateway");
         ArgumentCaptor<RuntimeOperationsQuery> query = ArgumentCaptor.forClass(RuntimeOperationsQuery.class);
         verify(runtime).snapshot(query.capture());
         assertThat(query.getValue().runtimeId()).isEqualTo("openclaw");
         assertThat(query.getValue().mcpServerId()).isEqualTo("mcp-network");
         assertThat(query.getValue().llmProviderId()).isEqualTo("llm-gateway");
+    }
+
+    @Test
+    void filtersQualityEvidenceByDataSourceBeforeCalculatingSuggestions() {
+        QualityEvaluationService quality = mock(QualityEvaluationService.class);
+        RuntimeOperationsService runtime = mock(RuntimeOperationsService.class);
+        QualitySnapshot production = new QualitySnapshot("snapshot-production", "skill-a", "1.0.0", "smoke",
+                "suite-v1", "mock-runner", "mock-evaluation", "production", Instant.now(), 92, 2, 2, true,
+                "quality-v1", 95, 1.0, QualityGateStatus.PASSED, List.of());
+        when(quality.snapshots("skill-a", "production", null, null, null)).thenReturn(List.of(production));
+        when(runtime.snapshot(any(RuntimeOperationsQuery.class))).thenReturn(new RuntimeOperationsSnapshot(
+                "24h", Instant.now(), "production", new RuntimeOperationsSnapshot.Filters("skill-a", "1.0.0", null),
+                RuntimeOperationsSnapshot.Totals.empty(), RuntimeOperationsSnapshot.Latency.empty(), List.of(),
+                List.of(), List.of(), List.of()));
+        OptimizationSuggestionService service = new OptimizationSuggestionService(
+                quality, runtime, new OptimizationSuggestionCalculator(),
+                new OptimizationSuggestionDispositionStore(tempDir.resolve("source-dispositions.json"),
+                        new ObjectMapper().findAndRegisterModules()),
+                new OptimizationSuggestionThresholdsStore(tempDir.resolve("source-thresholds.json"),
+                        new ObjectMapper().findAndRegisterModules()),
+                mock(GovernanceStore.class));
+
+        List<OptimizationSuggestion> suggestions = service.suggestions("skill-a", "",
+                RuntimeOperationsWindow.TWENTY_FOUR_HOURS, "production");
+
+        assertThat(suggestions).isNotEmpty().allSatisfy(item -> assertThat(item.version()).isEqualTo("1.0.0"));
     }
 }

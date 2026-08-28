@@ -78,6 +78,25 @@ function messageForApiError(code, serverMessage, status, retryAfterSeconds, deta
     const validationDetails = formatValidationDetails(details);
     if (validationDetails) return `Skill 包校验失败：${validationDetails}`;
   }
+  if (code === "QUALITY_GATE_BLOCKED") {
+    const optimizationGateMessage = formatOptimizationGateMessage(details);
+    if (optimizationGateMessage) return optimizationGateMessage;
+    const gateDetails = formatValidationDetails(details);
+    if (gateDetails) return `质量门禁未通过：${gateDetails}`;
+    return "质量门禁未通过，请完成评测并处理阻断原因后再发布";
+  }
+  if (code === "REVIEW_STATE_CONFLICT") {
+    return "审核状态已变化或需要另一名审核人，请刷新审核队列后重试";
+  }
+  if (code === "SKILL_VERSION_CONFLICT") {
+    return "Skill 版本已存在或必须高于最新版本，请提升版本号后重新上传";
+  }
+  if (code === "RUNNER_VERSION_NOT_ALLOWED") {
+    return "只能对已发布的 Skill 版本执行评测，请选择已发布版本";
+  }
+  if (code === "RUNNER_SCENARIO_INVALID") {
+    return "Runner 场景不在允许范围内，请选择受控 Mock 场景";
+  }
   return serverMessage || `Request failed with status ${status}`;
 }
 
@@ -94,4 +113,19 @@ function formatValidationDetails(details) {
     })
     .filter(Boolean)
     .join("；");
+}
+
+function formatOptimizationGateMessage(details) {
+  const reasons = (Array.isArray(details) ? details : [])
+    .map((detail) => typeof detail === "string" ? detail.trim() : detail?.reason)
+    .filter((reason) => typeof reason === "string" && reason.startsWith("OPTIMIZATION_"));
+  if (!reasons.length) return "";
+  const labels = reasons.map((reason) => ({
+    OPTIMIZATION_EXPERIMENT_INCOMPLETE: "实验仍在排队或运行中",
+    OPTIMIZATION_EXPERIMENT_FAILED: "最新实验失败",
+    OPTIMIZATION_EXPERIMENT_CANCELLED: "最新实验已取消",
+    OPTIMIZATION_DECISION_REQUIRED: "实验尚未生成决策",
+    OPTIMIZATION_DECISION_BLOCKED: "实验决策不允许发布",
+  }[reason] || reason));
+  return `优化实验门禁未通过：${labels.join("；")}。请前往质量管理中心处理实验后再发布`;
 }

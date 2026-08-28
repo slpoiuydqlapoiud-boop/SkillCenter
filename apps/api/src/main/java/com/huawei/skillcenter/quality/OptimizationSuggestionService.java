@@ -81,9 +81,8 @@ public class OptimizationSuggestionService {
     public List<OptimizationSuggestion> suggestions(String skillId, String version,
                                                      RuntimeOperationsWindow window, String dataSource,
                                                      String runtimeId, String mcpServerId, String llmProviderId) {
-        java.util.stream.Stream<QualitySnapshot> snapshotStream = hasEnvironmentFilter(runtimeId, mcpServerId, llmProviderId)
-                ? qualityEvaluationService.snapshots(skillId, runtimeId, mcpServerId, llmProviderId).stream()
-                : qualityEvaluationService.snapshots(skillId).stream();
+        java.util.stream.Stream<QualitySnapshot> snapshotStream = qualityEvaluationService
+                .snapshots(skillId, dataSource, runtimeId, mcpServerId, llmProviderId).stream();
         QualitySnapshot latest = snapshotStream
                 .filter(snapshot -> version == null || version.isBlank() || version.equals(snapshot.skillVersion()))
                 .findFirst()

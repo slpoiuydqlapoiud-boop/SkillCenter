@@ -8,7 +8,7 @@
     "build": "vite build && node scripts/prepare-sites-build.mjs",
     "preview": "vite preview",
     "test:sites": "node --test tests/sites-worker.test.mjs",
-    "test": "node --test tests/auth.test.mjs tests/login-view.test.mjs tests/navigation.test.mjs tests/upload.test.mjs tests/state.test.mjs tests/sites-worker.test.mjs tests/api-client.test.mjs tests/distribution.test.mjs tests/review-queue.test.mjs tests/analytics.test.mjs tests/governance.test.mjs tests/operations-metrics.test.mjs tests/detail-layout.test.mjs tests/detail-view-interaction.test.mjs tests/collections-view.test.mjs tests/vite-proxy.test.mjs"
+    "test": "node --test tests/auth.test.mjs tests/login-view.test.mjs tests/navigation.test.mjs tests/upload.test.mjs tests/state.test.mjs tests/sites-worker.test.mjs tests/api-client.test.mjs tests/distribution.test.mjs tests/review-queue.test.mjs tests/analytics.test.mjs tests/governance.test.mjs tests/export-governance.test.mjs tests/operations-metrics.test.mjs tests/operations-view.test.mjs tests/detail-layout.test.mjs tests/detail-view-interaction.test.mjs tests/collections-view.test.mjs tests/quality-center-view.test.mjs tests/vite-proxy.test.mjs"
   },
   "dependencies": {
     "@phosphor-icons/web": "^2.1.2",
