@@ -29,6 +29,7 @@ public class SkillSearchConnectivityProbeService {
     private final GovernanceStore governanceStore;
     private final Clock clock;
     private final Duration probeTtl;
+    private final String probeIdentity;
     private volatile SkillSearchProbeResult lastProbe;
 
     @Autowired
@@ -46,6 +47,8 @@ public class SkillSearchConnectivityProbeService {
         this.clock = clock == null ? Clock.systemUTC() : clock;
         this.probeTtl = probeTtl == null || probeTtl.isZero() || probeTtl.isNegative()
                 ? Duration.ofSeconds(1) : probeTtl;
+        this.probeIdentity = index instanceof SkillSearchRemoteHealth remoteHealth
+                ? remoteHealth.probeIdentity() : "";
         this.lastProbe = restoreLastProbe();
     }
 
@@ -84,6 +87,7 @@ public class SkillSearchConnectivityProbeService {
         metadata.put("status", result.status());
         metadata.put("reason", result.reasonCode());
         metadata.put("latencyMs", String.valueOf(result.latencyMs()));
+        if (!probeIdentity.isBlank()) metadata.put("identity", probeIdentity);
         if (result.httpStatus() != null) metadata.put("httpStatus", String.valueOf(result.httpStatus()));
         governanceStore.addAudit(new AuditEvent(UUID.randomUUID().toString(), AUDIT_ACTION, RESOURCE_TYPE,
                 result.backend(), actor.userId(), actor.role(), requestId == null ? "" : requestId,
@@ -109,6 +113,8 @@ public class SkillSearchConnectivityProbeService {
         String status = event.metadata().get("status");
         String reason = event.metadata().get("reason");
         String latencyValue = event.metadata().get("latencyMs");
+        String identity = event.metadata().get("identity");
+        if (!probeIdentity.isBlank() && !probeIdentity.equals(identity)) return null;
         if (!SAFE_STATUSES.contains(status) || reason == null || !reason.matches("[A-Z][A-Z0-9_.:-]{2,127}")
                 || latencyValue == null) return null;
         long latency;

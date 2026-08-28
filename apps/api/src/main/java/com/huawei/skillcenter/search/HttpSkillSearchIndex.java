@@ -15,6 +15,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -22,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.HexFormat;
 
 /** OpenSearch/Elasticsearch-compatible HTTP search projection with bounded, redacted I/O. */
 public final class HttpSkillSearchIndex implements SkillSearchIndex, SkillSearchRemoteHealth {
@@ -40,6 +43,7 @@ public final class HttpSkillSearchIndex implements SkillSearchIndex, SkillSearch
     private final ProviderCredentialResolver credentials;
     private final Clock clock;
     private final Duration probeTtl;
+    private final String probeIdentity;
     private volatile Snapshot snapshot = new Snapshot("NOT_READY", 0, 0, "", null, "");
     private volatile SkillSearchProbeResult lastProbe;
 
@@ -70,11 +74,17 @@ public final class HttpSkillSearchIndex implements SkillSearchIndex, SkillSearch
         this.credentials = credentials == null ? reference -> "" : credentials;
         this.clock = clock == null ? Clock.systemUTC() : clock;
         this.probeTtl = validProbeTtl(probeTtl);
+        this.probeIdentity = configurationFingerprint(this.endpoint, this.indexName, this.credentialRef);
     }
 
     @Override
     public String backend() {
         return "opensearch";
+    }
+
+    @Override
+    public String probeIdentity() {
+        return probeIdentity;
     }
 
     @Override
@@ -426,6 +436,16 @@ public final class HttpSkillSearchIndex implements SkillSearchIndex, SkillSearch
 
     private SkillSearchProbeResult failedProbe(String reason, long started, Instant checkedAt) {
         return new SkillSearchProbeResult("opensearch", "FAILED", reason, null, elapsedMs(started), checkedAt);
+    }
+
+    private static String configurationFingerprint(String endpoint, String indexName, String credentialRef) {
+        String input = endpoint + "\n" + indexName + "\n" + credentialRef;
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(input.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is unavailable", exception);
+        }
     }
 
     private long elapsedMs(long started) {
