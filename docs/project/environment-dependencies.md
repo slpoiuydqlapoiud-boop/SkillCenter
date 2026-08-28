@@ -49,6 +49,7 @@ py -3.11 -m unittest discover -s tests -p "test_*.py"
 关键配置位置：
 
 - API 默认配置：`apps/api/src/main/resources/application.yml`
+- 本地依赖编排：`deploy/local/compose.yaml`，变量模板：`deploy/local/.env.example`
 - 外部 Provider/Redis 联调手册：`docs/project/M11-external-integration-runbook.md`
 - Prometheus/Grafana/Alertmanager 模板：`deploy/observability/`
 - 开发依赖：`requirements-dev.txt`、`apps/api/pom.xml`、`apps/web/package.json`
