@@ -101,6 +101,33 @@ class OperationsMetricsServiceTest {
         assertThat(snapshot.health().metricsPersistence()).isEqualTo("ENABLED");
     }
 
+    @Test
+    void localMetricsReadinessIsNotReadyForSharedScheduling() {
+        OperationsMetricsService service = new OperationsMetricsService(
+                Clock.fixed(Instant.parse("2026-08-18T06:00:10Z"), ZoneOffset.UTC), "", false);
+
+        OperationsMetricsReadiness readiness = service.readiness();
+
+        assertThat(readiness.backend()).isEqualTo("local");
+        assertThat(readiness.status()).isEqualTo("NOT_READY");
+        assertThat(readiness.shared()).isFalse();
+        assertThat(readiness.reasonCode()).isEqualTo("OPERATIONS_METRICS_SHARED_STORE_REQUIRED");
+    }
+
+    @Test
+    void enabledRedisMetricsReadinessIsReadyForSharedScheduling() {
+        OperationsMetricsService service = new OperationsMetricsService(
+                Clock.fixed(Instant.parse("2026-08-18T06:00:10Z"), ZoneOffset.UTC), "", false,
+                new RedisOperationsMetricsStore(new SharedClient()));
+
+        OperationsMetricsReadiness readiness = service.readiness();
+
+        assertThat(readiness.backend()).isEqualTo("redis");
+        assertThat(readiness.status()).isEqualTo("READY");
+        assertThat(readiness.shared()).isTrue();
+        assertThat(readiness.reasonCode()).isEqualTo("OPERATIONS_METRICS_REDIS_READY");
+    }
+
     private static final class SharedClient implements RedisOperationsMetricsStore.Client {
         private final Map<Long, OperationsMetricsStore.Bucket> buckets = new ConcurrentHashMap<>();
 

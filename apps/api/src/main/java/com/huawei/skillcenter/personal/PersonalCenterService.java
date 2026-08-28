@@ -1,5 +1,6 @@
 package com.huawei.skillcenter.personal;
 
+import com.huawei.skillcenter.access.SkillNotVisibleException;
 import com.huawei.skillcenter.events.InvocationEvent;
 import com.huawei.skillcenter.events.InvocationEventService;
 import com.huawei.skillcenter.governance.Actor;
@@ -12,6 +13,7 @@ import com.huawei.skillcenter.governance.RoleGuard;
 import com.huawei.skillcenter.governance.SkillVersion;
 import com.huawei.skillcenter.skill.PageResult;
 import com.huawei.skillcenter.skill.SkillCatalogService;
+import com.huawei.skillcenter.skill.SkillNotFoundException;
 import com.huawei.skillcenter.skill.SkillQuery;
 import com.huawei.skillcenter.skill.SkillRecord;
 import com.huawei.skillcenter.skill.SkillSummary;
@@ -56,7 +58,7 @@ public class PersonalCenterService {
     public List<PersonalSkillView> mySkills(Actor actor) {
         requireActor(actor);
         Map<String, PersonalSkillView> result = new LinkedHashMap<>();
-        PageResult<SkillSummary> visible = catalogService.list(new SkillQuery("", "", "", "", 1, 500));
+        PageResult<SkillSummary> visible = catalogService.list(new SkillQuery("", "", "", "", 1, 500), actor);
         for (SkillSummary summary : visible.items()) {
             if (actor.userId().equals(summary.owner()) || actor.userId().equals(summary.team())) {
                 result.put(summary.id(), fromSummary(summary));
@@ -75,13 +77,14 @@ public class PersonalCenterService {
         return store.favoritesForUser(actor.userId()).stream()
                 .sorted(Comparator.comparing(FavoriteRecord::createdAt, Comparator.nullsLast(Comparator.reverseOrder())))
                 .map(FavoriteRecord::skillId)
-                .map(this::lookupSkill)
+                .map(skillId -> lookupSkill(skillId, actor))
+                .flatMap(java.util.Optional::stream)
                 .toList();
     }
 
     public PersonalSkillView addFavorite(Actor actor, String skillId, String requestId) {
         requireActor(actor);
-        PersonalSkillView skill = lookupSkillOrThrow(skillId);
+        PersonalSkillView skill = lookupSkillOrThrow(skillId, actor);
         Instant now = Instant.now();
         store.addFavorite(new FavoriteRecord(actor.userId(), skillId, now), audit("FAVORITE_ADDED", skillId, actor, requestId, now));
         return skill;
@@ -116,25 +119,28 @@ public class PersonalCenterService {
         return new InvocationHistoryPage(filtered.subList(fromIndex, toIndex), page, pageSize, filtered.size());
     }
 
-    private PersonalSkillView lookupSkill(String skillId) {
+    private java.util.Optional<PersonalSkillView> lookupSkill(String skillId, Actor actor) {
         try {
-            return fromRecord(catalogService.detail(skillId));
-        } catch (RuntimeException ignored) {
+            return java.util.Optional.of(fromRecord(catalogService.detail(skillId, actor)));
+        } catch (SkillNotVisibleException hidden) {
+            return java.util.Optional.empty();
+        } catch (SkillNotFoundException missing) {
             return store.snapshot().versions().stream()
                     .filter(version -> skillId.equals(version.skillId()))
                     .max(Comparator.comparing(SkillVersion::publishedAt,
                             Comparator.nullsLast(Comparator.naturalOrder())))
                     .map(this::fromVersion)
-                    .orElseGet(() -> new PersonalSkillView(skillId, skillId, "", "unknown", "", "", "", "",
-                            new com.huawei.skillcenter.skill.SkillMetrics(0, 0, 0, 0, 0), false));
+                    .map(java.util.Optional::of)
+                    .orElseGet(() -> java.util.Optional.of(new PersonalSkillView(skillId, skillId, "", "unknown", "", "", "", "",
+                            new com.huawei.skillcenter.skill.SkillMetrics(0, 0, 0, 0, 0), false)));
         }
     }
 
-    private PersonalSkillView lookupSkillOrThrow(String skillId) {
+    private PersonalSkillView lookupSkillOrThrow(String skillId, Actor actor) {
         if (store.snapshot().versions().stream().noneMatch(version -> skillId.equals(version.skillId()))) {
-            catalogService.detail(skillId);
+            catalogService.detail(skillId, actor);
         }
-        return lookupSkill(skillId);
+        return lookupSkill(skillId, actor).orElseThrow(SkillNotVisibleException::new);
     }
 
     private PersonalSkillView fromRecord(SkillRecord record) {

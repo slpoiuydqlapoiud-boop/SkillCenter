@@ -9,11 +9,13 @@ import com.huawei.skillcenter.governance.GovernanceStore;
 import com.huawei.skillcenter.governance.InstallationRecord;
 import com.huawei.skillcenter.governance.ReviewTask;
 import com.huawei.skillcenter.governance.SkillVersion;
+import com.huawei.skillcenter.access.SkillNotVisibleException;
 import com.huawei.skillcenter.skill.PageResult;
 import com.huawei.skillcenter.skill.SkillCatalogService;
 import com.huawei.skillcenter.skill.SkillQuery;
 import com.huawei.skillcenter.skill.SkillRecord;
 import com.huawei.skillcenter.skill.SkillRepository;
+import com.huawei.skillcenter.skill.SkillSummary;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -26,6 +28,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class PersonalCenterServiceTest {
     @TempDir
@@ -79,6 +88,50 @@ class PersonalCenterServiceTest {
                 .containsExactly("demo");
     }
 
+    @Test
+    void mySkillsUsesActorAwareCatalogList() {
+        GovernanceStore store = new GovernanceStore(tempDir.resolve("my-skills.json"), List.of());
+        SkillCatalogService catalog = mock(SkillCatalogService.class);
+        InvocationEventService events = new InvocationEventService();
+        Actor actor = new Actor("alice", "maintainer");
+        SkillSummary summary = new SkillSummary("demo", "Demo", "1.0.0", "desc", "other", List.of(),
+                "low", "low", "team-a", "alice", "", "blue", "published", "2026-08-17",
+                new com.huawei.skillcenter.skill.SkillMetrics(0, 0, 0, 0, 0));
+
+        when(catalog.list(any(SkillQuery.class))).thenReturn(new PageResult<>(List.of(), 1, 500, 0));
+        when(catalog.list(any(SkillQuery.class), eq(actor))).thenReturn(new PageResult<>(List.of(summary), 1, 500, 1));
+
+        PersonalCenterService service = new PersonalCenterService(store, catalog, events);
+
+        assertThat(service.mySkills(actor)).extracting(PersonalSkillView::id).containsExactly("demo");
+        verify(catalog).list(any(SkillQuery.class), eq(actor));
+        verify(catalog, never()).detail(any(String.class));
+    }
+
+    @Test
+    void favoritesAndAddFavoriteUseActorAwareCatalogDetail() {
+        GovernanceStore store = new GovernanceStore(tempDir.resolve("favorites.json"), List.of());
+        SkillCatalogService catalog = mock(SkillCatalogService.class);
+        InvocationEventService events = new InvocationEventService();
+        Actor actor = new Actor("alice", "viewer");
+        SkillRecord demo = skillRecord("demo");
+
+        store.addFavorite(new com.huawei.skillcenter.governance.FavoriteRecord("alice", "demo", Instant.now()), audit("favorite-seed"));
+        when(catalog.detail("demo", actor)).thenReturn(demo);
+
+        PersonalCenterService service = new PersonalCenterService(store, catalog, events);
+
+        assertThat(service.favorites(actor)).extracting(PersonalSkillView::id).containsExactly("demo");
+        verify(catalog).detail("demo", actor);
+
+        when(catalog.detail("hidden")).thenReturn(skillRecord("hidden"));
+        when(catalog.detail("hidden", actor)).thenThrow(new SkillNotVisibleException());
+
+        assertThatThrownBy(() -> service.addFavorite(actor, "hidden", "req-hidden"))
+                .isInstanceOf(SkillNotVisibleException.class);
+        verify(catalog).detail("hidden", actor);
+    }
+
     private PersonalCenterService service(GovernanceStore store, InvocationEventService events) {
         SkillRepository repository = new SkillRepository() {
             @Override
@@ -93,6 +146,13 @@ class PersonalCenterServiceTest {
         };
         return new PersonalCenterService(store, new SkillCatalogService(repository, store,
                 new ObjectMapper().findAndRegisterModules()), events);
+    }
+
+    private SkillRecord skillRecord(String skillId) {
+        return new SkillRecord(skillId, skillId, "1.0.0", "desc", "other", List.of(), "low", "low",
+                "team-a", "owner", "", "blue", "published", "2026-08-17", "2026-08-17",
+                "Java", "Java", "", List.of(), List.of(), List.of(), "", "", "", List.of(),
+                new com.huawei.skillcenter.skill.SkillMetrics(0, 0, 0, 0, 0));
     }
 
     private GovernanceStore storeWithVersion(String skillId, String version, String status, String uploadedBy) {

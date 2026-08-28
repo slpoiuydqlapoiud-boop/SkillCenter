@@ -30,7 +30,7 @@ public class InstallationService {
 
     public DistributionResponse createManifest(String skillId, InstallationRequest request, Actor actor, String requestId) {
         RoleGuard.require(actor, Set.of("viewer", "maintainer", "reviewer", "admin"));
-        InstallManifest manifest = distributionService.createManifest(skillId, request);
+        InstallManifest manifest = distributionService.createManifest(skillId, request, actor);
         Instant now = Instant.now();
         String clientType = request == null || request.clientType() == null || request.clientType().isBlank()
                 ? "codex" : request.clientType();

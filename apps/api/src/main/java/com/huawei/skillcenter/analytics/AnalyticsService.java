@@ -39,7 +39,7 @@ public class AnalyticsService {
 
     public AnalyticsOverview overview(AnalyticsQuery query, Actor actor) {
         RoleGuard.require(actor, java.util.Set.of("viewer", "maintainer", "reviewer", "admin"));
-        PageResult<SkillSummary> page = catalogService.list(new SkillQuery("", "", "", "", 1, 50));
+        PageResult<SkillSummary> page = catalogService.list(new SkillQuery("", "", "", "", 1, 50), actor);
         List<SkillSummary> skills = page.items();
         List<InvocationEvent> events = eventService.events().stream()
                 .filter(event -> visibleEvent(event, skills, actor))

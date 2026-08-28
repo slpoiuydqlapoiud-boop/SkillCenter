@@ -1,6 +1,7 @@
 package com.huawei.skillcenter.distribution;
 
 import com.huawei.skillcenter.api.RequestIdFilter;
+import com.huawei.skillcenter.governance.ActorResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -16,9 +17,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/distribution/artifacts")
 public class ArtifactController {
     private final ArtifactDownloadService service;
+    private final ActorResolver actorResolver;
 
     public ArtifactController(ArtifactDownloadService service) {
+        this(service, new ActorResolver());
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ArtifactController(ArtifactDownloadService service, ActorResolver actorResolver) {
         this.service = service;
+        this.actorResolver = actorResolver;
     }
 
     @GetMapping("/{skillId}/{version}")
@@ -26,7 +34,8 @@ public class ArtifactController {
                                       @PathVariable String version,
                                       @RequestParam String token,
                                       HttpServletRequest request) {
-        ArtifactDownloadService.DownloadedArtifact artifact = service.download(skillId, version, token);
+        ArtifactDownloadService.DownloadedArtifact artifact = service.download(skillId, version, token,
+                actorResolver.resolve(request));
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/zip"))
                 .contentLength(artifact.sizeBytes())

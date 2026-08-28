@@ -35,13 +35,35 @@ public class PackageValidationService {
     private final long maxPackageBytes;
     private final long maxUncompressedBytes;
     private final JsonSchema skillSchema;
+    private final PackageSecurityScanCoordinator securityScanCoordinator;
+
+    public PackageValidationService(ObjectMapper objectMapper, long maxPackageBytes, long maxUncompressedBytes) {
+        this(objectMapper, maxPackageBytes, maxUncompressedBytes,
+                new PackageSecurityScanCoordinator(new PackageSecurityScanService(),
+                        new ContractOnlyExternalPackageSecurityScanner(), PackageSecurityExternalMode.DISABLED));
+    }
 
     public PackageValidationService(ObjectMapper objectMapper,
+                                    long maxPackageBytes,
+                                    long maxUncompressedBytes,
+                                    PackageSecurityScanService securityScanService) {
+        this(objectMapper, maxPackageBytes, maxUncompressedBytes,
+                new PackageSecurityScanCoordinator(securityScanService, new ContractOnlyExternalPackageSecurityScanner(),
+                        PackageSecurityExternalMode.DISABLED));
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public PackageValidationService(ObjectMapper objectMapper,
                                     @org.springframework.beans.factory.annotation.Value("${skill-center.package-max-bytes:20971520}") long maxPackageBytes,
-                                    @org.springframework.beans.factory.annotation.Value("${skill-center.package-max-uncompressed-bytes:104857600}") long maxUncompressedBytes) {
+                                    @org.springframework.beans.factory.annotation.Value("${skill-center.package-max-uncompressed-bytes:104857600}") long maxUncompressedBytes,
+                                    PackageSecurityScanCoordinator securityScanCoordinator) {
         this.objectMapper = objectMapper;
         this.maxPackageBytes = maxPackageBytes;
         this.maxUncompressedBytes = maxUncompressedBytes;
+        this.securityScanCoordinator = securityScanCoordinator == null
+                ? new PackageSecurityScanCoordinator(new PackageSecurityScanService(),
+                new ContractOnlyExternalPackageSecurityScanner(), PackageSecurityExternalMode.DISABLED)
+                : securityScanCoordinator;
         this.skillSchema = loadSkillSchema();
     }
 
@@ -49,6 +71,8 @@ public class PackageValidationService {
         List<PackageValidationResult.ValidationError> errors = new ArrayList<>();
         String skillId = null;
         String version = null;
+        String riskLevel = "low";
+        PackageSecurityScanResult securityScan = new PackageSecurityScanResult("NOT_SCANNED", List.of());
         long sizeBytes = 0;
         if (!Files.isRegularFile(zipPath)) {
             return invalid(errors, "PACKAGE_NOT_FOUND", "file", "上传文件不存在");
@@ -111,6 +135,7 @@ public class PackageValidationService {
                         JsonNode skillJson = objectMapper.readTree(zip.getInputStream(zip.getEntry(skillJsonPath)));
                         skillId = text(skillJson, "id");
                         version = text(skillJson, "version");
+                        riskLevel = riskLevel(skillJson.path("permissions"));
                         Set<ValidationMessage> schemaErrors = skillSchema.validate(skillJson);
                         schemaErrors.stream().sorted(java.util.Comparator.comparing(ValidationMessage::getMessage))
                                 .forEach(error -> errors.add(new PackageValidationResult.ValidationError("SCHEMA_INVALID", "skill.json", error.getMessage())));
@@ -129,8 +154,13 @@ public class PackageValidationService {
         } catch (IOException | RuntimeException exception) {
             errors.add(new PackageValidationResult.ValidationError("ZIP_INVALID", "file", "无法读取或解析 ZIP 文件"));
         }
+        securityScan = securityScanCoordinator.scan(zipPath);
+        securityScan.findings().forEach(finding -> errors.add(new PackageValidationResult.ValidationError(
+                finding.code(), finding.path(), finding.reason())));
         String sha256 = sha256(zipPath, errors);
-        return new PackageValidationResult(errors.isEmpty(), skillId, version, sha256, sizeBytes, List.copyOf(errors));
+        return new PackageValidationResult(errors.isEmpty() && "PASSED".equals(securityScan.status()),
+                skillId, version, sha256, sizeBytes, List.copyOf(errors), riskLevel,
+                securityScan.status(), securityScan.findings(), securityScan.scannerId(), securityScan.scannerVersion());
     }
 
     private PackageValidationResult invalid(List<PackageValidationResult.ValidationError> errors, String skillId, String version, long sizeBytes) {
@@ -157,6 +187,25 @@ public class PackageValidationService {
     private String text(JsonNode node, String field) {
         JsonNode value = node.get(field);
         return value == null || value.isNull() ? null : value.asText();
+    }
+
+    private String riskLevel(JsonNode permissions) {
+        if (permissions == null || !permissions.isObject()) {
+            return "low";
+        }
+        String workspace = permissions.path("workspace").asText("none");
+        String network = permissions.path("network").asText("none");
+        String shell = permissions.path("shell").asText("none");
+        String credentials = permissions.path("credentials").asText("none");
+        if ("write".equals(workspace) || "external".equals(network)
+                || "unrestricted".equals(shell) || "declared".equals(credentials)) {
+            return "high";
+        }
+        if ("read".equals(workspace) || "internal".equals(network) || "restricted".equals(shell)
+                || permissions.path("mcpServers").isArray() && permissions.path("mcpServers").size() > 0) {
+            return "medium";
+        }
+        return "low";
     }
 
     private String sha256(Path path, List<PackageValidationResult.ValidationError> errors) {

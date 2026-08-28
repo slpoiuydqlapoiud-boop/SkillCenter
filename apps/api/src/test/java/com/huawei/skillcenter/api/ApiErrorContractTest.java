@@ -77,4 +77,40 @@ class ApiErrorContractTest {
                 .andExpect(jsonPath("$.error.code").value("CSRF_ORIGIN_REJECTED"))
                 .andExpect(jsonPath("$.requestId").isNotEmpty());
     }
+
+    @Test
+    void lifecycleImportRejectsUnexpectedJsonFieldsWithSchemaEnvelope() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/skill-lifecycle/projection/import")
+                        .header("X-User-Id", "lifecycle-admin")
+                        .header("X-User-Role", "admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"sourceSha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","actor":"admin","token":"secret"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("EVENT_SCHEMA_INVALID"))
+                .andExpect(jsonPath("$.requestId").isNotEmpty());
+    }
+}
+
+@SpringBootTest
+@AutoConfigureMockMvc
+class SensitiveResponseContractTest {
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void lifecycleProjectionStatusDoesNotExposeSensitiveFields() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/skill-lifecycle/projection/status")
+                        .header("X-User-Id", "lifecycle-admin")
+                        .header("X-User-Role", "admin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.actor").doesNotExist())
+                .andExpect(jsonPath("$.data.requestId").doesNotExist())
+                .andExpect(jsonPath("$.data.path").doesNotExist())
+                .andExpect(jsonPath("$.data.prompt").doesNotExist())
+                .andExpect(jsonPath("$.data.trace").doesNotExist())
+                .andExpect(jsonPath("$.data.token").doesNotExist())
+                .andExpect(jsonPath("$.data.dbSettings").doesNotExist());
+    }
 }

@@ -68,6 +68,7 @@ public class RateLimitService {
                 "DISTRIBUTION_CONSUME", new RateLimitRule(configured.getDistributionConsume(), window),
                 "DISTRIBUTION_DOWNLOAD", new RateLimitRule(configured.getDistributionDownload(), window),
                 "INVOCATION_INGEST", new RateLimitRule(configured.getInvocationIngest(), window),
+                "RUNTIME_SUMMARY_INGEST", new RateLimitRule(configured.getRuntimeSummaryIngest(), window),
                 "EXPORT_CREATE", new RateLimitRule(configured.getExportCreate(), window));
     }
 

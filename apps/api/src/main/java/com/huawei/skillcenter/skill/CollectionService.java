@@ -1,5 +1,6 @@
 package com.huawei.skillcenter.skill;
 
+import com.huawei.skillcenter.access.SkillNotVisibleException;
 import com.huawei.skillcenter.governance.Actor;
 import com.huawei.skillcenter.governance.CollectionDefinition;
 import com.huawei.skillcenter.governance.CollectionNotFoundException;
@@ -36,7 +37,7 @@ public class CollectionService {
     public PageResult<CollectionDefinition> page(Actor actor, int page, int pageSize, String query, String sort) {
         GovernanceConfigurationView view = governanceService.read(actor);
         validatePage(page, pageSize, view.platformPolicy());
-        List<CollectionDefinition> sorted = sorted(view.collections(), query, sort);
+        List<CollectionDefinition> sorted = sorted(view.collections(), query, sort, actor);
         int from = Math.min((page - 1) * pageSize, sorted.size());
         int to = Math.min(from + pageSize, sorted.size());
         return new PageResult<>(sorted.subList(from, to), page, pageSize, sorted.size());
@@ -47,30 +48,33 @@ public class CollectionService {
         CollectionDefinition collection = view.collections().stream()
                 .filter(item -> item.collectionId().equals(collectionId))
                 .findFirst().orElseThrow(() -> new CollectionNotFoundException(collectionId));
-        List<SkillSummary> skills = collection.skillIds().stream().map(this::findActiveSkill).flatMap(java.util.Optional::stream).toList();
+        List<SkillSummary> skills = collection.skillIds().stream()
+                .map(skillId -> findActiveSkill(skillId, actor))
+                .flatMap(java.util.Optional::stream)
+                .toList();
         return new CollectionDetail(collection, skills);
     }
 
-    private java.util.Optional<SkillSummary> findActiveSkill(String skillId) {
+    private java.util.Optional<SkillSummary> findActiveSkill(String skillId, Actor actor) {
         try {
-            SkillRecord skill = catalogService.detail(skillId);
+            SkillRecord skill = catalogService.detail(skillId, actor);
             if (skill == null || skill.status() == null
                     || !java.util.Set.of("published", "deprecated").contains(skill.status().toLowerCase(java.util.Locale.ROOT))) {
                 return java.util.Optional.empty();
             }
             return java.util.Optional.of(SkillSummary.from(skill));
-        } catch (SkillNotFoundException exception) {
+        } catch (SkillNotFoundException | SkillNotVisibleException exception) {
             return java.util.Optional.empty();
         }
     }
 
-    private List<CollectionDefinition> sorted(List<CollectionDefinition> values, String query, String sort) {
+    private List<CollectionDefinition> sorted(List<CollectionDefinition> values, String query, String sort, Actor actor) {
         String normalizedQuery = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         Comparator<CollectionDefinition> comparator = switch (normalizeSort(sort)) {
             case "order" -> Comparator.comparingInt(CollectionDefinition::sortOrder);
-            case "downloads" -> Comparator.comparingInt((CollectionDefinition item) -> aggregate(item, metrics -> metrics == null ? 0 : metrics.installs()));
-            case "calls" -> Comparator.comparingInt((CollectionDefinition item) -> aggregate(item, metrics -> metrics == null ? 0 : metrics.calls()));
-            case "favorites" -> Comparator.comparingInt((CollectionDefinition item) -> aggregate(item, metrics -> metrics == null ? 0 : metrics.favorites()));
+            case "downloads" -> Comparator.comparingInt((CollectionDefinition item) -> aggregate(item, metrics -> metrics == null ? 0 : metrics.installs(), actor));
+            case "calls" -> Comparator.comparingInt((CollectionDefinition item) -> aggregate(item, metrics -> metrics == null ? 0 : metrics.calls(), actor));
+            case "favorites" -> Comparator.comparingInt((CollectionDefinition item) -> aggregate(item, metrics -> metrics == null ? 0 : metrics.favorites(), actor));
             default -> Comparator.comparingLong(this::updatedAt);
         };
         var result = values.stream()
@@ -86,8 +90,8 @@ public class CollectionService {
                 item.ownerTeamId() == null ? "" : item.ownerTeamId()).toLowerCase(Locale.ROOT);
     }
 
-    private int aggregate(CollectionDefinition collection, ToIntFunction<SkillMetrics> metric) {
-        return collection.skillIds().stream().map(this::findActiveSkill)
+    private int aggregate(CollectionDefinition collection, ToIntFunction<SkillMetrics> metric, Actor actor) {
+        return collection.skillIds().stream().map(skillId -> findActiveSkill(skillId, actor))
                 .flatMap(java.util.Optional::stream)
                 .map(SkillSummary::metrics)
                 .mapToInt(metrics -> metric.applyAsInt(metrics == null ? new SkillMetrics(0, 0, 0, 0, 0) : metrics))

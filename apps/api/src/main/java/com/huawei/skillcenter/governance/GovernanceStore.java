@@ -1,56 +1,66 @@
 package com.huawei.skillcenter.governance;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.huawei.skillcenter.distribution.DistributionAuthorization;
 import com.huawei.skillcenter.skill.SkillRecord;
 import com.huawei.skillcenter.skill.SkillRepository;
 import com.huawei.skillcenter.skill.SkillQuery;
 import com.huawei.skillcenter.notification.NotificationRecord;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Component
 public class GovernanceStore {
-    private final Path statePath;
-    private final ObjectMapper objectMapper;
+    private final GovernanceStateRepository stateRepository;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final AuditIntegrityService auditIntegrityService = new AuditIntegrityService();
     private GovernanceSnapshot current;
+    private long currentRevision;
 
     public GovernanceStore(Path statePath, List<SkillRecord> seedSkills) {
-        this(statePath, new ObjectMapper().findAndRegisterModules(), seedSkills);
+        this(new JsonGovernanceStateRepository(statePath,
+                new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules()), seedSkills);
     }
 
     @Autowired
-    public GovernanceStore(ObjectMapper objectMapper,
-                           @Value("${skill-center.governance-storage:./data/governance/state.json}") String statePath,
-                           SkillRepository skillRepository) {
-        this(Path.of(statePath), objectMapper,
-                skillRepository.findPublished(new SkillQuery("", "", "", "", 1, 50)).items());
+    public GovernanceStore(SkillRepository skillRepository,
+                           GovernanceStateRepository stateRepository) {
+        this(stateRepository, skillRepository.findPublished(new SkillQuery("", "", "", "", 1, 50)).items());
     }
 
-    private GovernanceStore(Path statePath, ObjectMapper objectMapper, List<SkillRecord> seedSkills) {
-        this.statePath = statePath.toAbsolutePath().normalize();
-        this.objectMapper = objectMapper;
-        this.current = loadOrSeed(seedSkills);
+    public GovernanceStore(GovernanceStateRepository stateRepository, List<SkillRecord> seedSkills) {
+        if (stateRepository == null || seedSkills == null) {
+            throw new IllegalArgumentException("stateRepository and seedSkills are required");
+        }
+        this.stateRepository = stateRepository;
+        GovernanceStateRepository.GovernanceState loaded = stateRepository.loadOrSeed(
+                () -> seedSnapshot(seedSkills));
+        this.currentRevision = loaded.revision();
+        this.current = normalized(loaded.snapshot());
     }
 
     public GovernanceSnapshot snapshot() {
         lock.readLock().lock();
         try {
             return current;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public long revision() {
+        lock.readLock().lock();
+        try {
+            return currentRevision;
         } finally {
             lock.readLock().unlock();
         }
@@ -158,6 +168,113 @@ public class GovernanceStore {
             return copyWith(snapshot, versions, snapshot.reviews(), snapshot.installations(), audits,
                     snapshot.authorizations(), snapshot.favorites(), snapshot.configuration());
         });
+    }
+
+    /**
+     * Applies a lifecycle transition together with its downstream distribution and notification effects
+     * as one persisted governance snapshot. Consumed authorizations remain immutable history.
+     */
+    public VersionTransitionResult transitionVersion(SkillVersion version,
+                                                     AuditEvent lifecycleAudit,
+                                                     String revokeReason,
+                                                     String notificationType,
+                                                     String notificationTitle,
+                                                     String notificationDetail,
+                                                     Instant occurredAt) {
+        if (version == null || lifecycleAudit == null) {
+            throw new IllegalArgumentException("version and lifecycleAudit are required");
+        }
+        Instant eventTime = occurredAt == null ? Instant.now() : occurredAt;
+        lock.writeLock().lock();
+        try {
+            List<SkillVersion> versions = current.versions().stream()
+                    .map(existing -> existing.packageId().equals(version.packageId()) ? version : existing)
+                    .toList();
+            List<DistributionAuthorization> authorizations = new ArrayList<>(current.authorizations());
+            int revokedCount = 0;
+            if (revokeReason != null && !revokeReason.isBlank()) {
+                List<DistributionAuthorization> transitioned = new ArrayList<>(authorizations.size());
+                for (DistributionAuthorization authorization : authorizations) {
+                    if (version.skillId().equals(authorization.skillId())
+                            && version.version().equals(authorization.version())
+                            && authorization.consumedAt() == null
+                            && authorization.revokedAt() == null) {
+                        transitioned.add(new DistributionAuthorization(
+                                authorization.tokenId(), authorization.tokenDigest(), authorization.skillId(),
+                                authorization.version(), authorization.installationId(), authorization.requestedBy(),
+                                authorization.clientType(), authorization.clientVersion(), authorization.method(),
+                                authorization.issuedAt(), authorization.expiresAt(), authorization.consumedAt(),
+                                eventTime, revokeReason));
+                        revokedCount++;
+                    } else {
+                        transitioned.add(authorization);
+                    }
+                }
+                authorizations = transitioned;
+            }
+
+            List<AuditEvent> audits = new ArrayList<>(current.audits());
+            audits.add(lifecycleAudit);
+            if (revokedCount > 0) {
+                Map<String, String> metadata = new LinkedHashMap<>();
+                metadata.put("skillId", version.skillId());
+                metadata.put("version", version.version());
+                metadata.put("revokedCount", String.valueOf(revokedCount));
+                audits.add(new AuditEvent(UUID.randomUUID().toString(),
+                        "DISTRIBUTION_AUTHORIZATIONS_REVOKED", "SKILL_VERSION",
+                        version.packageId(), lifecycleAudit.actorId(), lifecycleAudit.actorRole(),
+                        lifecycleAudit.requestId(), eventTime, metadata));
+            }
+
+            List<NotificationRecord> notifications = new ArrayList<>(current.notifications());
+            if (notificationType != null && !notificationType.isBlank()
+                    && notificationTitle != null && !notificationTitle.isBlank()
+                    && notificationDetail != null && !notificationDetail.isBlank()) {
+                current.installations().stream()
+                        .filter(installation -> version.skillId().equals(installation.skillId())
+                                && version.version().equals(installation.version()))
+                        .map(InstallationRecord::requestedBy)
+                        .filter(userId -> userId != null && !userId.isBlank())
+                        .forEach(userId -> addLifecycleNotification(notifications, userId,
+                                version, notificationType, notificationTitle, notificationDetail, eventTime));
+                current.authorizations().stream()
+                        .filter(authorization -> version.skillId().equals(authorization.skillId())
+                                && version.version().equals(authorization.version())
+                                && authorization.consumedAt() == null
+                                && authorization.revokedAt() == null)
+                        .map(DistributionAuthorization::requestedBy)
+                        .filter(userId -> userId != null && !userId.isBlank())
+                        .forEach(userId -> addLifecycleNotification(notifications, userId,
+                                version, notificationType, notificationTitle, notificationDetail, eventTime));
+            }
+
+            int notificationCount = notifications.size() - current.notifications().size();
+            GovernanceSnapshot next = copyWith(current, versions, current.reviews(), current.installations(),
+                    audits, authorizations, current.favorites(), current.configuration(), notifications);
+            persist(next);
+            current = next;
+            return new VersionTransitionResult(next, revokedCount, notificationCount);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    private void addLifecycleNotification(List<NotificationRecord> notifications,
+                                          String userId,
+                                          SkillVersion version,
+                                          String type,
+                                          String title,
+                                          String detail,
+                                          Instant occurredAt) {
+        String notificationId = UUID.nameUUIDFromBytes(("skill-lifecycle:" + type + ":"
+                + version.skillId() + ":" + version.version() + ":" + userId)
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString();
+        boolean exists = notifications.stream().anyMatch(existing ->
+                existing.notificationId().equals(notificationId) && existing.userId().equals(userId));
+        if (!exists) {
+            notifications.add(new NotificationRecord(notificationId, userId, type, title, detail,
+                    "alert", occurredAt, false, null));
+        }
     }
 
     public GovernanceSnapshot addFavorite(FavoriteRecord favorite, AuditEvent audit) {
@@ -378,7 +495,11 @@ public class GovernanceStore {
     public void reload() {
         lock.writeLock().lock();
         try {
-            current = readState();
+            GovernanceStateRepository.GovernanceState loaded = stateRepository.load()
+                    .orElseThrow(() -> new GovernancePersistenceException(
+                            new IllegalStateException("governance state is missing")));
+            currentRevision = loaded.revision();
+            current = normalized(loaded.snapshot());
         } finally {
             lock.writeLock().unlock();
         }
@@ -404,9 +525,22 @@ public class GovernanceStore {
                                         List<DistributionAuthorization> authorizations,
                                         List<FavoriteRecord> favorites,
                                         GovernanceConfiguration configuration) {
+        return copyWith(snapshot, versions, reviews, installations, audits, authorizations, favorites,
+                configuration, snapshot.notifications());
+    }
+
+    private GovernanceSnapshot copyWith(GovernanceSnapshot snapshot,
+                                        List<SkillVersion> versions,
+                                        List<ReviewTask> reviews,
+                                        List<InstallationRecord> installations,
+                                        List<AuditEvent> audits,
+                                        List<DistributionAuthorization> authorizations,
+                                        List<FavoriteRecord> favorites,
+                                        GovernanceConfiguration configuration,
+                                        List<NotificationRecord> notifications) {
         return new GovernanceSnapshot(versions, reviews, installations, audits, authorizations, favorites,
                 configuration, snapshot.invocationEvents(), snapshot.exportJobs(), snapshot.retentionPolicy(),
-                integrityFor(snapshot, audits), snapshot.notifications());
+                integrityFor(snapshot, audits), notifications);
     }
 
     private GovernanceSnapshot withM52(GovernanceSnapshot snapshot,
@@ -440,56 +574,38 @@ public class GovernanceStore {
         return result;
     }
 
-    private GovernanceSnapshot loadOrSeed(List<SkillRecord> seedSkills) {
-        if (Files.exists(statePath)) {
-            return readState();
-        }
-        GovernanceSnapshot seeded = seedSkills.stream().map(skill -> new SkillVersion(
+    private GovernanceSnapshot seedSnapshot(List<SkillRecord> seedSkills) {
+        return seedSkills.stream().map(skill -> new SkillVersion(
                         "seed-" + skill.id(), skill.id(), skill.version(), "published", "0".repeat(64), 0,
                         "", "system", Instant.parse(skill.publishedAt() + "T00:00:00Z"), "system",
                         Instant.parse(skill.publishedAt() + "T00:00:00Z"), null))
                 .collect(java.util.stream.Collectors.collectingAndThen(java.util.stream.Collectors.toList(), versions ->
                         new GovernanceSnapshot(versions, List.of(), List.of(), List.of())));
-        persist(seeded);
-        return seeded;
     }
 
-    private GovernanceSnapshot readState() {
-        try {
-            GovernanceSnapshot loaded = objectMapper.readValue(statePath.toFile(), GovernanceSnapshot.class);
-            List<AuditIntegrityEntry> integrity = integrityFor(loaded, loaded.audits());
-            if (integrity.size() == loaded.auditIntegrity().size()) {
-                return loaded;
-            }
-            return new GovernanceSnapshot(loaded.versions(), loaded.reviews(), loaded.installations(), loaded.audits(),
-                    loaded.authorizations(), loaded.favorites(), loaded.configuration(), loaded.invocationEvents(),
-                    loaded.exportJobs(), loaded.retentionPolicy(), integrity, loaded.notifications());
-        } catch (IOException exception) {
-            throw new IllegalStateException("Unable to read governance state", exception);
+    private GovernanceSnapshot normalized(GovernanceSnapshot loaded) {
+        List<AuditIntegrityEntry> integrity = integrityFor(loaded, loaded.audits());
+        if (integrity.size() == loaded.auditIntegrity().size()) {
+            return loaded;
         }
+        return new GovernanceSnapshot(loaded.versions(), loaded.reviews(), loaded.installations(), loaded.audits(),
+                loaded.authorizations(), loaded.favorites(), loaded.configuration(), loaded.invocationEvents(),
+                loaded.exportJobs(), loaded.retentionPolicy(), integrity, loaded.notifications());
     }
 
     private void persist(GovernanceSnapshot snapshot) {
-        try {
-            Path parent = statePath.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Path temporary = statePath.resolveSibling(statePath.getFileName() + ".tmp");
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(temporary.toFile(), snapshot);
-            try {
-                Files.move(temporary, statePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException unsupported) {
-                Files.move(temporary, statePath, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException exception) {
-            throw new GovernancePersistenceException(exception);
-        }
+        GovernanceStateRepository.GovernanceState saved = stateRepository.replace(currentRevision, snapshot);
+        currentRevision = saved.revision();
     }
 
     public static class GovernancePersistenceException extends RuntimeException {
         public GovernancePersistenceException(Throwable cause) {
             super(cause);
         }
+    }
+
+    public record VersionTransitionResult(GovernanceSnapshot snapshot,
+                                          int revokedAuthorizationCount,
+                                          int notificationCount) {
     }
 }

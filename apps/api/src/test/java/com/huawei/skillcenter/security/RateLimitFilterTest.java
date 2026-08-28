@@ -50,6 +50,22 @@ class RateLimitFilterTest {
         assertThat(response.getStatus()).isEqualTo(200);
     }
 
+    @Test
+    void rateLimitsRuntimeSummaryIngestionAndBatchEndpoints() throws Exception {
+        RateLimitService service = new RateLimitService(Clock.systemUTC(),
+                Map.of("RUNTIME_SUMMARY_INGEST", new RateLimitRule(1, Duration.ofMinutes(1))));
+        RateLimitFilter filter = new RateLimitFilter(service, new SecurityErrorWriter(new ObjectMapper()));
+        FilterChain chain = (request, response) -> ((MockHttpServletResponse) response).setStatus(202);
+
+        filter.doFilter(request("POST", "/api/v1/events/runtime-summaries", "client-1"),
+                new MockHttpServletResponse(), chain);
+        MockHttpServletResponse rejected = new MockHttpServletResponse();
+        filter.doFilter(request("POST", "/api/v1/events/runtime-summaries/batch", "client-1"), rejected, chain);
+
+        assertThat(rejected.getStatus()).isEqualTo(429);
+        assertThat(rejected.getHeader("X-RateLimit-Limit")).isEqualTo("1");
+    }
+
     private static MockHttpServletRequest request(String method, String path, String userId) {
         MockHttpServletRequest request = new MockHttpServletRequest(method, path);
         request.addHeader("X-User-Id", userId);

@@ -45,6 +45,7 @@ public class SecurityBoundaryProperties {
         private int distributionConsume = 60;
         private int distributionDownload = 60;
         private int invocationIngest = 120;
+        private int runtimeSummaryIngest = 120;
         private int exportCreate = 10;
 
         public long getWindowSeconds() { return windowSeconds; }
@@ -57,6 +58,8 @@ public class SecurityBoundaryProperties {
         public void setDistributionDownload(int value) { distributionDownload = value; }
         public int getInvocationIngest() { return invocationIngest; }
         public void setInvocationIngest(int value) { invocationIngest = value; }
+        public int getRuntimeSummaryIngest() { return runtimeSummaryIngest; }
+        public void setRuntimeSummaryIngest(int value) { runtimeSummaryIngest = value; }
         public int getExportCreate() { return exportCreate; }
         public void setExportCreate(int value) { exportCreate = value; }
     }

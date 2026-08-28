@@ -31,6 +31,9 @@ class RoleGuardTest {
 
         when(request.getHeader("X-User-Role")).thenReturn("owner");
         assertThrows(ForbiddenException.class, () -> resolver.resolve(request));
+
+        when(request.getHeader("X-User-Role")).thenReturn("security_reviewer");
+        assertThrows(ForbiddenException.class, () -> resolver.resolve(request));
     }
 
     @Test

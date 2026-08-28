@@ -6,9 +6,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+
+import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -27,10 +31,10 @@ class ReviewControllerTest {
 
     @Test
     void reviewerCanApprovePendingUpload() throws Exception {
+        String skillId = "review-skill-" + System.currentTimeMillis();
         MvcResult upload = mockMvc.perform(multipart("/api/v1/skill-packages")
                         .file(new org.springframework.mock.web.MockMultipartFile(
-                                "file", "summarize-release-notes-1.0.0.zip", "application/zip",
-                                new FileSystemResource(canonicalExample()).getInputStream()))
+                                "file", skillId + ".zip", "application/zip", skillMdOnlyZip(skillId)))
                         .header("X-User-Id", "maintainer-1")
                         .header("X-User-Role", "maintainer"))
                 .andExpect(status().isCreated())
@@ -68,11 +72,14 @@ class ReviewControllerTest {
                 .andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
     }
 
-    private static String canonicalExample() {
-        java.nio.file.Path workingDirectory = java.nio.file.Path.of(System.getProperty("user.dir"));
-        java.nio.file.Path repositoryRoot = java.nio.file.Files.isDirectory(workingDirectory.resolve("examples"))
-                ? workingDirectory
-                : workingDirectory.getParent().getParent();
-        return repositoryRoot.resolve("examples/packages/summarize-release-notes-1.0.0.zip").toString();
+    private static byte[] skillMdOnlyZip(String skillId) throws java.io.IOException {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (ZipOutputStream output = new ZipOutputStream(bytes)) {
+            output.putNextEntry(new ZipEntry(skillId + "/SKILL.md"));
+            output.write(("---\nname: " + skillId + "\ndescription: Review test skill\n---\n\n# Review\n")
+                    .getBytes(StandardCharsets.UTF_8));
+            output.closeEntry();
+        }
+        return bytes.toByteArray();
     }
 }

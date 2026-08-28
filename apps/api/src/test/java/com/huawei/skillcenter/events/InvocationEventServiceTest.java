@@ -37,7 +37,8 @@ class InvocationEventServiceTest {
     @Test
     void batchReportsAcceptedDuplicateAndConflictingEventSeparately() {
         UUID duplicateId = UUID.randomUUID();
-        service.ingest(validEvent(duplicateId, "eox-query"));
+        InvocationEvent duplicate = validEvent(duplicateId, "eox-query");
+        service.ingest(duplicate);
         InvocationEvent conflict = new InvocationEvent(
                 "1.0", duplicateId, OffsetDateTime.now(), "eox-query", "1.2.0",
                 new InvocationEvent.Subject("user-1", "network-team"),
@@ -46,7 +47,7 @@ class InvocationEventServiceTest {
 
         InvocationEventBatchResponse response = service.ingestBatch(new InvocationEventBatchRequest(
                 "batch-1", "1.0", List.of(validEvent(UUID.randomUUID(), "eox-query"),
-                validEvent(duplicateId, "eox-query"), conflict)));
+                duplicate, conflict)));
 
         assertThat(response.accepted()).isEqualTo(1);
         assertThat(response.duplicates()).isEqualTo(1);
@@ -57,8 +58,9 @@ class InvocationEventServiceTest {
     @Test
     void ingestionStatsRetainsQualityOutcomeWithoutPayload() {
         UUID id = UUID.randomUUID();
-        service.ingest(validEvent(id, "eox-query"));
-        service.ingest(validEvent(id, "eox-query"));
+        InvocationEvent event = validEvent(id, "eox-query");
+        service.ingest(event);
+        service.ingest(event);
         service.ingestBatch(new InvocationEventBatchRequest("batch-quality", "1.0", List.of(invalidEvent())));
 
         assertThat(service.ingestionStats().entries())

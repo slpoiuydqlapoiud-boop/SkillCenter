@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.HexFormat;
@@ -19,18 +18,29 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class ArtifactPackageService {
     private final SkillCatalogService catalogService;
+    private final ArtifactStorage artifactStorage;
 
     public ArtifactPackageService(SkillCatalogService catalogService) {
+        this(catalogService, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ArtifactPackageService(SkillCatalogService catalogService, ArtifactStorage artifactStorage) {
         this.catalogService = catalogService;
+        this.artifactStorage = artifactStorage;
     }
 
     public ArtifactMetadata metadata(String skillId, String version, SkillVersion governedVersion) {
-        if (governedVersion != null && hasZipArtifact(governedVersion.artifactPath())) {
-            try {
-                return new ArtifactMetadata(governedVersion.sha256(), Files.size(Path.of(governedVersion.artifactPath())));
-            } catch (java.io.IOException ignored) {
-                // Fall through to the generated package when a persisted path is no longer available.
+        if (governedVersion != null && governedVersion.artifactPath() != null
+                && !governedVersion.artifactPath().isBlank()) {
+            if (artifactStorage != null) {
+                ArtifactStorage.ArtifactMetadata metadata = artifactStorage.inspect(
+                        governedVersion.artifactPath(), governedVersion.sha256());
+                return new ArtifactMetadata(metadata.sha256(), metadata.sizeBytes());
             }
+            ArtifactIntegrityVerifier.VerifiedArtifact verified = ArtifactIntegrityVerifier.verify(
+                    Path.of(governedVersion.artifactPath()), governedVersion.sha256());
+            return new ArtifactMetadata(verified.sha256(), verified.sizeBytes());
         }
         GeneratedArtifact generated = generate(skillId, version);
         return new ArtifactMetadata(generated.sha256(), generated.sizeBytes());
@@ -52,10 +62,6 @@ public class ArtifactPackageService {
             throw new IllegalStateException("Unable to generate Skill artifact", exception);
         }
         return new GeneratedArtifact(new ByteArrayResource(bytes), sha256(bytes), bytes.length, skillId, version);
-    }
-
-    private boolean hasZipArtifact(String artifactPath) {
-        return artifactPath != null && !artifactPath.isBlank() && artifactPath.toLowerCase(java.util.Locale.ROOT).endsWith(".zip");
     }
 
     private String sha256(byte[] bytes) {

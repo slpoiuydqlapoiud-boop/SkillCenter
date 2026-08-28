@@ -92,6 +92,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 && uri.matches("/api/v1/events/invocations(?:/batch)?/?")) {
             return "INVOCATION_INGEST";
         }
+        if ("POST".equals(normalizedMethod)
+                && uri.matches("/api/v1/events/runtime-summaries(?:/batch)?/?")) {
+            return "RUNTIME_SUMMARY_INGEST";
+        }
         if ("POST".equals(normalizedMethod) && "/api/v1/admin/exports".equals(uri)) {
             return "EXPORT_CREATE";
         }

@@ -113,6 +113,27 @@ public class OperationsMetricsService {
                 Map.copyOf(new TreeMap<>(aggregate.securityEvents)));
     }
 
+    public OperationsMetricsReadiness readiness() {
+        boolean shared = store.sharedReads();
+        String backend = shared ? "redis" : "local";
+        String storeStatus;
+        try {
+            store.load();
+            storeStatus = store.status();
+        } catch (RuntimeException exception) {
+            storeStatus = "DEGRADED";
+        }
+        boolean ready = shared && "ENABLED".equalsIgnoreCase(storeStatus);
+        return new OperationsMetricsReadiness(
+                backend,
+                ready ? "READY" : "NOT_READY",
+                shared,
+                ready ? "OPERATIONS_METRICS_REDIS_READY"
+                        : shared ? "OPERATIONS_METRICS_REDIS_UNAVAILABLE" : "OPERATIONS_METRICS_SHARED_STORE_REQUIRED",
+                ready ? "Redis metrics store is ready"
+                        : shared ? "Redis metrics store is unavailable" : "Shared Redis metrics store is required");
+    }
+
     public void clear() {
         buckets.clear();
         persist();
