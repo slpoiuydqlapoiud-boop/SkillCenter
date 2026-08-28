@@ -66,9 +66,11 @@ public final class JdbcSkillSearchIndex implements SkillSearchIndex {
                 try {
                     jdbc.update("select pg_advisory_xact_lock(hashtext(?))", LOCK_KEY);
                     SearchState current = readState();
+                    int currentCount = countDocuments();
                     if (current != null && "READY".equals(current.state())
-                            && validatedHash.equals(current.sourceHash())) {
-                        return result(current, countDocuments());
+                            && validatedHash.equals(current.sourceHash())
+                            && currentCount == validatedDocuments.size()) {
+                        return result(current, currentCount);
                     }
 
                     jdbc.update("delete from " + DOCUMENT_TABLE);

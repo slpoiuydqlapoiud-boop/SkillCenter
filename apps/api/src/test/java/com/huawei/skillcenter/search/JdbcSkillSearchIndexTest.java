@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.DefaultTransactionStatus;
 
@@ -42,6 +43,21 @@ class JdbcSkillSearchIndexTest {
         assertThatThrownBy(() -> index.rebuild(List.of(document("skill-a"), document("skill-a")), "source-hash"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("documents must not contain duplicate skillId values");
+    }
+
+    @Test
+    void statusHidesDatabaseFailureBehindStableUnavailableReason() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        when(jdbc.query(anyString(), any(RowMapper.class)))
+                .thenThrow(new DataAccessResourceFailureException("secret connection details"));
+        JdbcSkillSearchIndex index = new JdbcSkillSearchIndex(jdbc, new ObjectMapper().findAndRegisterModules(),
+                transactionManager());
+
+        SkillSearchIndexStatus status = index.status();
+
+        assertThat(status.state()).isEqualTo("NOT_READY");
+        assertThat(status.reasonCode()).isEqualTo("SEARCH_INDEX_PERSISTENCE_UNAVAILABLE");
+        assertThat(status.toString()).doesNotContain("secret connection details");
     }
 
     private SkillSearchDocument document(String skillId) {
