@@ -70,4 +70,22 @@ class SkillSearchBackendReadinessServiceTest {
         assertThat(readiness.status()).isEqualTo("NOT_READY");
         assertThat(readiness.reasonCode()).isEqualTo("SEARCH_INDEX_EVENTS_SCHEMA_REQUIRED");
     }
+
+    @Test
+    void enabledRefreshRetentionRequiresV19Schema() {
+        PersistenceControlProperties properties = mock(PersistenceControlProperties.class);
+        PersistenceBackend persistence = mock(PersistenceBackend.class);
+        SkillSearchIndex index = mock(SkillSearchIndex.class);
+        when(properties.normalizedSearchIndexBackend()).thenReturn("postgresql");
+        when(properties.normalizedBackend()).thenReturn("postgresql");
+        when(properties.searchIndexEventsEnabled()).thenReturn(true);
+        when(properties.searchIndexEventRetentionSchedulerEnabled()).thenReturn(true);
+        when(persistence.status()).thenReturn(PersistenceBackendStatus.ready("postgresql", "18", null));
+
+        SkillSearchBackendReadiness readiness = new SkillSearchBackendReadinessService(properties, persistence, index)
+                .readiness();
+
+        assertThat(readiness.status()).isEqualTo("NOT_READY");
+        assertThat(readiness.reasonCode()).isEqualTo("SEARCH_INDEX_EVENTS_RETENTION_SCHEMA_REQUIRED");
+    }
 }

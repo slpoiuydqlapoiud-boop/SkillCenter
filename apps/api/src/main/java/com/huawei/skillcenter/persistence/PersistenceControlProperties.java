@@ -46,6 +46,8 @@ public class PersistenceControlProperties {
     private String applicationSearchIndexBackend = "";
     @Value("${skill-center.search-index-events.enabled:false}")
     private String applicationSearchIndexEventsEnabled = "false";
+    @Value("${skill-center.search-index-events.retention.scheduler-enabled:false}")
+    private String applicationSearchIndexEventRetentionSchedulerEnabled = "false";
     private String controlStorage = "./data/control";
     private String snapshotStorage = "./data/backups";
     private String startupMode = "fail-closed";
@@ -271,6 +273,10 @@ public class PersistenceControlProperties {
         if (searchIndexEventsEnabled() && !"postgresql".equals(normalizedSearchIndexBackend())) {
             throw new IllegalArgumentException("search-index-events.enabled requires searchIndexBackend=postgresql");
         }
+        if (searchIndexEventRetentionSchedulerEnabled() && !searchIndexEventsEnabled()) {
+            throw new IllegalArgumentException(
+                    "search-index-events.retention.scheduler-enabled requires search-index-events.enabled");
+        }
         if (manifestRetention < 1) {
             throw new IllegalArgumentException("manifestRetention must be at least 1");
         }
@@ -359,6 +365,11 @@ public class PersistenceControlProperties {
     public boolean searchIndexEventsEnabled() {
         return Boolean.parseBoolean(applicationSearchIndexEventsEnabled == null
                 ? "false" : applicationSearchIndexEventsEnabled.trim());
+    }
+
+    public boolean searchIndexEventRetentionSchedulerEnabled() {
+        return Boolean.parseBoolean(applicationSearchIndexEventRetentionSchedulerEnabled == null
+                ? "false" : applicationSearchIndexEventRetentionSchedulerEnabled.trim());
     }
 
     private boolean isSupportedBackend(String value) {

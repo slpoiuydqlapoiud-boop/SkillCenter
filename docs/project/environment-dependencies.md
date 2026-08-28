@@ -51,6 +51,7 @@ py -3.11 -m unittest discover -s tests -p "test_*.py"
 - API 默认配置：`apps/api/src/main/resources/application.yml`
 - 搜索共享后端 selector：`SKILL_CENTER_SEARCH_INDEX_BACKEND=postgresql`（需同时开启全局 PostgreSQL，并通过 V16/readiness）
 - 跨实例搜索刷新：`SKILL_CENTER_SEARCH_INDEX_EVENTS_ENABLED=true`（需同时开启 PostgreSQL 搜索后端；治理聚合和 Skill 范围写入会将 V17 metadata-only refresh outbox 与各自主事务绑定，V18 持久化 consumer cursor + poller 提供 at-least-once 重放；`SKILL_CENTER_SEARCH_INDEX_EVENTS_CONSUMER_ID` 应为每个实例稳定且唯一的部署标识）
+- 搜索刷新日志清理：`SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_SCHEDULER_ENABLED=true`（显式开启，需 V19；仅删除早于 retention cutoff 且已被所有已登记 consumer 消费的事件；没有 consumer 或存在停滞 consumer 时 fail-safe 保留）
 - 本地依赖编排：`deploy/local/compose.yaml`，变量模板：`deploy/local/.env.example`
 - 外部 Provider/Redis 联调手册：`docs/project/M11-external-integration-runbook.md`
 - Prometheus/Grafana/Alertmanager 模板：`deploy/observability/`

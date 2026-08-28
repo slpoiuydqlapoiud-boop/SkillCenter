@@ -98,6 +98,14 @@ class SkillSearchRefreshEventDeliveryTest {
                 .contains("CREATE TABLE skill_search_refresh_event_consumers")
                 .contains("PRIMARY KEY (consumer_id)")
                 .contains("last_event_seq");
+
+        String retentionMigration = new org.springframework.core.io.ClassPathResource(
+                "db/migration/V19__index_skill_search_refresh_event_retention.sql")
+                .getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+
+        assertThat(retentionMigration)
+                .contains("skill_search_refresh_events_created_at_sequence")
+                .contains("created_at, event_seq");
     }
 
     private static final class CursorEventStore implements SkillSearchRefreshEventStore {

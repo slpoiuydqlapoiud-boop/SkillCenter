@@ -64,6 +64,13 @@ skill-center:
     consumer-id: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_CONSUMER_ID:${HOSTNAME:local}}
     poll-interval-ms: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_POLL_INTERVAL_MS:5000}
     batch-size: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_BATCH_SIZE:100}
+    retention:
+      # Cleanup is opt-in and requires PostgreSQL V19 plus all consumer cursors.
+      scheduler-enabled: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_SCHEDULER_ENABLED:false}
+      retention-days: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_DAYS:30}
+      cleanup-interval-ms: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_CLEANUP_INTERVAL_MS:3600000}
+      cleanup-initial-delay-ms: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_CLEANUP_INITIAL_DELAY_MS:3600000}
+      cleanup-batch-size: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_CLEANUP_BATCH_SIZE:1000}
   quality-evidence-storage: ./data/governance/quality-evidence.json
   benchmark-storage: ./data/governance/benchmarks.json
   runtime-summary-backend: json

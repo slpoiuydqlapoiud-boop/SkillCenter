@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 public class SkillSearchBackendReadinessService implements SkillSearchBackendHealth {
     private static final int REQUIRED_SCHEMA_VERSION = 16;
     private static final int REQUIRED_EVENT_SCHEMA_VERSION = 18;
+    private static final int REQUIRED_EVENT_RETENTION_SCHEMA_VERSION = 19;
     private final PersistenceControlProperties properties;
     private final PersistenceBackend persistence;
     private final SkillSearchIndex index;
@@ -56,6 +57,11 @@ public class SkillSearchBackendReadinessService implements SkillSearchBackendHea
                     && !hasSchemaAtLeast(persistenceStatus.schemaVersion(), REQUIRED_EVENT_SCHEMA_VERSION)) {
                 return notReady("postgresql", "SEARCH_INDEX_EVENTS_SCHEMA_REQUIRED",
                         "跨实例搜索刷新 PostgreSQL V18 schema 尚未就绪");
+            }
+            if (properties.searchIndexEventRetentionSchedulerEnabled()
+                    && !hasSchemaAtLeast(persistenceStatus.schemaVersion(), REQUIRED_EVENT_RETENTION_SCHEMA_VERSION)) {
+                return notReady("postgresql", "SEARCH_INDEX_EVENTS_RETENTION_SCHEMA_REQUIRED",
+                        "搜索刷新日志清理 PostgreSQL V19 schema 尚未就绪");
             }
             SkillSearchIndexStatus indexStatus = index.status();
             if (indexStatus == null || !"READY".equals(indexStatus.state())) {
