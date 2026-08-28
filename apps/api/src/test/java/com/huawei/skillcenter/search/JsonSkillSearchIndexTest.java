@@ -4,6 +4,10 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -64,7 +68,7 @@ class JsonSkillSearchIndexTest {
     }
 
     @Test
-    void appliesFiltersBeforeScoringAndReturnsNoResultsForEmptyOrUnmatchedText() {
+    void appliesFiltersBeforeScoringAndReturnsZeroScoreCandidatesForEmptyText() {
         JsonSkillSearchIndex index = new JsonSkillSearchIndex();
         index.rebuild(List.of(
                 document("published-low", "Common", "description", List.of(), "alpha", "tools", "published", "low", Instant.parse("2026-01-02T00:00:00Z")),
@@ -72,8 +76,44 @@ class JsonSkillSearchIndexTest {
 
         assertThat(index.search(SkillSearchQuery.of("common", "tools", "published", "low", "relevance")))
                 .extracting(SkillSearchHit::skillId).containsExactly("published-low");
-        assertThat(index.search(SkillSearchQuery.of("", "", "", "", "relevance"))).isEmpty();
+        assertThat(index.search(SkillSearchQuery.of("", "", "", "", "relevance")))
+                .extracting(SkillSearchHit::skillId).containsExactly("published-low", "deprecated-high");
+        assertThat(index.search(SkillSearchQuery.of("", "tools", "published", "low", "relevance")))
+                .allSatisfy(hit -> {
+                    assertThat(hit.score()).isZero();
+                    assertThat(hit.matchedFields()).isEmpty();
+                })
+                .extracting(SkillSearchHit::skillId).containsExactly("published-low");
         assertThat(index.search(SkillSearchQuery.of("missing", "", "", "", "relevance"))).isEmpty();
+    }
+
+    @Test
+    void searchesUseOneCommittedSnapshotWhileRebuildsRunConcurrently() throws Exception {
+        JsonSkillSearchIndex index = new JsonSkillSearchIndex();
+        List<SkillSearchDocument> first = java.util.stream.IntStream.range(0, 5_000)
+                .mapToObj(number -> document("first-" + number, "Common", "description", List.of(), "team", "category"))
+                .toList();
+        List<SkillSearchDocument> second = java.util.stream.IntStream.range(0, 5_000)
+                .mapToObj(number -> document("second-" + number, "Common", "description", List.of(), "team", "category"))
+                .toList();
+        index.rebuild(first, "first");
+
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            Future<List<SkillSearchHit>> search = executor.submit(
+                    () -> index.search(SkillSearchQuery.of("common", "", "", "", "relevance")));
+            Future<?> rebuild = executor.submit((Callable<Void>) () -> {
+                for (int revision = 0; revision < 20; revision++) {
+                    index.rebuild(revision % 2 == 0 ? second : first, "hash-" + revision);
+                }
+                return null;
+            });
+
+            List<SkillSearchHit> hits = search.get();
+            rebuild.get();
+
+            assertThat(hits).hasSize(5_000);
+            assertThat(hits).allSatisfy(hit -> assertThat(hit.skillId()).matches("^(first|second)-.*"));
+        }
     }
 
     @Test

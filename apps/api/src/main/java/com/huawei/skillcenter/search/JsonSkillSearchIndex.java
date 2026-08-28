@@ -77,16 +77,14 @@ public final class JsonSkillSearchIndex implements SkillSearchIndex {
         if (query == null) {
             throw new IllegalArgumentException("query is required");
         }
+        Snapshot current = snapshot;
         List<String> queryTokens = queryTokens(query.text());
-        if (queryTokens.isEmpty()) {
-            return List.of();
-        }
 
-        return snapshot.documents().values().stream()
+        return current.documents().values().stream()
                 .filter(indexed -> matchesFilters(indexed.document(), query))
                 .map(indexed -> hit(indexed, queryTokens))
                 .filter(java.util.Objects::nonNull)
-                .sorted(hitComparator(snapshot.documents()))
+                .sorted(hitComparator(current.documents()))
                 .limit(MAX_CANDIDATES)
                 .toList();
     }
