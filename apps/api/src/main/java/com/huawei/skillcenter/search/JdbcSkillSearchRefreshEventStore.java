@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /** PostgreSQL refresh journal with deterministic event-key idempotency. */
-@Conditional(SkillSearchBackendCondition.Postgresql.class)
+@Conditional(SkillSearchRefreshEventCondition.PostgresqlPersistence.class)
 public final class JdbcSkillSearchRefreshEventStore implements SkillSearchRefreshEventStore {
     private static final String TABLE = "skill_search_refresh_events";
     private static final String CONSUMER_TABLE = "skill_search_refresh_event_consumers";

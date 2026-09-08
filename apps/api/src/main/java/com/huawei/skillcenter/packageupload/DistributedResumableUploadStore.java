@@ -33,6 +33,7 @@ public class DistributedResumableUploadStore implements ResumableUploadStore {
     @Autowired
     public DistributedResumableUploadStore(
             StringRedisTemplate redis,
+            @org.springframework.beans.factory.annotation.Qualifier("resumableUploadObjectClient")
             S3ObjectClient objects,
             @Value("${skill-center.package-max-bytes:20971520}") long maxPackageBytes,
             @Value("${skill-center.package-upload-chunk-bytes:1048576}") long maxChunkBytes,

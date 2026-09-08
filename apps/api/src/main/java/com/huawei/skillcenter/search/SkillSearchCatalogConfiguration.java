@@ -60,7 +60,7 @@ class SkillSearchCatalogConfiguration {
     }
 
     @Bean
-    @Conditional(SkillSearchBackendCondition.Postgresql.class)
+    @Conditional(SkillSearchRefreshEventCondition.PostgresqlPersistence.class)
     @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
             name = "skill-center.search-index-events.enabled", havingValue = "true")
     JdbcSkillSearchRefreshEventStore skillSearchRefreshEventStore(
@@ -70,7 +70,7 @@ class SkillSearchCatalogConfiguration {
     }
 
     @Bean
-    @Conditional(SkillSearchBackendCondition.Postgresql.class)
+    @Conditional(SkillSearchRefreshEventCondition.PostgresqlPersistence.class)
     @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
             name = "skill-center.search-index-events.enabled", havingValue = "true")
     SkillSearchRefreshEventPoller skillSearchRefreshEventPoller(SkillSearchRefreshEventStore store,
@@ -83,7 +83,7 @@ class SkillSearchCatalogConfiguration {
     }
 
     @Bean
-    @Conditional(SkillSearchBackendCondition.Postgresql.class)
+    @Conditional(SkillSearchRefreshEventCondition.PostgresqlPersistence.class)
     @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
             name = {"skill-center.search-index-events.enabled",
                     "skill-center.search-index-events.retention.scheduler-enabled"},

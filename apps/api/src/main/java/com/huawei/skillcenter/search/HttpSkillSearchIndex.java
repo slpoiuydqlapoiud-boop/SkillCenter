@@ -169,32 +169,36 @@ public final class HttpSkillSearchIndex implements SkillSearchIndex, SkillSearch
     @Override
     public SkillSearchProbeResult probe() {
         Instant checkedAt = Instant.now(clock);
-        if (endpoint.isBlank() || indexName.isBlank() || credentialRef.isBlank()) {
+        if (endpoint.isBlank() || indexName.isBlank()) {
             return recordProbe(new SkillSearchProbeResult("opensearch", "NOT_CONFIGURED",
                     "SEARCH_INDEX_ENDPOINT_NOT_CONFIGURED", null, 0, checkedAt));
         }
         URI uri;
-        String credential;
+        String credential = "";
         try {
             uri = probeUri();
-            credential = credentials.resolve(credentialRef);
+            if (!credentialRef.isBlank()) {
+                credential = credentials.resolve(credentialRef);
+            }
         } catch (RuntimeException exception) {
             return recordProbe(new SkillSearchProbeResult("opensearch", "NOT_CONFIGURED",
                     "SEARCH_INDEX_CREDENTIAL_UNAVAILABLE", null, 0, checkedAt));
         }
-        if (credential == null || credential.isBlank()) {
+        if (!credentialRef.isBlank() && (credential == null || credential.isBlank())) {
             return recordProbe(new SkillSearchProbeResult("opensearch", "NOT_CONFIGURED",
                     "SEARCH_INDEX_CREDENTIAL_UNAVAILABLE", null, 0, checkedAt));
         }
         long started = System.nanoTime();
         try {
-            HttpRequest request = HttpRequest.newBuilder(uri)
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(uri)
                     .timeout(requestTimeout)
                     .header("Accept", "application/json")
-                    .header("Authorization", "Bearer " + credential)
                     .header("X-Skill-Center-Probe", "v1")
-                    .GET()
-                    .build();
+                    .GET();
+            if (!credentialRef.isBlank()) {
+                requestBuilder.header("Authorization", "Bearer " + credential);
+            }
+            HttpRequest request = requestBuilder.build();
             HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
             int status = response.statusCode();
             String state = status >= 200 && status < 300 ? "REACHABLE" : "HTTP_ERROR";
@@ -223,18 +227,25 @@ public final class HttpSkillSearchIndex implements SkillSearchIndex, SkillSearch
 
     private JsonNode post(String operation, String body) {
         URI uri = endpoint(operation);
-        String credential;
+        String credential = "";
         try {
-            credential = credentials.resolve(credentialRef);
+            if (!credentialRef.isBlank()) {
+                credential = credentials.resolve(credentialRef);
+            }
         } catch (RuntimeException exception) {
             throw remote("SEARCH_INDEX_CREDENTIAL_UNAVAILABLE");
         }
-        if (credential == null || credential.isBlank()) throw remote("SEARCH_INDEX_CREDENTIAL_UNAVAILABLE");
-        HttpRequest request = HttpRequest.newBuilder(uri)
+        if (!credentialRef.isBlank() && (credential == null || credential.isBlank())) {
+            throw remote("SEARCH_INDEX_CREDENTIAL_UNAVAILABLE");
+        }
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(uri)
                 .timeout(requestTimeout)
                 .header("Accept", "application/json")
-                .header("Content-Type", "application/x-ndjson")
-                .header("Authorization", "Bearer " + credential)
+                .header("Content-Type", "application/x-ndjson");
+        if (!credentialRef.isBlank()) {
+            requestBuilder.header("Authorization", "Bearer " + credential);
+        }
+        HttpRequest request = requestBuilder
                 .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
                 .build();
         try {
@@ -288,7 +299,7 @@ public final class HttpSkillSearchIndex implements SkillSearchIndex, SkillSearch
     }
 
     private URI probeUri() {
-        if (endpoint.isBlank() || indexName.isBlank() || credentialRef.isBlank()) {
+        if (endpoint.isBlank() || indexName.isBlank()) {
             throw remote("SEARCH_INDEX_ENDPOINT_NOT_CONFIGURED");
         }
         if (!indexName.matches("[A-Za-z0-9._-]{1,128}")) {
@@ -308,7 +319,7 @@ public final class HttpSkillSearchIndex implements SkillSearchIndex, SkillSearch
     }
 
     private URI baseUri() {
-        if (endpoint.isBlank() || indexName.isBlank() || credentialRef.isBlank()) {
+        if (endpoint.isBlank() || indexName.isBlank()) {
             throw remote("SEARCH_INDEX_ENDPOINT_NOT_CONFIGURED");
         }
         if (!indexName.matches("[A-Za-z0-9._-]{1,128}")) throw remote("SEARCH_INDEX_INVALID_ENDPOINT");

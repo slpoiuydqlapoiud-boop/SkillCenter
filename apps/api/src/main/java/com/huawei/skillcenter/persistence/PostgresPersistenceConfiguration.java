@@ -8,6 +8,9 @@ import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -24,6 +27,52 @@ public class PostgresPersistenceConfiguration {
     private static final int MAXIMUM_POOL_SIZE = 100;
     private static final long MINIMUM_SLO_MILLIS = 1;
     private static final long MAXIMUM_SLO_MILLIS = Duration.ofSeconds(5).toMillis();
+    private static final java.util.List<String> POSTGRES_SCHEMA_DEPENDENT_BEANS = java.util.List.of(
+            "jdbcSkillScopeStore",
+            "jdbcExecutionEnvironmentStore",
+            "jdbcGovernanceStateRepository",
+            "jdbcProductionEvidenceStore",
+            "jdbcBenchmarkStore",
+            "jdbcOptimizationExperimentAssessmentStore",
+            "jdbcOptimizationExperimentObservationStore",
+            "jdbcOptimizationExperimentStore",
+            "jdbcOptimizationWorkItemStore",
+            "jdbcQualityEvidenceStore",
+            "jdbcSkillRelationStore",
+            "jdbcReleaseRecordStore",
+            "postgresSkillLifecycleProjectionStore",
+            "postgresSkillSearchIndex",
+            "skillSearchRefreshEventStore",
+            "skillSearchRefreshEventPoller",
+            "skillSearchRefreshEventRetentionScheduler",
+            "skillSearchRefreshEventJournal",
+            "skillSearchRefreshConsumerController");
+
+    @Bean
+    static BeanFactoryPostProcessor postgresSchemaMigrationOrdering() {
+        return beanFactory -> {
+            if (!(beanFactory instanceof ConfigurableListableBeanFactory configurableFactory)
+                    || !configurableFactory.containsBeanDefinition("postgresPersistenceBackend")) {
+                return;
+            }
+            for (String beanName : POSTGRES_SCHEMA_DEPENDENT_BEANS) {
+                if (!configurableFactory.containsBeanDefinition(beanName)) {
+                    continue;
+                }
+                BeanDefinition definition = configurableFactory.getBeanDefinition(beanName);
+                String[] existingDependencies = definition.getDependsOn();
+                if (existingDependencies == null) {
+                    definition.setDependsOn("postgresPersistenceBackend");
+                } else if (java.util.Arrays.stream(existingDependencies)
+                        .noneMatch("postgresPersistenceBackend"::equals)) {
+                    String[] dependencies = java.util.Arrays.copyOf(existingDependencies,
+                            existingDependencies.length + 1);
+                    dependencies[existingDependencies.length] = "postgresPersistenceBackend";
+                    definition.setDependsOn(dependencies);
+                }
+            }
+        };
+    }
 
     @Bean
     PostgresPersistenceBackend postgresPersistenceBackend(PostgresPersistenceProperties properties,

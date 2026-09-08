@@ -40,6 +40,21 @@ class SkillSearchBackendReadinessServiceTest {
     }
 
     @Test
+    void opensearchWithSharedRefreshRequiresPostgresqlEventSchema() {
+        PersistenceControlProperties properties = mock(PersistenceControlProperties.class);
+        PersistenceBackend persistence = mock(PersistenceBackend.class);
+        ProbeAwareIndex index = new ProbeAwareIndex(true);
+        when(properties.normalizedSearchIndexBackend()).thenReturn("opensearch");
+        when(properties.normalizedBackend()).thenReturn("postgresql");
+        when(properties.searchIndexEventsEnabled()).thenReturn(true);
+        when(persistence.status()).thenReturn(PersistenceBackendStatus.ready("postgresql", "19", null));
+
+        assertThat(new SkillSearchBackendReadinessService(properties, persistence, index).readiness())
+                .isEqualTo(new SkillSearchBackendReadiness("opensearch", "NOT_READY",
+                        "SEARCH_INDEX_EVENTS_SCHEMA_REQUIRED", "跨实例搜索刷新 PostgreSQL V20 schema 尚未就绪"));
+    }
+
+    @Test
     void postgresqlBackendRequiresV16AndAReadyIndex() {
         PersistenceControlProperties properties = mock(PersistenceControlProperties.class);
         PersistenceBackend persistence = mock(PersistenceBackend.class);

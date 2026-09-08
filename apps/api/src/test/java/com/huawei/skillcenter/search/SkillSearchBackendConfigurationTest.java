@@ -122,6 +122,23 @@ class SkillSearchBackendConfigurationTest {
                 });
     }
 
+    @Test
+    void sharedRefreshPollingCanUsePostgresqlOutboxWithOpenSearchIndex() {
+        context.withPropertyValues(
+                        "skill-center.persistence.backend=postgresql",
+                        "skill-center.search-index-backend=opensearch",
+                        "skill-center.search-index.endpoint=http://127.0.0.1:9200",
+                        "skill-center.search-index.index=skills-v1",
+                        "skill-center.search-index.credential-ref=secret://search",
+                        "skill-center.search-index-events.enabled=true")
+                .run(application -> {
+                    assertThat(application).hasNotFailed();
+                    assertThat(application).hasSingleBean(HttpSkillSearchIndex.class);
+                    assertThat(application).hasSingleBean(SkillSearchRefreshEventStore.class);
+                    assertThat(application).hasSingleBean(SkillSearchRefreshEventPoller.class);
+                });
+    }
+
     @Configuration
     static class Fixture {
         @Bean

@@ -48,6 +48,18 @@ public class SkillSearchBackendReadinessService implements SkillSearchBackendHea
                         "Skill 搜索索引仅使用本地 JSON，不支持多实例共享");
             }
             if ("opensearch".equals(selected)) {
+                if (properties.searchIndexEventsEnabled()) {
+                    PersistenceBackendStatus persistenceStatus = persistence.status();
+                    if (persistenceStatus == null || !"READY".equals(persistenceStatus.state())
+                            || !"postgresql".equals(persistenceStatus.backendId())) {
+                        return notReady("opensearch", "SEARCH_INDEX_EVENTS_PERSISTENCE_NOT_READY",
+                                "跨实例搜索刷新 PostgreSQL 持久化控制面尚未就绪");
+                    }
+                    if (!hasSchemaAtLeast(persistenceStatus.schemaVersion(), REQUIRED_EVENT_SCHEMA_VERSION)) {
+                        return notReady("opensearch", "SEARCH_INDEX_EVENTS_SCHEMA_REQUIRED",
+                                "跨实例搜索刷新 PostgreSQL V20 schema 尚未就绪");
+                    }
+                }
                 boolean probeFresh = connectivityProbe != null
                         ? connectivityProbe.probeFresh()
                         : index instanceof SkillSearchRemoteHealth remoteHealth && remoteHealth.probeFresh();

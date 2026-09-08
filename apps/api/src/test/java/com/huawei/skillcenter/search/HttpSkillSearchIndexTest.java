@@ -150,6 +150,21 @@ class HttpSkillSearchIndexTest {
         }
     }
 
+    @Test
+    void supportsUnauthenticatedLocalOpenSearchWhenCredentialReferenceIsBlank() throws Exception {
+        try (var server = new SearchHttpServer(200, "{\"errors\":false}")) {
+            HttpSkillSearchIndex index = new HttpSkillSearchIndex(server.endpoint(), "skills-v1", "",
+                    Duration.ofSeconds(1), Duration.ofSeconds(2), 16_384, HttpClient.newHttpClient(),
+                    new ObjectMapper(), reference -> { throw new AssertionError("credentials must not be resolved"); },
+                    Clock.systemUTC());
+            SkillSearchDocument document = new SkillSearchDocument("skill-a", "A", "Description", List.of("tag"),
+                    "team-a", "category-a", "published", "low", null, null, "1.0.0", "PUBLIC", "");
+
+            assertThat(index.probe().status()).isEqualTo("REACHABLE");
+            assertDoesNotThrow(() -> index.rebuild(List.of(document), "hash-a"));
+        }
+    }
+
     private static final class SearchHttpServer implements AutoCloseable {
         private final com.sun.net.httpserver.HttpServer server;
         private final AtomicInteger requestCount = new AtomicInteger();

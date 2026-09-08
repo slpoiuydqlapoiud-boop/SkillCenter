@@ -22,7 +22,7 @@ import java.util.Set;
 /** Admin-only lifecycle controls for shared search refresh consumers. */
 @RestController
 @RequestMapping("/api/v1/admin/search/consumers")
-@Conditional(SkillSearchBackendCondition.Postgresql.class)
+@Conditional(SkillSearchRefreshEventCondition.PostgresqlPersistence.class)
 @ConditionalOnProperty(name = "skill-center.search-index-events.enabled", havingValue = "true")
 public class SkillSearchRefreshConsumerController {
     private final SkillSearchRefreshEventStore store;

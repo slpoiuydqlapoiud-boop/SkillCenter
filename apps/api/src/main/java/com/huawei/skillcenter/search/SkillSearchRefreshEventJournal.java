@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 /** Captures local refresh events for later delivery to other instances. */
 @Component
-@Conditional(SkillSearchBackendCondition.Postgresql.class)
+@Conditional(SkillSearchRefreshEventCondition.PostgresqlPersistence.class)
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
         name = "skill-center.search-index-events.enabled", havingValue = "true")
 public final class SkillSearchRefreshEventJournal {

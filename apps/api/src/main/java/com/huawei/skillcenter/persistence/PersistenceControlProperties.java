@@ -270,8 +270,8 @@ public class PersistenceControlProperties {
                 && !"postgresql".equals(normalizedBackend())) {
             throw new IllegalArgumentException("searchIndexBackend=postgresql requires backend=postgresql");
         }
-        if (searchIndexEventsEnabled() && !"postgresql".equals(normalizedSearchIndexBackend())) {
-            throw new IllegalArgumentException("search-index-events.enabled requires searchIndexBackend=postgresql");
+        if (searchIndexEventsEnabled() && !"postgresql".equals(normalizedBackend())) {
+            throw new IllegalArgumentException("search-index-events.enabled requires persistence backend=postgresql");
         }
         if (searchIndexEventRetentionSchedulerEnabled() && !searchIndexEventsEnabled()) {
             throw new IllegalArgumentException(
