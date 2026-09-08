@@ -488,7 +488,7 @@ class PostgresSkillLifecycleProjectionStoreTest {
     }
 
     private SkillLifecycleReleaseRow release(String releaseId, String skillId, String version) {
-        return release(releaseId, skillId, version, "b".repeat(64));
+        return release(releaseId, skillId, version, "a".repeat(64));
     }
 
     private SkillLifecycleReleaseRow release(String releaseId, String skillId, String version, String sha256) {

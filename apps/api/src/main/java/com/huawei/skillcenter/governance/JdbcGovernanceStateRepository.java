@@ -193,7 +193,7 @@ public class JdbcGovernanceStateRepository implements GovernanceStateRepository 
         for (SkillVersion version : versions == null ? List.<SkillVersion>of() : versions) {
             jdbc.update("insert into skill_governance_version (" + VERSION_COLUMNS
                             .replace("security_evidence::text AS security_evidence", "security_evidence")
-                            + ") values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, current_timestamp)",
+                            + ", updated_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, current_timestamp)",
                     version.packageId(), version.skillId(), version.version(), version.status(), version.sha256(),
                     version.sizeBytes(), version.artifactPath(), version.uploadedBy(), timestamp(version.uploadedAt()),
                     version.publishedBy(), timestamp(version.publishedAt()), version.reviewId(),
