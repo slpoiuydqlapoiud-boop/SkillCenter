@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.nio.charset.StandardCharsets;
@@ -139,6 +140,33 @@ class SkillSearchBackendConfigurationTest {
                 });
     }
 
+    @Test
+    void redisMessageBusIsExplicitlyOptInAndUsesTheSameConsumerBoundary() {
+        context.withPropertyValues(
+                        "skill-center.persistence.backend=postgresql",
+                        "skill-center.search-index-backend=opensearch",
+                        "skill-center.search-index.endpoint=http://127.0.0.1:9200",
+                        "skill-center.search-index.index=skills-v1",
+                        "skill-center.search-index.credential-ref=secret://search",
+                        "skill-center.search-index-events.enabled=true",
+                        "skill-center.search-index-events.bus.transport=redis")
+                .run(application -> {
+                    assertThat(application).hasNotFailed();
+                    assertThat(application).hasSingleBean(RedisSkillSearchRefreshEventBus.class);
+                    assertThat(application).hasSingleBean(SkillSearchRefreshMessageBusConsumer.class);
+                });
+
+        context.withPropertyValues(
+                        "skill-center.persistence.backend=postgresql",
+                        "skill-center.search-index-backend=postgresql",
+                        "skill-center.search-index-events.enabled=true")
+                .run(application -> {
+                    assertThat(application).hasNotFailed();
+                    assertThat(application.getBeansOfType(RedisSkillSearchRefreshEventBus.class)).isEmpty();
+                    assertThat(application.getBeansOfType(SkillSearchRefreshMessageBusConsumer.class)).isEmpty();
+                });
+    }
+
     @Configuration
     static class Fixture {
         @Bean
@@ -149,6 +177,11 @@ class SkillSearchBackendConfigurationTest {
         @Bean
         JdbcTemplate jdbcTemplate() {
             return mock(JdbcTemplate.class);
+        }
+
+        @Bean
+        StringRedisTemplate stringRedisTemplate() {
+            return mock(StringRedisTemplate.class);
         }
 
         @Bean

@@ -40,6 +40,11 @@ skill-center:
   search-index-events:
     enabled: true
     consumer-id: "${SKILL_CENTER_SEARCH_INDEX_EVENTS_CONSUMER_ID:local-integration-8081}"
+    bus:
+      transport: "${SKILL_CENTER_SEARCH_INDEX_EVENTS_BUS_TRANSPORT:disabled}"
+      stream: "${SKILL_CENTER_SEARCH_INDEX_EVENTS_BUS_STREAM:skill-center:search:refresh}"
+      group: "${SKILL_CENTER_SEARCH_INDEX_EVENTS_BUS_GROUP:skill-center-search-index}"
+      batch-size: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_BUS_BATCH_SIZE:100}
   artifact-storage-backend: object-storage
   artifact-storage:
     mode: http

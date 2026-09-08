@@ -6,6 +6,7 @@ param(
     [switch]$SkipWeb,
     [switch]$SkipApi,
     [switch]$WithObservability,
+    [switch]$WithMessageBus,
     [switch]$DryRun,
     [int]$TimeoutSeconds = 90
 )
@@ -207,6 +208,7 @@ if ($Profile -eq "integration") {
     # explicitly here because process environment has higher precedence than YAML.
     $env:SKILL_CENTER_SEARCH_INDEX_BACKEND = "opensearch"
     $env:SKILL_CENTER_SEARCH_INDEX_EVENTS_ENABLED = "true"
+    $env:SKILL_CENTER_SEARCH_INDEX_EVENTS_BUS_TRANSPORT = if ($WithMessageBus) { "redis" } else { "disabled" }
     $env:SKILL_CENTER_PACKAGE_UPLOAD_BACKEND = "distributed"
     if (-not $env:SKILL_CENTER_METRICS_TOKEN) {
         $env:SKILL_CENTER_METRICS_TOKEN = "local-metrics-token"

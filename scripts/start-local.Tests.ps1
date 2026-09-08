@@ -22,8 +22,10 @@ Describe "start-local contract" {
         $content | Should Match 'SKILL_CENTER_SEARCH_INDEX_EVENTS_ENABLED.*true'
         $content | Should Match 'SKILL_CENTER_PACKAGE_UPLOAD_BACKEND.*distributed'
         $content | Should Match '\[switch\]\$WithObservability'
+        $content | Should Match '\[switch\]\$WithMessageBus'
         $content | Should Match 'observability\.compose\.yaml'
         $content | Should Match 'SKILL_CENTER_METRICS_TOKEN_FILE'
+        $content | Should Match 'SKILL_CENTER_SEARCH_INDEX_EVENTS_BUS_TRANSPORT'
     }
 
     It "does not contain destructive cleanup or production deployment commands" {

@@ -85,6 +85,33 @@ class SkillSearchCatalogConfiguration {
     @Bean
     @Conditional(SkillSearchRefreshEventCondition.PostgresqlPersistence.class)
     @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+            name = "skill-center.search-index-events.bus.transport", havingValue = "redis")
+    RedisSkillSearchRefreshEventBus skillSearchRefreshEventBus(
+            org.springframework.data.redis.core.StringRedisTemplate redis,
+            @org.springframework.beans.factory.annotation.Value(
+                    "${skill-center.search-index-events.bus.stream:skill-center:search:refresh}") String stream,
+            @org.springframework.beans.factory.annotation.Value(
+                    "${skill-center.search-index-events.bus.group:skill-center-search-index}") String group) {
+        return new RedisSkillSearchRefreshEventBus(redis, stream, group);
+    }
+
+    @Bean
+    @Conditional(SkillSearchRefreshEventCondition.PostgresqlPersistence.class)
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+            name = "skill-center.search-index-events.bus.transport", havingValue = "redis")
+    SkillSearchRefreshMessageBusConsumer skillSearchRefreshMessageBusConsumer(
+            SkillSearchRefreshEventBus bus,
+            SkillSearchRefreshCoordinator coordinator,
+            @org.springframework.beans.factory.annotation.Value(
+                    "${skill-center.search-index-events.consumer-id:local}") String consumerId,
+            @org.springframework.beans.factory.annotation.Value(
+                    "${skill-center.search-index-events.bus.batch-size:100}") int batchSize) {
+        return new SkillSearchRefreshMessageBusConsumer(bus, coordinator, consumerId, batchSize);
+    }
+
+    @Bean
+    @Conditional(SkillSearchRefreshEventCondition.PostgresqlPersistence.class)
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
             name = {"skill-center.search-index-events.enabled",
                     "skill-center.search-index-events.retention.scheduler-enabled"},
             havingValue = "true")
