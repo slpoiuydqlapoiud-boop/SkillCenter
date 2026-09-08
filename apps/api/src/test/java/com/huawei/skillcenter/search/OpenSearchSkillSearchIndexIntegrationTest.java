@@ -31,7 +31,6 @@ class OpenSearchSkillSearchIndexIntegrationTest {
                 .withEnv("discovery.type", "single-node")
                 .withEnv("plugins.security.disabled", "true")
                 .withEnv("DISABLE_INSTALL_DEMO_CONFIG", "true")
-                .withEnv("DISABLE_SECURITY_PLUGIN", "true")
                 .withEnv("OPENSEARCH_JAVA_OPTS", "-Xms512m -Xmx512m")
                 .withExposedPorts(9200)
                 .waitingFor(Wait.forHttp("/_cluster/health")

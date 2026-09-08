@@ -109,7 +109,7 @@ public final class HttpSkillSearchIndex implements SkillSearchIndex, SkillSearch
         List<SkillSearchDocument> boundedDocuments = validateDocuments(documents);
         String body = bulkBody(boundedDocuments);
         try {
-            JsonNode response = post("_bulk", body);
+            JsonNode response = post("_bulk?refresh=wait_for", body);
             if (!response.path("errors").isBoolean() || response.path("errors").booleanValue()) {
                 throw remote("SEARCH_INDEX_RESPONSE_INVALID");
             }
@@ -176,7 +176,7 @@ public final class HttpSkillSearchIndex implements SkillSearchIndex, SkillSearch
         URI uri;
         String credential;
         try {
-            uri = baseUri();
+            uri = probeUri();
             credential = credentials.resolve(credentialRef);
         } catch (RuntimeException exception) {
             return recordProbe(new SkillSearchProbeResult("opensearch", "NOT_CONFIGURED",
@@ -287,6 +287,26 @@ public final class HttpSkillSearchIndex implements SkillSearchIndex, SkillSearch
         return URI.create(base.toString().replaceAll("/+$", "") + "/" + operation);
     }
 
+    private URI probeUri() {
+        if (endpoint.isBlank() || indexName.isBlank() || credentialRef.isBlank()) {
+            throw remote("SEARCH_INDEX_ENDPOINT_NOT_CONFIGURED");
+        }
+        if (!indexName.matches("[A-Za-z0-9._-]{1,128}")) {
+            throw remote("SEARCH_INDEX_INVALID_ENDPOINT");
+        }
+        try {
+            URI root = URI.create(endpoint.replaceAll("/+$", ""));
+            if (!("http".equalsIgnoreCase(root.getScheme()) || "https".equalsIgnoreCase(root.getScheme()))
+                    || root.getHost() == null || root.getUserInfo() != null
+                    || root.getQuery() != null || root.getFragment() != null) {
+                throw remote("SEARCH_INDEX_INVALID_ENDPOINT");
+            }
+            return URI.create(root.toString() + "/_cluster/health");
+        } catch (IllegalArgumentException exception) {
+            throw remote("SEARCH_INDEX_INVALID_ENDPOINT");
+        }
+    }
+
     private URI baseUri() {
         if (endpoint.isBlank() || indexName.isBlank() || credentialRef.isBlank()) {
             throw remote("SEARCH_INDEX_ENDPOINT_NOT_CONFIGURED");
@@ -350,9 +370,16 @@ public final class HttpSkillSearchIndex implements SkillSearchIndex, SkillSearch
             ObjectNode bool = body.putObject("query").putObject("bool");
             ArrayNode must = bool.putArray("must");
             if (query.text().isBlank()) {
-                must.add(mapper.createObjectNode().set("match_all", mapper.createObjectNode()));
+                ObjectNode matchAll = mapper.createObjectNode();
+                matchAll.set("match_all", mapper.createObjectNode());
+                must.add(matchAll);
+            } else {
+                ObjectNode multiMatch = mapper.createObjectNode();
+                multiMatch.put("query", query.text());
+                ObjectNode multiMatchQuery = mapper.createObjectNode();
+                multiMatchQuery.set("multi_match", multiMatch);
+                must.add(multiMatchQuery);
             }
-            else must.add(mapper.createObjectNode().putObject("multi_match").put("query", query.text()));
             ArrayNode filters = bool.putArray("filter");
             addTerm(filters, "category", query.category());
             addTerm(filters, "status", query.status());
@@ -369,7 +396,11 @@ public final class HttpSkillSearchIndex implements SkillSearchIndex, SkillSearch
 
     private void addTerm(ArrayNode filters, String field, String value) {
         if (value != null && !value.isBlank()) {
-            filters.add(mapper.createObjectNode().putObject("term").put(field, value));
+            ObjectNode term = mapper.createObjectNode();
+            term.put(field, value);
+            ObjectNode termQuery = mapper.createObjectNode();
+            termQuery.set("term", term);
+            filters.add(termQuery);
         }
     }
 

@@ -27,10 +27,13 @@ class HttpSkillSearchIndexTest {
                     new ObjectMapper(), reference -> "token-value", Clock.systemUTC());
 
             index.probe();
-            List<SkillSearchHit> hits = index.search(new SkillSearchQuery("skill-a", "", "", "", "updated"));
+            List<SkillSearchHit> hits = index.search(new SkillSearchQuery("skill-a", "", "published", "low", "updated"));
 
             assertThat(hits).containsExactly(new SkillSearchHit("skill-a", 12.5, List.of("id", "name")));
-            assertThat(server.requestBody()).contains("skill-a").doesNotContain("prompt");
+            assertThat(server.requestBody()).contains("\"multi_match\":{\"query\":\"skill-a\"}")
+                    .contains("\"term\":{\"status\":\"published\"}")
+                    .contains("\"term\":{\"risk\":\"low\"}")
+                    .doesNotContain("prompt");
         }
     }
 
@@ -99,6 +102,7 @@ class HttpSkillSearchIndexTest {
             assertThat(lines).hasSize(2);
             assertThat(lines[0]).contains("\"index\"").contains("\"_id\":\"skill-a\"");
             assertThat(lines[1]).contains("\"skillId\":\"skill-a\"").doesNotContain("\"doc\"");
+            assertThat(server.requestTarget()).isEqualTo("/skills-v1/_bulk?refresh=wait_for");
         }
     }
 
@@ -134,15 +138,31 @@ class HttpSkillSearchIndexTest {
         }
     }
 
+    @Test
+    void probesClusterHealthWithoutRequiringTheConfiguredIndexToExist() throws Exception {
+        try (var server = new SearchHttpServer(200, "{}")) {
+            HttpSkillSearchIndex index = new HttpSkillSearchIndex(server.endpoint(), "skills-v1", "secret://search",
+                    Duration.ofSeconds(1), Duration.ofSeconds(2), 16_384, HttpClient.newHttpClient(),
+                    new ObjectMapper(), reference -> "token-value", Clock.systemUTC());
+
+            assertThat(index.probe().status()).isEqualTo("REACHABLE");
+            assertThat(server.requestPath()).isEqualTo("/_cluster/health");
+        }
+    }
+
     private static final class SearchHttpServer implements AutoCloseable {
         private final com.sun.net.httpserver.HttpServer server;
         private final AtomicInteger requestCount = new AtomicInteger();
         private volatile String requestBody = "";
+        private volatile String requestPath = "";
+        private volatile String requestTarget = "";
 
         private SearchHttpServer(int status, String response) throws Exception {
             server = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
             server.createContext("/", exchange -> {
                 requestCount.incrementAndGet();
+                requestPath = exchange.getRequestURI().getPath();
+                requestTarget = exchange.getRequestURI().toString();
                 requestBody = new String(exchange.getRequestBody().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
                 byte[] bytes = response.getBytes(java.nio.charset.StandardCharsets.UTF_8);
                 exchange.sendResponseHeaders(status, bytes.length);
@@ -164,6 +184,14 @@ class HttpSkillSearchIndexTest {
 
         private int requestCount() {
             return requestCount.get();
+        }
+
+        private String requestPath() {
+            return requestPath;
+        }
+
+        private String requestTarget() {
+            return requestTarget;
         }
 
         @Override
