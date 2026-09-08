@@ -1,5 +1,6 @@
 param(
     [switch]$CheckServices,
+    [switch]$CheckObservability,
     [switch]$Json,
     [switch]$FailOnMissing
 )
@@ -144,6 +145,12 @@ if ($CheckServices) {
     $checks += Get-PortCheck "redis" "Redis" 6379 "Start Redis 7+ via deploy/local/compose.yaml"
     $checks += Get-PortCheck "minio" "MinIO / S3-compatible storage" 9000 "Start MinIO via deploy/local/compose.yaml"
     $checks += Get-PortCheck "opensearch" "OpenSearch" 9200 "Start OpenSearch 2.17.1 via deploy/local/compose.yaml"
+}
+
+if ($CheckObservability) {
+    $checks += Get-PortCheck "prometheus" "Prometheus" 9090 "Start the local observability stack with scripts/start-local.ps1 -WithObservability"
+    $checks += Get-PortCheck "grafana" "Grafana" 3000 "Start the local observability stack with scripts/start-local.ps1 -WithObservability"
+    $checks += Get-PortCheck "alertmanager" "Alertmanager" 9093 "Start the local observability stack with scripts/start-local.ps1 -WithObservability"
 }
 
 $checks = @($checks)

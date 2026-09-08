@@ -1,0 +1,51 @@
+# Local integration profile only. Do not copy this file to a shared or production environment.
+server:
+  port: ${SKILL_CENTER_API_PORT:8081}
+
+spring:
+  data:
+    redis:
+      host: ${SKILL_CENTER_REDIS_HOST:127.0.0.1}
+      port: ${SKILL_CENTER_REDIS_PORT:6379}
+
+skill-center:
+  persistence:
+    backend: postgresql
+    postgresql:
+      url: "${SKILL_CENTER_POSTGRES_URL:jdbc:postgresql://127.0.0.1:5432/skillcenter}"
+      username: "${SKILL_CENTER_POSTGRES_USERNAME:skillcenter}"
+      password: "${SKILL_CENTER_POSTGRES_PASSWORD:local-dev-only}"
+  governance-backend: postgresql
+  quality-evidence-backend: postgresql
+  benchmark-backend: postgresql
+  release-backend: postgresql
+  optimization-work-item-backend: postgresql
+  optimization-experiment-backend: postgresql
+  production-evidence-backend: postgresql
+  execution-environment-backend: postgresql
+  skill-scope-backend: postgresql
+  skill-relation-backend: postgresql
+  runtime-summary-backend: redis
+  runtime-summary-redis-key: skill-center:runtime:summaries
+  operations:
+    metrics-storage: redis
+    metrics-token: "${SKILL_CENTER_METRICS_TOKEN:local-metrics-token}"
+    alert-state-backend: redis
+  search-index-backend: opensearch
+  search-index:
+    mode: http
+    endpoint: "${SKILL_CENTER_SEARCH_INDEX_ENDPOINT:http://127.0.0.1:9200}"
+    index: "${SKILL_CENTER_SEARCH_INDEX_NAME:skillcenter-skills-v1}"
+    credential-ref: "${SKILL_CENTER_SEARCH_INDEX_CREDENTIAL_REF:}"
+  search-index-events:
+    enabled: true
+    consumer-id: "${SKILL_CENTER_SEARCH_INDEX_EVENTS_CONSUMER_ID:local-integration-8081}"
+  artifact-storage-backend: object-storage
+  artifact-storage:
+    mode: http
+    endpoint: "${SKILL_CENTER_MINIO_ENDPOINT:http://127.0.0.1:9000}"
+    bucket: "${SKILL_CENTER_MINIO_BUCKET:skill-packages}"
+    region: us-east-1
+    access-key-id-ref: secret://env/SKILL_CENTER_MINIO_ROOT_USER
+    secret-access-key-ref: secret://env/SKILL_CENTER_MINIO_ROOT_PASSWORD
+  package-upload-backend: distributed

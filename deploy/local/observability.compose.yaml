@@ -1,0 +1,52 @@
+name: skillcenter-local-observability
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    ports:
+      - "127.0.0.1:${SKILL_CENTER_PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - skillcenter-prometheus:/prometheus
+      - ./observability-local.yml:/etc/prometheus/prometheus.yml:ro
+      - ../observability/skill-center-alerts.yml:/etc/prometheus/rules/skill-center-alerts.yml:ro
+      - type: bind
+        source: ${SKILL_CENTER_METRICS_TOKEN_FILE:?SKILL_CENTER_METRICS_TOKEN_FILE must be set by start-local.ps1}
+        target: /etc/prometheus/secrets/skill-center-metrics-token
+        read_only: true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    ports:
+      - "127.0.0.1:${SKILL_CENTER_ALERTMANAGER_PORT:-9093}:9093"
+    volumes:
+      - skillcenter-alertmanager:/alertmanager
+      - ../observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${SKILL_CENTER_GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${SKILL_CENTER_GRAFANA_ADMIN_PASSWORD:-local-dev-only}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "127.0.0.1:${SKILL_CENTER_GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - skillcenter-grafana:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../observability/grafana-skill-center-dashboard.json:/var/lib/grafana/dashboards/skill-center.json:ro
+
+volumes:
+  skillcenter-prometheus:
+  skillcenter-alertmanager:
+  skillcenter-grafana:

@@ -39,10 +39,22 @@ Describe "verify-environment contract" {
         ($json -join "") | Should Not Match "(?i)(password|secret|access[_-]?key|token)\s*[:=]"
     }
 
+    It "can include optional observability service checks" {
+        $json = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $scriptPath -Json -CheckObservability
+        $LASTEXITCODE | Should Be 0
+
+        $checks = @($json | ConvertFrom-Json)
+        ($checks.Id -contains "prometheus") | Should Be $true
+        ($checks.Id -contains "grafana") | Should Be $true
+        ($checks.Id -contains "alertmanager") | Should Be $true
+        ($json -join "") | Should Not Match "(?i)(password|secret|access[_-]?key|token)\s*[:=]"
+    }
+
     It "is non-destructive and supports a fail-closed mode" {
         $content = Get-Content -Raw -LiteralPath $scriptPath
 
         $content | Should Match '\[switch\]\$FailOnMissing'
+        $content | Should Match '\[switch\]\$CheckObservability'
         $content | Should Not Match "(?im)\bgit\s+(reset|clean|checkout|commit|push)\b"
         $content | Should Not Match "(?im)\b(Remove-Item|del|erase|rm)\b"
     }

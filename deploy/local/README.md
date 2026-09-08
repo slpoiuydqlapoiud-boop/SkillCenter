@@ -10,6 +10,34 @@ docker compose --env-file .\deploy\local\.env -f .\deploy\local\compose.yaml up 
 docker compose --env-file .\deploy\local\.env -f .\deploy\local\compose.yaml ps
 ```
 
+也可以从仓库根目录使用一键联调入口。默认 `integration` 会复用已运行的服务，启动或等待四个依赖，并在 API 就绪后自动执行 OpenSearch 与 MinIO 制品存储管理探测，避免探测 TTL 过期导致技能目录或制品链路误报不可用：
+
+```powershell
+.\scripts\start-local.ps1 -Profile integration
+```
+
+只检查将执行的动作而不改变运行环境：
+
+```powershell
+.\scripts\start-local.ps1 -Profile integration -DryRun
+```
+
+启动后可用统一环境检查器验证依赖和观测组件：
+
+```powershell
+.\scripts\verify-environment.ps1 -CheckServices -CheckObservability -FailOnMissing
+```
+
+`-Profile default` 仍使用 API 的 JSON/Mock/单实例默认配置并绑定 8080；`integration` 使用本文件下方的 PostgreSQL、Redis、OpenSearch、MinIO 联调配置并绑定 8081。该入口只适用于本地环境，不会停止或清理已有进程、容器和数据卷。
+
+需要运行运营观测闭环时，可显式增加 `-WithObservability`。它会额外启动 Prometheus、Alertmanager 和 Grafana，并将 Prometheus 指向本机 8081 集成 API 的受保护指标端点：
+
+```powershell
+.\scripts\start-local.ps1 -Profile integration -WithObservability
+```
+
+观测组件地址：Prometheus `http://127.0.0.1:9090`、Grafana `http://127.0.0.1:3000`（默认账号 `admin`，本地密码 `local-dev-only`）、Alertmanager `http://127.0.0.1:9093`。指标 Token 只在运行时写入系统临时目录，不进入仓库；Alertmanager 的通知地址仍是模板中的企业网关占位地址，不代表真实通知渠道已接通。
+
 服务地址：
 
 - PostgreSQL：`jdbc:postgresql://127.0.0.1:5432/skillcenter`

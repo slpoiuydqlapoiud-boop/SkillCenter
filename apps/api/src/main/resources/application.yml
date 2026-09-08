@@ -176,7 +176,7 @@ skill-center:
     max-source-age-seconds: 900
   operations:
     metrics-storage: ./data/operations/metrics.json
-    metrics-token: ""
+    metrics-token: ${SKILL_CENTER_METRICS_TOKEN:}
     redis:
       key: skill-center:operations:metrics
       ttl-seconds: 3660
