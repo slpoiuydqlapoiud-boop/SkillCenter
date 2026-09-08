@@ -50,8 +50,17 @@ function Get-CommandCheck {
     }
 
     try {
-        $output = @(& $commandInfo.Source @Arguments 2>&1 | Out-String).Trim()
-        $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
+        # java -version writes its version to stderr. Keep stderr in the
+        # captured diagnostic output, but do not let PowerShell's Stop policy
+        # turn that valid version report into an invocation exception.
+        $previousErrorActionPreference = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        try {
+            $output = @(& $commandInfo.Source @Arguments 2>&1 | Out-String).Trim()
+            $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
+        } finally {
+            $ErrorActionPreference = $previousErrorActionPreference
+        }
         $firstLine = (($output -split "`r?`n") | Where-Object { $_.Trim().Length -gt 0 } | Select-Object -First 1).Trim()
         if ($exitCode -ne 0) {
             return New-Check $Id $Name $Category $Requirement "UNAVAILABLE" $firstLine "$Command was found, but the command failed with exit code $exitCode" $InstallHint

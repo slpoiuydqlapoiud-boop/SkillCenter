@@ -27,6 +27,17 @@ Describe "verify-environment contract" {
         }
     }
 
+    It "treats Java version output written to stderr as an executable JDK" {
+        $java = Get-Command java -ErrorAction SilentlyContinue
+        if ($null -eq $java) {
+            return
+        }
+
+        $json = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $scriptPath -Json
+        $checks = @($json | ConvertFrom-Json)
+        ($checks | Where-Object Id -eq "jdk").Status | Should Be "READY"
+    }
+
     It "can include local service reachability checks without exposing credentials" {
         $json = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $scriptPath -Json -CheckServices
         $LASTEXITCODE | Should Be 0
