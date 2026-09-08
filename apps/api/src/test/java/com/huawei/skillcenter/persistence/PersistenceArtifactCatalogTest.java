@@ -185,6 +185,31 @@ class PersistenceArtifactCatalogTest {
     }
 
     @Test
+    void optimizationObservationAndAssessmentArtifactsFollowPostgresqlExperimentBackend() {
+        PersistenceControlProperties properties = properties("postgresql", "control", "snapshots", 10);
+        properties.setOptimizationExperimentBackend("postgresql");
+
+        PersistenceArtifactCatalog catalog = new PersistenceArtifactCatalog(properties, tempDir);
+
+        assertThat(catalog.find("optimization-observations"))
+                .hasValueSatisfying(descriptor -> assertThat(descriptor.physicalBackend()).isEqualTo("postgresql"));
+        assertThat(catalog.find("optimization-assessments"))
+                .hasValueSatisfying(descriptor -> assertThat(descriptor.physicalBackend()).isEqualTo("postgresql"));
+    }
+
+    @Test
+    void sharedRuntimeAndMetricsStoresAreNotRegisteredAsJsonSnapshotArtifacts() {
+        PersistenceControlProperties properties = properties("postgresql", "control", "snapshots", 10);
+        properties.setRuntimeSummaryBackend("redis");
+        properties.setOperationsMetricsStorage("redis");
+
+        PersistenceArtifactCatalog catalog = new PersistenceArtifactCatalog(properties, tempDir);
+
+        assertThat(catalog.find("runtime-summaries")).isEmpty();
+        assertThat(catalog.find("operations-metrics")).isEmpty();
+    }
+
+    @Test
     void persistedInvocationEventsRemainMappedToGovernanceState() {
         PersistenceArtifactCatalog catalog = catalog(tempDir);
 

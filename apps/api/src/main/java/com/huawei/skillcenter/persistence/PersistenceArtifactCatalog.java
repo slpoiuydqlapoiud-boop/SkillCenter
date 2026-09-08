@@ -150,6 +150,9 @@ public class PersistenceArtifactCatalog {
                 throw new IllegalArgumentException("definition must not be null");
             }
             String artifactId = definition.artifactId().trim();
+            if (!isControlPlaneManaged(artifactId, properties)) {
+                continue;
+            }
             if (!artifactIds.add(artifactId)) {
                 throw new IllegalArgumentException("duplicate artifactId: " + artifactId);
             }
@@ -164,6 +167,18 @@ public class PersistenceArtifactCatalog {
         }
         resolved.sort(Comparator.comparing(PersistenceArtifactDescriptor::artifactId));
         return List.copyOf(resolved);
+    }
+
+    private boolean isControlPlaneManaged(String artifactId, PersistenceControlProperties properties) {
+        if ("runtime-summaries".equals(artifactId)
+                && "redis".equals(properties.normalizedRuntimeSummaryBackend())) {
+            return false;
+        }
+        if ("operations-metrics".equals(artifactId)) {
+            String storage = properties.normalizedOperationsMetricsStorage();
+            return !storage.isBlank() && !"redis".equals(storage) && !"memory".equals(storage);
+        }
+        return true;
     }
 
     private Path resolvePath(Path baseDir, String configuredPath) {
@@ -207,6 +222,16 @@ public class PersistenceArtifactCatalog {
         }
         if ("releases".equals(artifactId)
                 && "postgresql".equals(properties.normalizedReleaseBackend())) {
+            return "postgresql";
+        }
+        if ("optimization-work-items".equals(artifactId)
+                && "postgresql".equals(properties.normalizedOptimizationWorkItemBackend())) {
+            return "postgresql";
+        }
+        if (("optimization-experiments".equals(artifactId)
+                || "optimization-observations".equals(artifactId)
+                || "optimization-assessments".equals(artifactId))
+                && "postgresql".equals(properties.normalizedOptimizationExperimentBackend())) {
             return "postgresql";
         }
         return "json";

@@ -22,6 +22,8 @@ public class PersistenceControlProperties {
     private String skillScopeBackend = "json";
     private String skillRelationBackend = "json";
     private String searchIndexBackend = "json";
+    private String runtimeSummaryBackend = "json";
+    private String operationsMetricsStorage = "./data/operations/metrics.json";
     @Value("${skill-center.quality-evidence-backend:}")
     private String applicationQualityEvidenceBackend = "";
     @Value("${skill-center.benchmark-backend:}")
@@ -44,6 +46,10 @@ public class PersistenceControlProperties {
     private String applicationSkillRelationBackend = "";
     @Value("${skill-center.search-index-backend:}")
     private String applicationSearchIndexBackend = "";
+    @Value("${skill-center.runtime-summary-backend:}")
+    private String applicationRuntimeSummaryBackend = "";
+    @Value("${skill-center.operations.metrics-storage:}")
+    private String applicationOperationsMetricsStorage = "";
     @Value("${skill-center.search-index-events.enabled:false}")
     private String applicationSearchIndexEventsEnabled = "false";
     @Value("${skill-center.search-index-events.retention.scheduler-enabled:false}")
@@ -139,6 +145,15 @@ public class PersistenceControlProperties {
 
     public void setSkillRelationBackend(String skillRelationBackend) {
         this.skillRelationBackend = skillRelationBackend == null ? "json" : skillRelationBackend.trim();
+    }
+
+    public void setRuntimeSummaryBackend(String runtimeSummaryBackend) {
+        this.runtimeSummaryBackend = runtimeSummaryBackend == null ? "json" : runtimeSummaryBackend.trim();
+    }
+
+    public void setOperationsMetricsStorage(String operationsMetricsStorage) {
+        this.operationsMetricsStorage = operationsMetricsStorage == null
+                ? "./data/operations/metrics.json" : operationsMetricsStorage.trim();
     }
 
     public String getSearchIndexBackend() {
@@ -360,6 +375,18 @@ public class PersistenceControlProperties {
         String configured = applicationSearchIndexBackend == null || applicationSearchIndexBackend.isBlank()
                 ? searchIndexBackend : applicationSearchIndexBackend;
         return normalizeBackendValue(configured);
+    }
+
+    public String normalizedRuntimeSummaryBackend() {
+        String configured = applicationRuntimeSummaryBackend == null || applicationRuntimeSummaryBackend.isBlank()
+                ? runtimeSummaryBackend : applicationRuntimeSummaryBackend;
+        return normalizeBackendValue(configured);
+    }
+
+    public String normalizedOperationsMetricsStorage() {
+        String configured = applicationOperationsMetricsStorage == null || applicationOperationsMetricsStorage.isBlank()
+                ? operationsMetricsStorage : applicationOperationsMetricsStorage;
+        return configured == null ? "" : configured.trim().toLowerCase(Locale.ROOT);
     }
 
     public boolean searchIndexEventsEnabled() {
