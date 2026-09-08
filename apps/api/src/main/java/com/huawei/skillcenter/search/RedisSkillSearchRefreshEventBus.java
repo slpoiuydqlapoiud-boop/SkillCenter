@@ -9,6 +9,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.connection.stream.StreamRecords;
 import org.springframework.data.redis.connection.stream.StreamReadOptions;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,13 +56,14 @@ public final class RedisSkillSearchRefreshEventBus implements SkillSearchRefresh
             throw new IllegalArgumentException("limit must be between 1 and 1000");
         }
         try {
-            if (!ensureGroup()) return List.of();
-            List<MapRecord<String, Object, Object>> pending = read(boundedConsumerId,
+            String consumerGroup = consumerGroupFor(boundedConsumerId);
+            if (!ensureGroup(consumerGroup)) return List.of();
+            List<MapRecord<String, Object, Object>> pending = read(consumerGroup, boundedConsumerId,
                     ReadOffset.from("0-0"), limit);
-            if (pending.size() >= limit) return map(pending);
-            List<MapRecord<String, Object, Object>> fresh = read(boundedConsumerId,
+            if (pending.size() >= limit) return map(pending, boundedConsumerId);
+            List<MapRecord<String, Object, Object>> fresh = read(consumerGroup, boundedConsumerId,
                     ReadOffset.lastConsumed(), limit - pending.size());
-            return map(concat(pending, fresh));
+            return map(concat(pending, fresh), boundedConsumerId);
         } catch (SkillSearchIndexControlException exception) {
             throw exception;
         } catch (RuntimeException exception) {
@@ -71,35 +75,59 @@ public final class RedisSkillSearchRefreshEventBus implements SkillSearchRefresh
     public void acknowledge(Delivery delivery) {
         if (delivery == null) throw new IllegalArgumentException("delivery is required");
         try {
-            redis.opsForStream().acknowledge(stream, group, RecordId.of(delivery.messageId()));
+            redis.opsForStream().acknowledge(stream, consumerGroupFor(delivery.consumerId()),
+                    RecordId.of(delivery.messageId()));
         } catch (RuntimeException exception) {
             throw new SkillSearchIndexPersistenceException(exception);
         }
     }
 
-    private boolean ensureGroup() {
+    String consumerGroupFor(String consumerId) {
+        String boundedConsumerId = SkillSearchDocument.boundedRequired(consumerId, "consumerId", 128);
+        String suffix = sha256Hex(boundedConsumerId);
+        String prefix = group + "-";
+        int prefixLength = Math.min(prefix.length(), 128 - suffix.length());
+        return prefix.substring(0, prefixLength) + suffix;
+    }
+
+    private String sha256Hex(String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder result = new StringBuilder(digest.length * 2);
+            for (byte item : digest) {
+                result.append(String.format(java.util.Locale.ROOT, "%02x", item));
+            }
+            return result.toString();
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is unavailable", exception);
+        }
+    }
+
+    private boolean ensureGroup(String consumerGroup) {
         Boolean exists = redis.hasKey(stream);
         if (!Boolean.TRUE.equals(exists)) return false;
         try {
-            redis.opsForStream().createGroup(stream, ReadOffset.from("0-0"), group);
+            redis.opsForStream().createGroup(stream, ReadOffset.from("0-0"), consumerGroup);
         } catch (RuntimeException exception) {
             if (!isBusyGroup(exception)) throw exception;
         }
         return true;
     }
 
-    private List<MapRecord<String, Object, Object>> read(String consumerId, ReadOffset offset, int limit) {
+    private List<MapRecord<String, Object, Object>> read(String consumerGroup, String consumerId,
+                                                         ReadOffset offset, int limit) {
         List<MapRecord<String, Object, Object>> records = redis.opsForStream().read(
-                Consumer.from(group, consumerId), StreamReadOptions.empty().count(limit),
+                Consumer.from(consumerGroup, consumerId), StreamReadOptions.empty().count(limit),
                 StreamOffset.create(stream, offset));
         return records == null ? List.of() : records;
     }
 
-    private List<Delivery> map(List<MapRecord<String, Object, Object>> records) {
-        return records.stream().map(this::map).toList();
+    private List<Delivery> map(List<MapRecord<String, Object, Object>> records, String consumerId) {
+        return records.stream().map(record -> map(record, consumerId)).toList();
     }
 
-    private Delivery map(MapRecord<String, Object, Object> record) {
+    private Delivery map(MapRecord<String, Object, Object> record, String consumerId) {
         if (record == null || record.getId() == null) {
             throw new SkillSearchIndexControlException("SEARCH_INDEX_MESSAGE_INVALID");
         }
@@ -113,7 +141,7 @@ public final class RedisSkillSearchRefreshEventBus implements SkillSearchRefresh
             if (!event.eventKey().equals(eventId)) {
                 throw new SkillSearchIndexControlException("SEARCH_INDEX_MESSAGE_INVALID");
             }
-            return new Delivery(record.getId().getValue(), event);
+            return new Delivery(record.getId().getValue(), consumerId, event);
         } catch (IllegalArgumentException exception) {
             throw new SkillSearchIndexControlException("SEARCH_INDEX_MESSAGE_INVALID");
         }
