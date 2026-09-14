@@ -154,12 +154,31 @@ public class GovernanceStore {
     }
 
     public GovernanceSnapshot addAudit(AuditEvent audit) {
-        return mutate(snapshot -> {
-            List<AuditEvent> audits = new ArrayList<>(snapshot.audits());
-            audits.add(audit);
-            return copyWith(snapshot, snapshot.versions(), snapshot.reviews(), snapshot.installations(),
-                    audits, snapshot.authorizations(), snapshot.favorites(), snapshot.configuration());
-        });
+        lock.writeLock().lock();
+        try {
+            for (int attempt = 0; attempt < 2; attempt++) {
+                try {
+                    List<AuditEvent> audits = new ArrayList<>(current.audits());
+                    audits.add(audit);
+                    GovernanceSnapshot next = copyWith(current, current.versions(), current.reviews(),
+                            current.installations(), audits, current.authorizations(), current.favorites(),
+                            current.configuration());
+                    persist(next);
+                    current = next;
+                    return next;
+                } catch (GovernanceStateConflictException exception) {
+                    if (attempt == 1) throw exception;
+                    GovernanceStateRepository.GovernanceState loaded = stateRepository.load()
+                            .orElseThrow(() -> new GovernancePersistenceException(
+                                    new IllegalStateException("governance state is missing")));
+                    currentRevision = loaded.revision();
+                    current = normalized(loaded.snapshot());
+                }
+            }
+            throw new IllegalStateException("audit append retry exhausted");
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     public GovernanceSnapshot updateVersion(SkillVersion version, AuditEvent audit) {

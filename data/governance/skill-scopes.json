@@ -1,0 +1,11 @@
+[ {
+  "skillId" : "summarize-release-notes",
+  "visibility" : "PUBLIC",
+  "ownerTeamId" : "",
+  "maintainerUserIds" : [ ],
+  "revision" : 348,
+  "declaredBy" : "scope-admin",
+  "declaredAt" : "2026-08-24T16:24:17.677162800Z",
+  "updatedBy" : "scope-admin",
+  "updatedAt" : "2026-09-09T04:21:12.955291700Z"
+} ]

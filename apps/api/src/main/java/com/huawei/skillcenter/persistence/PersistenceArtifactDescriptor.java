@@ -37,8 +37,9 @@ public record PersistenceArtifactDescriptor(
         artifactId = artifactId.trim();
         storagePath = normalized;
         physicalBackend = PersistenceControlProperties.normalizeBackendValue(physicalBackend);
-        if (!"json".equals(physicalBackend) && !"postgresql".equals(physicalBackend)) {
-            throw new IllegalArgumentException("physicalBackend must be json or postgresql");
+        if (!"json".equals(physicalBackend) && !"mysql".equals(physicalBackend)
+                && !"postgresql".equals(physicalBackend)) {
+            throw new IllegalArgumentException("physicalBackend must be json, mysql or postgresql");
         }
     }
 }

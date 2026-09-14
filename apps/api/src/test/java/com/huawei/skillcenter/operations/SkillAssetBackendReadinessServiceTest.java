@@ -37,6 +37,20 @@ class SkillAssetBackendReadinessServiceTest {
     }
 
     @Test
+    void mysqlBackendsAreReadyAfterDepartmentDocumentSchemaIsMigrated() {
+        PersistenceControlProperties properties = mock(PersistenceControlProperties.class);
+        PersistenceBackend persistence = mock(PersistenceBackend.class);
+        when(properties.normalizedSkillScopeBackend()).thenReturn("mysql");
+        when(properties.normalizedSkillRelationBackend()).thenReturn("mysql");
+        when(properties.normalizedBackend()).thenReturn("mysql");
+        when(persistence.status()).thenReturn(PersistenceBackendStatus.ready("mysql", "2", null));
+
+        assertThat(new SkillAssetBackendReadinessService(properties, persistence).readiness())
+                .isEqualTo(new SkillAssetBackendReadiness("mysql", "READY", "SKILL_ASSET_MYSQL_READY",
+                        "Skill scope 与 relation MySQL 存储已就绪"));
+    }
+
+    @Test
     void postgresqlBackendsFailClosedWhenGlobalPersistenceIsNotPostgresql() {
         PersistenceControlProperties properties = mock(PersistenceControlProperties.class);
         PersistenceBackend persistence = mock(PersistenceBackend.class);

@@ -9,6 +9,14 @@ spring:
       port: ${SKILL_CENTER_REDIS_PORT:6379}
 
 skill-center:
+  providers:
+    probe-scheduler-enabled: true
+    probe-scheduler-interval-ms: ${SKILL_CENTER_PROVIDERS_PROBE_SCHEDULER_INTERVAL_MS:60000}
+    probe-scheduler-initial-delay-ms: ${SKILL_CENTER_PROVIDERS_PROBE_SCHEDULER_INITIAL_DELAY_MS:1000}
+  release-target:
+    probe-scheduler-enabled: true
+    probe-scheduler-interval-ms: ${SKILL_CENTER_RELEASE_TARGET_PROBE_SCHEDULER_INTERVAL_MS:60000}
+    probe-scheduler-initial-delay-ms: ${SKILL_CENTER_RELEASE_TARGET_PROBE_SCHEDULER_INITIAL_DELAY_MS:1000}
   persistence:
     backend: postgresql
     postgresql:
@@ -37,6 +45,9 @@ skill-center:
     endpoint: "${SKILL_CENTER_SEARCH_INDEX_ENDPOINT:http://127.0.0.1:9200}"
     index: "${SKILL_CENTER_SEARCH_INDEX_NAME:skillcenter-skills-v1}"
     credential-ref: "${SKILL_CENTER_SEARCH_INDEX_CREDENTIAL_REF:}"
+    probe-scheduler-enabled: true
+    probe-scheduler-interval-ms: ${SKILL_CENTER_SEARCH_INDEX_PROBE_SCHEDULER_INTERVAL_MS:60000}
+    probe-scheduler-initial-delay-ms: ${SKILL_CENTER_SEARCH_INDEX_PROBE_SCHEDULER_INITIAL_DELAY_MS:1000}
   search-index-events:
     enabled: true
     consumer-id: "${SKILL_CENTER_SEARCH_INDEX_EVENTS_CONSUMER_ID:local-integration-8081}"
@@ -53,4 +64,7 @@ skill-center:
     region: us-east-1
     access-key-id-ref: secret://env/SKILL_CENTER_MINIO_ROOT_USER
     secret-access-key-ref: secret://env/SKILL_CENTER_MINIO_ROOT_PASSWORD
+    probe-scheduler-enabled: true
+    probe-scheduler-interval-ms: ${SKILL_CENTER_ARTIFACT_STORAGE_PROBE_SCHEDULER_INTERVAL_MS:60000}
+    probe-scheduler-initial-delay-ms: ${SKILL_CENTER_ARTIFACT_STORAGE_PROBE_SCHEDULER_INITIAL_DELAY_MS:1000}
   package-upload-backend: distributed

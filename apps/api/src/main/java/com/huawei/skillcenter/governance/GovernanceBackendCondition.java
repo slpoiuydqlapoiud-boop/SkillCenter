@@ -42,4 +42,10 @@ abstract class GovernanceBackendCondition implements Condition {
             super("postgresql");
         }
     }
+
+    static final class Mysql extends GovernanceBackendCondition {
+        Mysql() {
+            super("mysql");
+        }
+    }
 }

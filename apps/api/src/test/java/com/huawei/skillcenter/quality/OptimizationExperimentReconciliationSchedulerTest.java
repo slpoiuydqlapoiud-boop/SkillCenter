@@ -44,6 +44,27 @@ class OptimizationExperimentReconciliationSchedulerTest {
     }
 
     @Test
+    void schedulerAcceptsDepartmentMysqlBackends() {
+        OptimizationExperimentService service = mock(OptimizationExperimentService.class);
+        OptimizationExperimentRepository experiments = mock(OptimizationExperimentRepository.class);
+        OptimizationExperiment running = experiment("mysql-experiment", OptimizationExperimentStatus.RUNNING);
+        when(experiments.findAll("", "", "")).thenReturn(List.of(running));
+
+        OptimizationExperimentReconciliationScheduler scheduler = new OptimizationExperimentReconciliationScheduler(
+                service, experiments,
+                () -> new OptimizationExperimentBackendReadiness(
+                        "mysql", "READY", "OPTIMIZATION_EXPERIMENT_MYSQL_READY", "实验已就绪"),
+                () -> new OptimizationWorkItemBackendReadiness(
+                        "mysql", "READY", "OPTIMIZATION_WORK_ITEM_MYSQL_READY", "工作项已就绪"),
+                mysqlProperties(), mysqlPersistence());
+
+        scheduler.runOnce();
+
+        verify(service).reconcile(eq(running.experimentId()), any(),
+                eq("scheduler-optimization-experiment-mysql-experiment"));
+    }
+
+    @Test
     void automaticActionsRequireReadySharedBenchmarkBackend() {
         OptimizationExperimentService service = mock(OptimizationExperimentService.class);
         OptimizationExperimentRepository experiments = mock(OptimizationExperimentRepository.class);
@@ -186,6 +207,19 @@ class OptimizationExperimentReconciliationSchedulerTest {
     private PersistenceBackend readyPersistence() {
         PersistenceBackend persistence = mock(PersistenceBackend.class);
         when(persistence.status()).thenReturn(PersistenceBackendStatus.ready("postgresql", "12", null));
+        return persistence;
+    }
+
+    private PersistenceControlProperties mysqlProperties() {
+        PersistenceControlProperties properties = mock(PersistenceControlProperties.class);
+        when(properties.normalizedBackend()).thenReturn("mysql");
+        when(properties.normalizedQualityEvidenceBackend()).thenReturn("mysql");
+        return properties;
+    }
+
+    private PersistenceBackend mysqlPersistence() {
+        PersistenceBackend persistence = mock(PersistenceBackend.class);
+        when(persistence.status()).thenReturn(PersistenceBackendStatus.ready("mysql", "2", null));
         return persistence;
     }
 

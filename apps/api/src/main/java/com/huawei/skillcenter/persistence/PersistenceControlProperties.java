@@ -206,40 +206,40 @@ public class PersistenceControlProperties {
 
     public void validate(Path configuredParent) {
         if (!isSupportedBackend(normalizedBackend())) {
-            throw new IllegalArgumentException("backend must be json or postgresql");
+            throw new IllegalArgumentException("backend must be json, mysql or postgresql");
         }
         if (!isSupportedBackend(normalizedQualityEvidenceBackend())) {
-            throw new IllegalArgumentException("qualityEvidenceBackend must be json or postgresql");
+            throw new IllegalArgumentException("qualityEvidenceBackend must be json, mysql or postgresql");
         }
         if (!isSupportedBackend(normalizedBenchmarkBackend())) {
-            throw new IllegalArgumentException("benchmarkBackend must be json or postgresql");
+            throw new IllegalArgumentException("benchmarkBackend must be json, mysql or postgresql");
         }
         if (!isSupportedBackend(normalizedReleaseBackend())) {
-            throw new IllegalArgumentException("releaseBackend must be json or postgresql");
+            throw new IllegalArgumentException("releaseBackend must be json, mysql or postgresql");
         }
         if (!isSupportedBackend(normalizedOptimizationWorkItemBackend())) {
-            throw new IllegalArgumentException("optimizationWorkItemBackend must be json or postgresql");
+            throw new IllegalArgumentException("optimizationWorkItemBackend must be json, mysql or postgresql");
         }
         if (!isSupportedBackend(normalizedOptimizationExperimentBackend())) {
-            throw new IllegalArgumentException("optimizationExperimentBackend must be json or postgresql");
+            throw new IllegalArgumentException("optimizationExperimentBackend must be json, mysql or postgresql");
         }
         if (!isSupportedBackend(normalizedProductionEvidenceBackend())) {
-            throw new IllegalArgumentException("productionEvidenceBackend must be json or postgresql");
+            throw new IllegalArgumentException("productionEvidenceBackend must be json, mysql or postgresql");
         }
         if (!isSupportedBackend(normalizedGovernanceBackend())) {
-            throw new IllegalArgumentException("governanceBackend must be json or postgresql");
+            throw new IllegalArgumentException("governanceBackend must be json, mysql or postgresql");
         }
         if (!isSupportedBackend(normalizedExecutionEnvironmentBackend())) {
-            throw new IllegalArgumentException("executionEnvironmentBackend must be json or postgresql");
+            throw new IllegalArgumentException("executionEnvironmentBackend must be json, mysql or postgresql");
         }
         if (!isSupportedBackend(normalizedSkillScopeBackend())) {
-            throw new IllegalArgumentException("skillScopeBackend must be json or postgresql");
+            throw new IllegalArgumentException("skillScopeBackend must be json, mysql or postgresql");
         }
         if (!isSupportedBackend(normalizedSkillRelationBackend())) {
-            throw new IllegalArgumentException("skillRelationBackend must be json or postgresql");
+            throw new IllegalArgumentException("skillRelationBackend must be json, mysql or postgresql");
         }
         if (!isSupportedSearchBackend(normalizedSearchIndexBackend())) {
-            throw new IllegalArgumentException("searchIndexBackend must be json, postgresql or opensearch");
+            throw new IllegalArgumentException("searchIndexBackend must be json, mysql, postgresql or opensearch");
         }
         if ("postgresql".equals(normalizedQualityEvidenceBackend())
                 && !"postgresql".equals(normalizedBackend())) {
@@ -400,7 +400,7 @@ public class PersistenceControlProperties {
     }
 
     private boolean isSupportedBackend(String value) {
-        return "json".equals(value) || "postgresql".equals(value);
+        return "json".equals(value) || "mysql".equals(value) || "postgresql".equals(value);
     }
 
     private boolean isSupportedSearchBackend(String value) {

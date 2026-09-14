@@ -19,6 +19,7 @@ export function createApiClient({ fetchImpl = globalThis.fetch, baseUrl = "", ti
     actor = {
       userId: nextActor.userId || "local-user",
       role: nextActor.role || "admin",
+      token: nextActor.token || "",
     };
   }
 
@@ -33,6 +34,7 @@ export function createApiClient({ fetchImpl = globalThis.fetch, baseUrl = "", ti
           Accept: "application/json",
           "X-User-Id": actor.userId,
           "X-User-Role": actor.role,
+          ...(actor.token ? { Authorization: `Bearer ${actor.token}` } : {}),
           ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
           ...(options.headers ?? {}),
         },
@@ -62,7 +64,42 @@ export function createApiClient({ fetchImpl = globalThis.fetch, baseUrl = "", ti
     }
   }
 
-  return { request, setActor };
+  async function login(username, password) {
+    const response = await request("/api/v1/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    });
+    const session = sessionFromResponse(response);
+    setActor(session);
+    return session;
+  }
+
+  async function loginAsGuest() {
+    const response = await request("/api/v1/auth/guest", { method: "POST" });
+    const session = sessionFromResponse(response);
+    setActor(session);
+    return session;
+  }
+
+  async function logout() {
+    try { await request("/api/v1/auth/logout", { method: "POST" }); } finally { setActor(); }
+  }
+
+  return { request, setActor, login, loginAsGuest, logout };
+}
+
+function sessionFromResponse(response) {
+  const actor = response?.data?.actor;
+  if (!response?.data?.token || !actor?.userId || !actor?.role) {
+    throw new ApiError("登录响应无效", { code: "AUTH_RESPONSE_INVALID" });
+  }
+  return {
+    userId: actor.userId,
+    role: actor.role,
+    token: response.data.token,
+    displayName: actor.userId === "developer-user" ? "普通开发者" : actor.userId,
+    expiresAt: response.data.expiresAt,
+  };
 }
 
 function messageForApiError(code, serverMessage, status, retryAfterSeconds, details = []) {

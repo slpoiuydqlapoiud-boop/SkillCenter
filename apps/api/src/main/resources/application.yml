@@ -31,30 +31,34 @@ skill-center:
       max-age-seconds: 900
       storage: ./data/governance/organization-directory.json
   providers:
-    runner: mock
-    evaluation: mock
-    observability: mock
-    trace: mock
+    runner: ${SKILL_CENTER_PROVIDERS_RUNNER:mock}
+    evaluation: ${SKILL_CENTER_PROVIDERS_EVALUATION:mock}
+    observability: ${SKILL_CENTER_PROVIDERS_OBSERVABILITY:mock}
+    trace: ${SKILL_CENTER_PROVIDERS_TRACE:mock}
+    probe-ttl-seconds: ${SKILL_CENTER_PROVIDERS_PROBE_TTL_SECONDS:300}
+    probe-scheduler-enabled: ${SKILL_CENTER_PROVIDERS_PROBE_SCHEDULER_ENABLED:false}
+    probe-scheduler-interval-ms: ${SKILL_CENTER_PROVIDERS_PROBE_SCHEDULER_INTERVAL_MS:60000}
+    probe-scheduler-initial-delay-ms: ${SKILL_CENTER_PROVIDERS_PROBE_SCHEDULER_INITIAL_DELAY_MS:1000}
     openclaw:
-      endpoint: ""
-      credential-ref: ""
-      mode: contract
+      endpoint: ${SKILL_CENTER_OPENCLAW_ENDPOINT:}
+      credential-ref: ${SKILL_CENTER_OPENCLAW_CREDENTIAL_REF:}
+      mode: ${SKILL_CENTER_OPENCLAW_MODE:contract}
     deepeval:
-      endpoint: ""
-      credential-ref: ""
-      mode: contract
+      endpoint: ${SKILL_CENTER_DEEPEVAL_ENDPOINT:}
+      credential-ref: ${SKILL_CENTER_DEEPEVAL_CREDENTIAL_REF:}
+      mode: ${SKILL_CENTER_DEEPEVAL_MODE:contract}
     langfuse:
-      endpoint: ""
-      trace-endpoint: ""
-      credential-ref: ""
-      mode: contract
-  quality-evidence-backend: json
+      endpoint: ${SKILL_CENTER_LANGFUSE_ENDPOINT:}
+      trace-endpoint: ${SKILL_CENTER_LANGFUSE_TRACE_ENDPOINT:}
+      credential-ref: ${SKILL_CENTER_LANGFUSE_CREDENTIAL_REF:}
+      mode: ${SKILL_CENTER_LANGFUSE_MODE:contract}
+  quality-evidence-backend: ${SKILL_CENTER_QUALITY_EVIDENCE_BACKEND:json}
   benchmark-backend: ${SKILL_CENTER_BENCHMARK_BACKEND:json}
-  release-backend: json
-  optimization-work-item-backend: json
+  release-backend: ${SKILL_CENTER_RELEASE_BACKEND:json}
+  optimization-work-item-backend: ${SKILL_CENTER_OPTIMIZATION_WORK_ITEM_BACKEND:json}
   optimization-experiment-backend: ${SKILL_CENTER_OPTIMIZATION_EXPERIMENT_BACKEND:json}
-  production-evidence-backend: json
-  governance-backend: json
+  production-evidence-backend: ${SKILL_CENTER_PRODUCTION_EVIDENCE_BACKEND:json}
+  governance-backend: ${SKILL_CENTER_GOVERNANCE_BACKEND:json}
   execution-environment-backend: ${SKILL_CENTER_EXECUTION_ENVIRONMENT_BACKEND:json}
   skill-scope-backend: ${SKILL_CENTER_SKILL_SCOPE_BACKEND:json}
   skill-relation-backend: ${SKILL_CENTER_SKILL_RELATION_BACKEND:json}
@@ -77,14 +81,17 @@ skill-center:
     endpoint: ${SKILL_CENTER_SEARCH_INDEX_ENDPOINT:}
     index: ${SKILL_CENTER_SEARCH_INDEX_NAME:skillcenter-skills-v1}
     credential-ref: ${SKILL_CENTER_SEARCH_INDEX_CREDENTIAL_REF:}
+    probe-scheduler-enabled: ${SKILL_CENTER_SEARCH_INDEX_PROBE_SCHEDULER_ENABLED:false}
+    probe-scheduler-interval-ms: ${SKILL_CENTER_SEARCH_INDEX_PROBE_SCHEDULER_INTERVAL_MS:60000}
+    probe-scheduler-initial-delay-ms: ${SKILL_CENTER_SEARCH_INDEX_PROBE_SCHEDULER_INITIAL_DELAY_MS:1000}
     connect-timeout-ms: ${SKILL_CENTER_SEARCH_INDEX_CONNECT_TIMEOUT_MS:1000}
     request-timeout-ms: ${SKILL_CENTER_SEARCH_INDEX_REQUEST_TIMEOUT_MS:5000}
     max-response-bytes: ${SKILL_CENTER_SEARCH_INDEX_MAX_RESPONSE_BYTES:256000}
     probe-ttl-seconds: ${SKILL_CENTER_SEARCH_INDEX_PROBE_TTL_SECONDS:300}
   quality-evidence-storage: ./data/governance/quality-evidence.json
   benchmark-storage: ./data/governance/benchmarks.json
-  runtime-summary-backend: json
-  alert-state-backend: memory
+  runtime-summary-backend: ${SKILL_CENTER_RUNTIME_SUMMARY_BACKEND:json}
+  alert-state-backend: ${SKILL_CENTER_OPERATIONS_ALERT_STATE_BACKEND:memory}
   runtime-summary-storage: ./data/governance/runtime-summaries.json
   execution-environment-storage: ./data/governance/execution-environments.json
   runtime-summary-redis-key: skill-center:runtime:summaries
@@ -92,12 +99,15 @@ skill-center:
   release-storage: ./data/governance/releases.json
   release-target:
     # Mock is the deterministic local default; HTTP is explicit and fail-closed.
-    mode: mock
+    mode: ${SKILL_CENTER_RELEASE_TARGET_MODE:mock}
     endpoint: ${SKILL_CENTER_RELEASE_TARGET_ENDPOINT:}
     credential-ref: ${SKILL_CENTER_RELEASE_TARGET_CREDENTIAL_REF:}
+    probe-scheduler-enabled: ${SKILL_CENTER_RELEASE_TARGET_PROBE_SCHEDULER_ENABLED:false}
+    probe-scheduler-interval-ms: ${SKILL_CENTER_RELEASE_TARGET_PROBE_SCHEDULER_INTERVAL_MS:60000}
+    probe-scheduler-initial-delay-ms: ${SKILL_CENTER_RELEASE_TARGET_PROBE_SCHEDULER_INITIAL_DELAY_MS:1000}
     timeout-ms: ${SKILL_CENTER_RELEASE_TARGET_TIMEOUT_MS:10000}
     probe-ttl-seconds: ${SKILL_CENTER_RELEASE_TARGET_PROBE_TTL_SECONDS:300}
-  release-admission-mode: LEGACY_COMPATIBLE
+  release-admission-mode: ${SKILL_CENTER_RELEASE_ADMISSION_MODE:LEGACY_COMPATIBLE}
   skill-scope-storage: ./data/governance/skill-scopes.json
   skill-relations-storage: ./data/governance/skill-relations.json
   optimization-work-item-storage: ./data/governance/optimization-work-items.json
@@ -114,16 +124,16 @@ skill-center:
     auto-decision-enabled: ${SKILL_CENTER_OPTIMIZATION_EXPERIMENT_AUTO_DECISION_ENABLED:false}
   package-storage: ./data/packages
   # local is the safe development default; object-storage is fail-closed until a real adapter is installed.
-  artifact-storage-backend: local
+  artifact-storage-backend: ${SKILL_CENTER_ARTIFACT_STORAGE_BACKEND:local}
   artifact-storage:
-    mode: contract
-    probe-ttl-seconds: 300
-    endpoint: ""
-    bucket: ""
-    region: us-east-1
-    prefix: skill-packages
-    access-key-id-ref: ""
-    secret-access-key-ref: ""
+    mode: ${SKILL_CENTER_ARTIFACT_STORAGE_MODE:contract}
+    probe-ttl-seconds: ${SKILL_CENTER_ARTIFACT_STORAGE_PROBE_TTL_SECONDS:300}
+    endpoint: ${SKILL_CENTER_ARTIFACT_STORAGE_ENDPOINT:}
+    bucket: ${SKILL_CENTER_ARTIFACT_STORAGE_BUCKET:}
+    region: ${SKILL_CENTER_ARTIFACT_STORAGE_REGION:us-east-1}
+    prefix: ${SKILL_CENTER_ARTIFACT_STORAGE_PREFIX:skill-packages}
+    access-key-id-ref: ${SKILL_CENTER_ARTIFACT_STORAGE_ACCESS_KEY_ID_REF:}
+    secret-access-key-ref: ${SKILL_CENTER_ARTIFACT_STORAGE_SECRET_ACCESS_KEY_REF:}
   package-max-bytes: 20971520
   package-max-uncompressed-bytes: 104857600
   package-upload-chunk-bytes: ${SKILL_CENTER_PACKAGE_UPLOAD_CHUNK_BYTES:1048576}
@@ -143,12 +153,12 @@ skill-center:
       max-response-bytes: ${SKILL_CENTER_PACKAGE_SECURITY_EXTERNAL_MAX_RESPONSE_BYTES:1048576}
       max-request-bytes: ${SKILL_CENTER_PACKAGE_SECURITY_EXTERNAL_MAX_REQUEST_BYTES:20971520}
       capabilities: ${SKILL_CENTER_PACKAGE_SECURITY_EXTERNAL_CAPABILITIES:}
-  artifact-base-url: https://skill-center.internal/artifacts
+  artifact-base-url: ${SKILL_CENTER_ARTIFACT_BASE_URL:https://skill-center.internal/artifacts}
   invocation-persistence: true
   persistence:
     # Local default: JSON remains the authoritative source of truth.
     # PostgreSQL lifecycle projection requires this selector and the lifecycle selector below to be postgresql.
-    backend: json
+    backend: ${SKILL_CENTER_PERSISTENCE_BACKEND:json}
     configured-root: ${user.dir}
     control-storage: ./data/control
     snapshot-storage: ./data/backups
@@ -167,7 +177,7 @@ skill-center:
     # The following values are immutable lifecycle safety-contract labels, not runtime switches.
     # Operators must not change them; the verifier rejects any other value and Java keeps the
     # same fail-closed/offline/explicit-admin policy when this section is absent.
-    backend: json
+    backend: ${SKILL_CENTER_LIFECYCLE_PROJECTION_BACKEND:json}
     source-mode: offline-snapshot
     import-mode: explicit-admin
     startup-mode: fail-closed
@@ -175,7 +185,8 @@ skill-center:
     # PostgreSQL freshness alert threshold; the verifier and runtime bound this to 60..86400 seconds.
     max-source-age-seconds: 900
   operations:
-    metrics-storage: ./data/operations/metrics.json
+    metrics-storage: ${SKILL_CENTER_OPERATIONS_METRICS_STORAGE:./data/operations/metrics.json}
+    alert-state-backend: ${SKILL_CENTER_OPERATIONS_ALERT_STATE_BACKEND:memory}
     metrics-token: ${SKILL_CENTER_METRICS_TOKEN:}
     redis:
       key: skill-center:operations:metrics
@@ -193,12 +204,12 @@ skill-center:
       evaluation-window: ${SKILL_CENTER_OPERATIONS_ALERT_EVALUATION_WINDOW:5m}
       evaluation-interval-ms: ${SKILL_CENTER_OPERATIONS_ALERT_EVALUATION_INTERVAL_MS:60000}
       evaluation-initial-delay-ms: ${SKILL_CENTER_OPERATIONS_ALERT_EVALUATION_INITIAL_DELAY_MS:60000}
-      notification-url: ""
+      notification-url: ${SKILL_CENTER_OPERATIONS_ALERT_NOTIFICATION_URL:}
       notification-timeout-ms: 1500
   security:
     authentication:
       # Local is intentionally the development default; production must use jwt and a managed SSO key.
-      mode: local
+      mode: ${SKILL_CENTER_AUTHENTICATION_MODE:local}
       jwt:
         public-key: ${SKILL_CENTER_JWT_PUBLIC_KEY:}
         # Configure jwks-uri instead of public-key for managed SSO key rotation; production must use HTTPS.

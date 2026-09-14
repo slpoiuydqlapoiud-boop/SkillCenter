@@ -1,4 +1,6 @@
-# ADR-0001：Skill Center 一期技术底座
+# ADR-0001：Skill Center 一期技术底座（历史企业级基线）
+
+> 当前部门版默认部署以 [ADR-0002](./ADR-0002-department-windows-mysql-platform.md) 为准。本 ADR 中的 PostgreSQL、Redis、OpenSearch、消息、对象存储和多环境/企业级安全要求不再是部门版启动前置条件。
 
 - 状态：M0 已接受
 - 日期：2026-08-12

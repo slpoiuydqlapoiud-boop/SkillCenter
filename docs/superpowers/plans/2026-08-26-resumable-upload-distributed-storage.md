@@ -10,6 +10,14 @@
 
 **Spec:** `docs/superpowers/specs/2026-08-26-resumable-upload-distributed-storage-design.md`
 
+## Implementation status (2026-08-26)
+
+The implementation and regression coverage for Tasks 1–6 are now present in the working tree. The code uses the existing package-upload boundaries: `ResumableUploadStore` contains the metadata/chunk contracts, `S3ObjectClient` is the reusable object boundary, and `S3CompatibleArtifactStorage` provides the distributed object implementation. The distributed store now includes lease recovery/renewal, conditional abort, idempotent-content conflict detection, cleanup of uncommitted objects, and fail-closed Redis + object-storage readiness. Upload readiness is also included in `PlatformReadinessService`.
+
+Verification evidence: `mvn -q -DforkCount=0 test` from `apps/api` completed with `974` tests, `0` failures, `0` errors, and `43` Docker capability skips; `git diff --check` completed successfully. Real Redis/S3 multi-instance integration, orphan-object load testing, and production migration acceptance remain external handoff items.
+
+The original file map names some conceptual ports separately; the shipped implementation intentionally keeps the public contract smaller by using the nested records and `S3ObjectClient` boundary above. No isolated commit was created for this increment because the workspace already contained mixed user changes.
+
 ## Global Constraints
 
 - API 路径、`UploadProgress` 字段和现有 `UPLOAD_*` 错误语义保持兼容，Web 不感知后端存储类型。

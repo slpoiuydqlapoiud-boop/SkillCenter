@@ -1,0 +1,83 @@
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+csms:
+  enabled: false
+  provider: cce
+  useWorkloadCred: true
+  secretName: skillcenter-runtime-secrets
+  objects: []
+
+api:
+  image:
+    repository: skillcenter/api
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  containerPort: 8080
+  servicePort: 8080
+  env: {}
+  secretRef:
+    enabled: false
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+
+web:
+  image:
+    repository: skillcenter/web
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  containerPort: 8080
+  servicePort: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+ingress:
+  enabled: false
+  className: nginx
+  host: skill-center.prod.example.com
+  tlsSecretName: skillcenter-tls
+  annotations: {}
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true
+  ingressNamespaceSelector: {}
+  apiEgress: []
+
+migration:
+  enabled: true
+  backoffLimit: 1
+  activeDeadlineSeconds: 600
+
+serviceMonitor:
+  enabled: false
+  interval: 30s

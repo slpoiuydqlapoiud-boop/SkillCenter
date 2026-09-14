@@ -1,0 +1,36 @@
+{
+  "versions" : [ ],
+  "reviews" : [ ],
+  "installations" : [ ],
+  "audits" : [ ],
+  "authorizations" : [ ],
+  "favorites" : [ ],
+  "configuration" : {
+    "teams" : [ ],
+    "roleBindings" : [ ],
+    "categories" : [ ],
+    "tags" : [ ],
+    "collections" : [ ],
+    "platformPolicy" : {
+      "policyVersion" : 1,
+      "pageSizeOptions" : [ 12, 24, 48 ],
+      "maxPageSize" : 48,
+      "minimumClientVersion" : "1.0.0",
+      "defaultCollectionVisibility" : "public",
+      "updatedBy" : null,
+      "updatedAt" : null
+    }
+  },
+  "invocationEvents" : [ ],
+  "exportJobs" : [ ],
+  "retentionPolicy" : {
+    "policyVersion" : 1,
+    "auditRetentionDays" : 365,
+    "invocationRetentionDays" : 90,
+    "installationRetentionDays" : 90,
+    "updatedBy" : null,
+    "updatedAt" : null
+  },
+  "auditIntegrity" : [ ],
+  "notifications" : [ ]
+}

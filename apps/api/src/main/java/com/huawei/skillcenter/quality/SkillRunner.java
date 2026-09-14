@@ -5,6 +5,11 @@ public interface SkillRunner {
 
     String providerVersion();
 
+    /** Identifies the evidence partition produced before the first case completes. */
+    default String dataSource() {
+        return "mock";
+    }
+
     default java.util.List<String> capabilities() {
         return java.util.List.of();
     }

@@ -39,6 +39,18 @@ class OptimizationExperimentBackendReadinessServiceTest {
     }
 
     @Test
+    void mysqlBackendIsReadyAfterDepartmentDocumentSchemaIsMigrated() {
+        PersistenceControlProperties properties = mock(PersistenceControlProperties.class);
+        PersistenceBackend persistence = mock(PersistenceBackend.class);
+        when(properties.normalizedOptimizationExperimentBackend()).thenReturn("mysql");
+        when(properties.normalizedBackend()).thenReturn("mysql");
+        when(persistence.status()).thenReturn(PersistenceBackendStatus.ready("mysql", "2", null));
+
+        assertThat(service(properties, persistence).readiness()).isEqualTo(new OptimizationExperimentBackendReadiness(
+                "mysql", "READY", "OPTIMIZATION_EXPERIMENT_MYSQL_READY", "优化实验 MySQL 存储已就绪"));
+    }
+
+    @Test
     void postgresqlBackendFailsClosedWhenV12SchemaIsMissing() {
         PersistenceControlProperties properties = mock(PersistenceControlProperties.class);
         PersistenceBackend persistence = mock(PersistenceBackend.class);

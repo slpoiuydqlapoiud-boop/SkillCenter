@@ -1,0 +1,12 @@
+[ {
+  "skillId" : "skill-a",
+  "version" : "1.0.0",
+  "suggestionId" : "runtime-data",
+  "status" : "ACKNOWLEDGED",
+  "note" : "补充生产样本",
+  "actorId" : "quality-admin",
+  "actorRole" : "admin",
+  "updatedAt" : "2026-09-09T04:22:35.666734500Z",
+  "evidenceType" : "NONE",
+  "evidenceId" : ""
+} ]

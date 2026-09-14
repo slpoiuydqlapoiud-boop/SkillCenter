@@ -61,6 +61,19 @@ Describe "verify-environment contract" {
         ($json -join "") | Should Not Match "(?i)(password|secret|access[_-]?key|token)\s*[:=]"
     }
 
+    It "can verify application runtime HTTP readiness without returning response bodies" {
+        $json = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $scriptPath -Json -CheckRuntime
+        $LASTEXITCODE | Should Be 0
+
+        $checks = @($json | ConvertFrom-Json)
+        ($checks | Where-Object Id -eq "skillcenter-web").Status | Should Be "READY"
+        ($checks | Where-Object Id -eq "skillcenter-api-default").Status | Should Be "READY"
+        ($checks | Where-Object Id -eq "skillcenter-api-integration").Status | Should Be "READY"
+        ($checks | Where-Object Id -eq "skillcenter-readiness-integration").Status | Should Be "READY"
+        ($json -join "") | Should Not Match "(?i)(password|secret|access[_-]?key|token)\s*[:=]"
+        ($json -join "") | Should Not Match '(?i)"(data|body)"\s*:'
+    }
+
     It "is non-destructive and supports a fail-closed mode" {
         $content = Get-Content -Raw -LiteralPath $scriptPath
 

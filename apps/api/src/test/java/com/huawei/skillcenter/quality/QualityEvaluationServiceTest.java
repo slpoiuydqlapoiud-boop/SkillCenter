@@ -8,6 +8,7 @@ import java.time.ZoneOffset;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -38,6 +39,45 @@ class QualityEvaluationServiceTest {
         assertThat(snapshot.skillVersion()).isEqualTo("1.2.0");
         assertThat(snapshot.suiteVersion()).isEqualTo("smoke-v1");
         assertThat(snapshot.snapshotId()).isEqualTo(run.id());
+    }
+
+    @Test
+    void preservesProductionDataSourceAcrossEvaluationEvidence() {
+        QualityEvaluationService productionService = new QualityEvaluationService(
+                new ProductionRunner(), new MockEvaluationProvider(),
+                Clock.fixed(Instant.parse("2026-08-21T00:00:00Z"), ZoneOffset.UTC));
+
+        EvaluationRun queued = productionService.submit(new EvaluationRequest(
+                "eox-query", "1.2.0", "smoke", "success", 1_000));
+
+        assertThat(queued.dataSource()).isEqualTo("production");
+        EvaluationRun completed = awaitCompleted(productionService, queued.id());
+
+        assertThat(completed.dataSource()).isEqualTo("production");
+        assertThat(productionService.snapshot(queued.id()).dataSource()).isEqualTo("production");
+        assertThat(productionService.results(queued.id()))
+                .extracting(EvaluationCaseResult::dataSource)
+                .containsOnly("production");
+        assertThat(productionService.snapshots("eox-query", "production", null, null, null)).hasSize(1);
+        assertThat(productionService.snapshots("eox-query", "mock", null, null, null)).isEmpty();
+    }
+
+    @Test
+    void failsClosedWhenRunnerMixesEvidenceDataSourcesAcrossCases() {
+        QualityEvaluationService mixedService = new QualityEvaluationService(
+                new MixedDataSourceRunner(), new MockEvaluationProvider(),
+                Clock.fixed(Instant.parse("2026-08-21T00:00:00Z"), ZoneOffset.UTC));
+
+        EvaluationRun queued = mixedService.submit(new EvaluationRequest(
+                "eox-query", "1.2.0", "smoke", "success", 1_000));
+        EvaluationRun terminal = awaitTerminal(mixedService, queued.id());
+
+        assertThat(terminal.status()).isEqualTo(EvaluationRunStatus.FAILED);
+        assertThat(terminal.errorCode()).isEqualTo("MIXED_DATA_SOURCE");
+        assertThat(mixedService.snapshot(queued.id())).isNull();
+        assertThat(mixedService.results(queued.id()))
+                .extracting(EvaluationCaseResult::dataSource)
+                .containsOnly("production");
     }
 
     @Test
@@ -146,6 +186,24 @@ class QualityEvaluationServiceTest {
     }
 
     @Test
+    void awaitsCancellationWorkerQuiescenceBeforeTemporaryStateCleanup() throws Exception {
+        BlockingRunner runner = new BlockingRunner();
+        QualityEvaluationService cancellable = new QualityEvaluationService(
+                runner, new MockEvaluationProvider(),
+                Clock.fixed(Instant.parse("2026-08-21T00:00:00Z"), ZoneOffset.UTC));
+
+        EvaluationRun queued = cancellable.submit(new EvaluationRequest(
+                "eox-query", "1.2.0", "smoke", "success", 1_000));
+        assertThat(runner.started.await(1, TimeUnit.SECONDS)).isTrue();
+
+        cancellable.cancel(queued.id());
+        assertThat(cancellable.awaitQuiescence(Duration.ofMillis(20))).isFalse();
+
+        runner.release.countDown();
+        assertThat(cancellable.awaitQuiescence(Duration.ofSeconds(1))).isTrue();
+    }
+
+    @Test
     void recordsRunnerTimeoutAsTerminalEvaluationTimeoutWithoutQualitySnapshot() {
         QualityEvaluationService timeoutService = new QualityEvaluationService(
                 new MockRunner(), new MockEvaluationProvider(),
@@ -192,10 +250,14 @@ class QualityEvaluationServiceTest {
     }
 
     private EvaluationRun awaitCompleted(String id) {
+        return awaitCompleted(service, id);
+    }
+
+    private EvaluationRun awaitCompleted(QualityEvaluationService target, String id) {
         long deadline = System.nanoTime() + Duration.ofSeconds(2).toNanos();
         EvaluationRun current;
         do {
-            current = service.find(id);
+            current = target.find(id);
             if (current.status() == EvaluationRunStatus.COMPLETED) {
                 return current;
             }
@@ -261,6 +323,55 @@ class QualityEvaluationServiceTest {
             }
             return new RunnerExecutionResult(RunnerExecutionStatus.SUCCEEDED, providerId(), providerVersion(),
                     "mock", 10, "blocking-success", "");
+        }
+    }
+
+    private static final class ProductionRunner implements SkillRunner {
+        @Override
+        public String providerId() {
+            return "openclaw-runner";
+        }
+
+        @Override
+        public String providerVersion() {
+            return "contract-v1";
+        }
+
+        @Override
+        public String dataSource() {
+            return "production";
+        }
+
+        @Override
+        public RunnerExecutionResult execute(RunnerExecutionRequest request) {
+            return new RunnerExecutionResult(RunnerExecutionStatus.SUCCEEDED, providerId(), providerVersion(),
+                    "production", 10, "production-success", "");
+        }
+    }
+
+    private static final class MixedDataSourceRunner implements SkillRunner {
+        private final AtomicInteger calls = new AtomicInteger();
+
+        @Override
+        public String providerId() {
+            return "openclaw-runner";
+        }
+
+        @Override
+        public String providerVersion() {
+            return "contract-v1";
+        }
+
+        @Override
+        public String dataSource() {
+            return "production";
+        }
+
+        @Override
+        public RunnerExecutionResult execute(RunnerExecutionRequest request) {
+            String dataSource = calls.getAndIncrement() == 0 ? "production" : "mock";
+            return new RunnerExecutionResult(RunnerExecutionStatus.SUCCEEDED, providerId(), providerVersion(),
+                    dataSource, 10, "mixed-source", "");
         }
     }
 }

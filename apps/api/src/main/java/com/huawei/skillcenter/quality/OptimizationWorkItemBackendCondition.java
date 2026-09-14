@@ -30,4 +30,8 @@ abstract class OptimizationWorkItemBackendCondition implements Condition {
     public static final class Postgresql extends OptimizationWorkItemBackendCondition {
         public Postgresql() { super("postgresql"); }
     }
+
+    public static final class Mysql extends OptimizationWorkItemBackendCondition {
+        public Mysql() { super("mysql"); }
+    }
 }

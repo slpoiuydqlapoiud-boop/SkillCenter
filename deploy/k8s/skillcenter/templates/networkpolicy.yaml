@@ -1,0 +1,86 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- $root := . }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "skillcenter.fullname" . }}-default-deny
+  labels:
+    {{- include "skillcenter.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "skillcenter.fullname" . }}-api
+  labels:
+    {{- include "skillcenter.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "skillcenter.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "skillcenter.selectorLabels" $root | nindent 14 }}
+              app.kubernetes.io/component: web
+      ports:
+        - protocol: TCP
+          port: {{ $root.Values.api.containerPort }}
+    {{- with $root.Values.networkPolicy.ingressNamespaceSelector }}
+    - from:
+        - namespaceSelector:
+            {{- toYaml . | nindent 12 }}
+      ports:
+        - protocol: TCP
+          port: {{ $root.Values.api.containerPort }}
+    {{- end }}
+  egress:
+    {{- with $root.Values.networkPolicy.apiEgress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "skillcenter.fullname" . }}-web
+  labels:
+    {{- include "skillcenter.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "skillcenter.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: {{ .Values.web.containerPort }}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "skillcenter.selectorLabels" $root | nindent 14 }}
+              app.kubernetes.io/component: api
+      ports:
+        - protocol: TCP
+          port: {{ $root.Values.api.servicePort }}
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+{{- end }}

@@ -1,0 +1,14 @@
+FROM maven:3.9.16-eclipse-temurin-21 AS build
+WORKDIR /workspace
+COPY apps/api/pom.xml apps/api/pom.xml
+RUN mvn -q -f apps/api/pom.xml dependency:go-offline
+COPY apps/api/src apps/api/src
+RUN mvn -q -f apps/api/pom.xml -DskipTests package
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+RUN useradd --system --uid 10001 --create-home skillcenter
+COPY --from=build /workspace/apps/api/target/skill-center-api-*.jar /app/app.jar
+USER 10001
+EXPOSE 8080
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]

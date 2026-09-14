@@ -26,6 +26,8 @@ public class ProviderConnectivityProbeService {
     private final ProviderProbeTransport transport;
     private final GovernanceStore governanceStore;
     private final Clock clock;
+    private final Duration probeTtl;
+    private volatile Map<String, ProviderProbeResult> lastProbes = Map.of();
 
     @Autowired
     public ProviderConnectivityProbeService(
@@ -38,33 +40,66 @@ public class ProviderConnectivityProbeService {
             @Value("${skill-center.providers.deepeval.credential-ref:}") String deepevalCredentialRef,
             @Value("${skill-center.providers.langfuse.endpoint:}") String langfuseEndpoint,
             @Value("${skill-center.providers.langfuse.credential-ref:}") String langfuseCredentialRef,
+            @Value("${skill-center.providers.probe-ttl-seconds:300}") long probeTtlSeconds,
             HttpProviderProbeTransport transport,
             GovernanceStore governanceStore) {
         this(defaultTargets(runnerMode, evaluationMode, observabilityMode,
                         openclawEndpoint, openclawCredentialRef,
                         deepevalEndpoint, deepevalCredentialRef,
                         langfuseEndpoint, langfuseCredentialRef),
-                transport, governanceStore, Clock.systemUTC());
+                transport, governanceStore, Clock.systemUTC(),
+                Duration.ofSeconds(Math.max(1, probeTtlSeconds)));
     }
 
     ProviderConnectivityProbeService(Map<String, ProviderProbeTarget> targets,
                                      ProviderProbeTransport transport,
                                      GovernanceStore governanceStore,
                                      Clock clock) {
+        this(targets, transport, governanceStore, clock, Duration.ofMinutes(5));
+    }
+
+    ProviderConnectivityProbeService(Map<String, ProviderProbeTarget> targets,
+                                     ProviderProbeTransport transport,
+                                     GovernanceStore governanceStore,
+                                     Clock clock,
+                                     Duration probeTtl) {
         this.targets = Map.copyOf(targets);
         this.transport = transport;
         this.governanceStore = governanceStore;
         this.clock = clock;
+        this.probeTtl = probeTtl == null || probeTtl.isZero() || probeTtl.isNegative()
+                ? Duration.ofSeconds(1) : probeTtl;
     }
 
     public List<ProviderProbeResult> probe(String providerId, Actor actor, String requestId) {
         RoleGuard.require(actor, java.util.Set.of("admin"));
+        List<ProviderProbeResult> results = probeSelected(providerId);
+        remember(results);
+        results.forEach(result -> audit(result, actor, requestId));
+        return results;
+    }
+
+    /** Refreshes all configured provider signals without creating user-facing audit events. */
+    public List<ProviderProbeResult> probeScheduled() {
+        List<ProviderProbeResult> results = probeSelected(null);
+        remember(results);
+        return results;
+    }
+
+    /** Returns the most recent safe probe result for each target, marking expired evidence stale. */
+    public List<ProviderProbeResult> lastProbes() {
+        return lastProbes.values().stream()
+                .sorted(Comparator.comparing(ProviderProbeResult::providerId))
+                .map(this::freshen)
+                .toList();
+    }
+
+    private List<ProviderProbeResult> probeSelected(String providerId) {
         List<ProviderProbeTarget> selected = select(providerId);
         List<ProviderProbeResult> results = new ArrayList<>();
         for (ProviderProbeTarget target : selected) {
             ProviderProbeResult result = probeTarget(target);
             results.add(result);
-            audit(result, actor, requestId);
         }
         return results;
     }
@@ -110,6 +145,22 @@ public class ProviderConnectivityProbeService {
                                        Integer httpStatus, long latencyMs, Instant checkedAt) {
         return new ProviderProbeResult(target.providerId(), target.kind(), status, reason,
                 httpStatus, latencyMs, checkedAt);
+    }
+
+    private void remember(List<ProviderProbeResult> results) {
+        Map<String, ProviderProbeResult> updated = new HashMap<>(lastProbes);
+        results.forEach(result -> updated.put(result.providerId(), result));
+        lastProbes = Map.copyOf(updated);
+    }
+
+    private ProviderProbeResult freshen(ProviderProbeResult probe) {
+        Instant now = clock.instant();
+        if (probe.checkedAt() == null || probe.checkedAt().isAfter(now)
+                || Duration.between(probe.checkedAt(), now).compareTo(probeTtl) > 0) {
+            return new ProviderProbeResult(probe.providerId(), probe.kind(), "STALE", "PROBE_EXPIRED",
+                    probe.httpStatus(), probe.latencyMs(), probe.checkedAt());
+        }
+        return probe;
     }
 
     private void audit(ProviderProbeResult result, Actor actor, String requestId) {

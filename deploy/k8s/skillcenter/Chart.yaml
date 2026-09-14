@@ -1,0 +1,6 @@
+apiVersion: v2
+name: skillcenter
+description: SkillCenter enterprise Skill lifecycle platform for Huawei CCE
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

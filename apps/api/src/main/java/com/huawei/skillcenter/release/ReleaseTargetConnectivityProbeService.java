@@ -75,9 +75,19 @@ public class ReleaseTargetConnectivityProbeService {
 
     public ReleaseTargetProbeResult probe(Actor actor, String requestId) {
         RoleGuard.require(actor, Set.of("admin"));
+        ReleaseTargetProbeResult result = executeProbe();
+        audit(result, actor, requestId);
+        return result;
+    }
+
+    /** Refreshes release-target connectivity evidence without creating a user-facing audit event. */
+    public ReleaseTargetProbeResult probeScheduled() {
+        return executeProbe();
+    }
+
+    private ReleaseTargetProbeResult executeProbe() {
         ReleaseTargetProbeResult result = probeTarget();
         lastProbe = result;
-        audit(result, actor, requestId);
         return result;
     }
 

@@ -62,6 +62,17 @@ public class ArtifactStorageConnectivityProbeService {
 
     public ArtifactStorageProbeResult probe(Actor actor, String requestId) {
         RoleGuard.require(actor, java.util.Set.of("admin"));
+        ArtifactStorageProbeResult result = executeProbe();
+        audit(result, actor, requestId);
+        return result;
+    }
+
+    /** Refreshes connectivity evidence without creating a user-facing audit event. */
+    public ArtifactStorageProbeResult probeScheduled() {
+        return executeProbe();
+    }
+
+    private ArtifactStorageProbeResult executeProbe() {
         ArtifactStorageProbeResult result;
         if (storage instanceof ArtifactStorageConnectivityProbe probe) {
             result = probe.probe();
@@ -74,7 +85,6 @@ public class ArtifactStorageConnectivityProbeService {
                     "ARTIFACT_STORAGE_PROBE_FAILED", null, 0, clock.instant());
         }
         lastProbe = result;
-        audit(result, actor, requestId);
         return result;
     }
 

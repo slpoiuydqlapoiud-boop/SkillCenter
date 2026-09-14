@@ -1,0 +1,122 @@
+name: SkillCenter CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skillcenter-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-tests:
+    name: Contract tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install contract-test dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements-dev.txt
+
+      - name: Run contract tests
+        run: python -m unittest discover -s tests/contract -p 'test_*.py'
+
+  sdk-tests:
+    name: Telemetry SDK tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: sdk/skillcenter-telemetry
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run SDK tests
+        run: npm test
+
+      - name: Verify publish boundary
+        run: npm pack --dry-run
+
+  web-tests:
+    name: Web tests and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install web dependencies
+        run: npm ci
+
+      - name: Run web tests
+        run: npm test
+
+      - name: Build production artifact
+        run: npm run build
+
+  api-tests:
+    name: API tests and container integrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Run API tests
+        run: mvn -q -DforkCount=0 test
+
+  quality-gate:
+    name: CI quality gate
+    if: ${{ always() }}
+    needs: [contract-tests, sdk-tests, web-tests, api-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every verification job to pass
+        env:
+          CONTRACT_RESULT: ${{ needs.contract-tests.result }}
+          SDK_RESULT: ${{ needs.sdk-tests.result }}
+          WEB_RESULT: ${{ needs.web-tests.result }}
+          API_RESULT: ${{ needs.api-tests.result }}
+        run: |
+          set -eu
+          for result in "$CONTRACT_RESULT" "$SDK_RESULT" "$WEB_RESULT" "$API_RESULT"; do
+            test "$result" = success
+          done

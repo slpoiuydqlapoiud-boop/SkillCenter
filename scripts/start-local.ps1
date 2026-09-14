@@ -1,7 +1,7 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
-    [ValidateSet("integration", "default")]
-    [string]$Profile = "integration",
+    [ValidateSet("department", "integration", "default")]
+    [string]$Profile = "department",
     [switch]$SkipDependencies,
     [switch]$SkipWeb,
     [switch]$SkipApi,
@@ -12,7 +12,33 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$originalProcessEnvironment = @{}
+foreach ($entry in Get-ChildItem Env:) {
+    $originalProcessEnvironment[$entry.Name] = $entry.Value
+}
+
+function Restore-ProcessEnvironment {
+    foreach ($entry in Get-ChildItem Env:) {
+        if (-not $originalProcessEnvironment.ContainsKey($entry.Name)) {
+            [Environment]::SetEnvironmentVariable($entry.Name, $null, "Process")
+        }
+    }
+    foreach ($name in $originalProcessEnvironment.Keys) {
+        [Environment]::SetEnvironmentVariable($name, $originalProcessEnvironment[$name], "Process")
+    }
+}
+
 $repoRoot = Split-Path -Parent $PSScriptRoot
+
+if ($Profile -eq "department") {
+    if ($WithObservability -or $WithMessageBus) {
+        throw "department profile 不需要 Docker 观测栈或消息总线；请使用 MySQL + 本地文件默认路径。"
+    }
+    $departmentScript = Join-Path $repoRoot "scripts\start-department-local.ps1"
+    & $departmentScript -SkipApi:$SkipApi -SkipWeb:$SkipWeb -DryRun:$DryRun -TimeoutSeconds $TimeoutSeconds
+    exit $LASTEXITCODE
+}
+
 $composeFile = Join-Path $repoRoot "deploy\local\compose.yaml"
 $observabilityComposeFile = Join-Path $repoRoot "deploy\local\observability.compose.yaml"
 $envFile = Join-Path $repoRoot "deploy\local\.env"
@@ -184,6 +210,7 @@ function Test-MetricsReady([int]$Port) {
     }
 }
 
+function Invoke-LocalStartup {
 if ($env:SKILL_CENTER_LOCAL_ONLY -and $env:SKILL_CENTER_LOCAL_ONLY -ne "true") {
     throw "SKILL_CENTER_LOCAL_ONLY 必须为 true；该入口只允许启动本地联调环境。"
 }
@@ -280,4 +307,11 @@ if ($WithObservability) {
 if (-not $DryRun) {
     Write-Host "本地 $Profile 联调环境已启动：Web=http://127.0.0.1:$webPort，API=http://127.0.0.1:$apiPort" -ForegroundColor Green
     Write-Host "生产 Readiness 仍需外部 SSO、扫描、监控、备份和验收证据，不会因本地容器启动而自动变为 READY。" -ForegroundColor Yellow
+}
+}
+
+try {
+    Invoke-LocalStartup
+} finally {
+    Restore-ProcessEnvironment
 }

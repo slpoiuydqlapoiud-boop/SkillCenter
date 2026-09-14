@@ -19,21 +19,36 @@ public class ActorResolver {
 
     private final Mode mode;
     private final ActorTokenVerifier tokenVerifier;
+    private final LocalAuthenticationService localAuthenticationService;
+    private final boolean requireLocalToken;
 
     @org.springframework.beans.factory.annotation.Autowired
+    public ActorResolver(ActorAuthenticationProperties properties, LocalAuthenticationService localAuthenticationService) {
+        this(resolveMode(properties.getMode()), verifierFor(properties), localAuthenticationService,
+                properties.getLocal().isRequireToken());
+    }
+
     public ActorResolver(ActorAuthenticationProperties properties) {
-        this(resolveMode(properties.getMode()), verifierFor(properties));
+        this(resolveMode(properties.getMode()), verifierFor(properties),
+                new LocalAuthenticationService(properties), properties.getLocal().isRequireToken());
     }
 
     public ActorResolver() {
         this(Mode.LOCAL, token -> {
             throw new ForbiddenException("Bearer token required");
-        });
+        }, null, false);
     }
 
     public ActorResolver(Mode mode, ActorTokenVerifier tokenVerifier) {
+        this(mode, tokenVerifier, null, false);
+    }
+
+    public ActorResolver(Mode mode, ActorTokenVerifier tokenVerifier,
+                         LocalAuthenticationService localAuthenticationService, boolean requireLocalToken) {
         this.mode = mode == null ? Mode.LOCAL : mode;
         this.tokenVerifier = tokenVerifier;
+        this.localAuthenticationService = localAuthenticationService;
+        this.requireLocalToken = requireLocalToken;
     }
 
     public Actor resolve(HttpServletRequest request) {
@@ -47,6 +62,18 @@ public class ActorResolver {
                 throw new ForbiddenException("Bearer token required");
             }
             return tokenVerifier.verify(token);
+        }
+        String authorization = request.getHeader(AUTHORIZATION_HEADER);
+        if (authorization != null && authorization.regionMatches(true, 0, "Bearer ", 0, 7)) {
+            String token = authorization.substring(7).trim();
+            if (localAuthenticationService == null || token.isBlank()) {
+                throw new ForbiddenException("Local authentication token required");
+            }
+            return localAuthenticationService.resolve(token)
+                    .orElseThrow(() -> new ForbiddenException("Local authentication token is invalid or expired"));
+        }
+        if (requireLocalToken) {
+            throw new ForbiddenException("Local authentication token required");
         }
         String userId = headerOrDefault(request.getHeader(USER_ID_HEADER), "local-user");
         String role = headerOrDefault(request.getHeader(ROLE_HEADER), "admin").toLowerCase(Locale.ROOT);

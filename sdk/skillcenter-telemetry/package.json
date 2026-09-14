@@ -1,0 +1,18 @@
+{
+  "name": "@skillcenter/telemetry",
+  "version": "1.0.0",
+  "description": "Minimal browser/Node reference client for SkillCenter installation and invocation telemetry.",
+  "type": "module",
+  "types": "./index.d.ts",
+  "files": ["index.mjs", "index.d.ts", "README.md"],
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "default": "./index.mjs"
+    }
+  },
+  "scripts": {
+    "test": "node --test tests/telemetry-client.test.mjs"
+  }
+}

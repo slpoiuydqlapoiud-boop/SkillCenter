@@ -1,6 +1,41 @@
 # SkillCenter 本地依赖环境
 
-该编排只启动本地联调依赖，不启动 API/Web，也不会改变应用默认的 JSON、local、Mock 和 contract-only 配置。
+部门版默认直接运行在 Windows 本机：MySQL 是唯一数据库，本地目录保存 Skill 包；不需要 Docker。
+
+## 部门版（默认）
+
+准备 MySQL Server 8.0+ 后，复制 `deploy/local/.env.department.example` 为本机私有配置（或在系统环境变量中设置同名变量）；如使用仓库提供的初始化助手，还需要 MySQL Client 的 `mysql.exe`，然后执行：
+
+```powershell
+.\scripts\bootstrap-department-mysql.ps1
+.\scripts\start-local.ps1
+```
+
+初始化助手会交互式读取 MySQL 管理员密码，创建 `skillcenter` 数据库和仅限该库的 `skillcenter` 应用账号；应用密码从本地 `.env` 的 `SKILL_CENTER_MYSQL_PASSWORD` 读取，不会写回仓库。
+
+该入口只检查 Java 21、Maven 3.9+、Node.js 20+ 和 `127.0.0.1:3306`，启动 API `8080` 和 Web `5173`，不会调用 Docker、Kubernetes、Redis、OpenSearch 或 MinIO。
+
+验证部门版环境：
+
+```powershell
+.\scripts\verify-department-local.ps1 -FailOnMissing
+```
+
+环境通过后，可执行只读功能 smoke（目录、详情、内容、质量视图）：
+
+```powershell
+.\scripts\smoke-department-local.ps1
+```
+
+需要额外提交一次 `smoke` 评测并验证质量证据重读时，显式加 `-IncludeEvaluation`；该模式会提示本地管理员密码，并保留评测记录供审计。
+
+启动脚本只会复用已通过 guest 登录和 `/api/v1/skills` 检查的部门版 API；如果 8080 被旧实例占用，会明确报端口冲突，不会把旧实例当作部门版服务。
+
+旧的 `integration` profile 和 `compose.yaml` 只用于历史企业级联调，不是部门版前置条件。
+
+## 历史容器联调
+
+下面内容保留给需要复现旧适配器测试的场景；它不改变部门版默认路径，也不会被新的启动脚本调用。
 
 ## 启动
 

@@ -1,0 +1,37 @@
+[ {
+  "environmentId" : "openclaw",
+  "kind" : "AGENT_RUNTIME",
+  "version" : "context-v1",
+  "status" : "ACTIVE",
+  "capabilities" : [ "context-only" ],
+  "adapterProviderId" : "openclaw-runner",
+  "configReference" : "",
+  "createdBy" : "system",
+  "createdAt" : "2026-08-24T13:25:06.670802800Z",
+  "updatedBy" : "system",
+  "updatedAt" : "2026-08-24T13:25:06.670802800Z"
+}, {
+  "environmentId" : "mcp-network",
+  "kind" : "MCP_SERVER",
+  "version" : "context-v1",
+  "status" : "ACTIVE",
+  "capabilities" : [ "context-only" ],
+  "adapterProviderId" : "mcp-gateway",
+  "configReference" : "",
+  "createdBy" : "system",
+  "createdAt" : "2026-08-24T13:25:06.670802800Z",
+  "updatedBy" : "system",
+  "updatedAt" : "2026-08-24T13:25:06.670802800Z"
+}, {
+  "environmentId" : "llm-gateway",
+  "kind" : "LLM_PROVIDER",
+  "version" : "context-v1",
+  "status" : "ACTIVE",
+  "capabilities" : [ "context-only" ],
+  "adapterProviderId" : "llm-gateway",
+  "configReference" : "",
+  "createdBy" : "system",
+  "createdAt" : "2026-08-24T13:25:06.670802800Z",
+  "updatedBy" : "system",
+  "updatedAt" : "2026-08-24T13:25:06.670802800Z"
+} ]

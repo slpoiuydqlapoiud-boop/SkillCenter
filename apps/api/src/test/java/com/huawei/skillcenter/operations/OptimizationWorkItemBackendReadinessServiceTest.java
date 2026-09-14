@@ -38,6 +38,18 @@ class OptimizationWorkItemBackendReadinessServiceTest {
     }
 
     @Test
+    void mysqlBackendIsReadyAfterDepartmentDocumentSchemaIsMigrated() {
+        PersistenceControlProperties properties = mock(PersistenceControlProperties.class);
+        PersistenceBackend persistence = mock(PersistenceBackend.class);
+        when(properties.normalizedOptimizationWorkItemBackend()).thenReturn("mysql");
+        when(properties.normalizedBackend()).thenReturn("mysql");
+        when(persistence.status()).thenReturn(PersistenceBackendStatus.ready("mysql", "2", null));
+
+        assertThat(service(properties, persistence).readiness()).isEqualTo(new OptimizationWorkItemBackendReadiness(
+                "mysql", "READY", "OPTIMIZATION_WORK_ITEM_MYSQL_READY", "优化工作项 MySQL 存储已就绪"));
+    }
+
+    @Test
     void postgresqlBackendFailsClosedWhenGlobalPersistenceIsNotReady() {
         PersistenceControlProperties properties = mock(PersistenceControlProperties.class);
         PersistenceBackend persistence = mock(PersistenceBackend.class);

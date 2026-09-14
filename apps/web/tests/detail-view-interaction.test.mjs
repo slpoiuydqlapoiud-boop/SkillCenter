@@ -65,6 +65,8 @@ let requestLog = [];
 let scopeConflictFixture = false;
 let scopeFixture = null;
 let scopeLoadErrorFixture = null;
+let detailErrorFixture = null;
+let detailErrorSequence = [];
 
 function json(data) {
   return new Response(JSON.stringify({ data, requestId: "test" }), {
@@ -163,7 +165,14 @@ function responseFor(input, options = {}) {
     rootSkillId: "demo-skill", rootVersion: "1.0.0", maxDepth: 5, maxNodes: 100, truncated: true,
     nodes: [{ relationId: "relation-1", skillId: "consumer-skill", version: "2.0.0", relationType: "DEPENDS_ON", depth: 1, status: "published", productionPromoted: false, activeInstallationCount: 3 }],
   });
-  if (path === "/api/v1/skills/demo-skill") return json(skill);
+  if (path === "/api/v1/skills/demo-skill") {
+    if (detailErrorSequence.length > 0) {
+      const nextError = detailErrorSequence.shift();
+      if (nextError) return apiError(nextError.code, nextError.message, nextError.status);
+    }
+    if (detailErrorFixture) return apiError(detailErrorFixture.code, detailErrorFixture.message, detailErrorFixture.status);
+    return json(skill);
+  }
   if (path.startsWith("/api/v1/skills?")) return json({ items: [skill], page: 1, pageSize: 12, total: 1 });
   if (path.startsWith("/api/v1/analytics/overview")) return json({ kpis: {}, callTrend: [], topSkills: [] });
   if (path === "/api/v1/me/favorites") return json({ items: [] });
@@ -191,6 +200,8 @@ async function waitFor(check, timeoutMs = 3000) {
 
 async function renderDetail(role = "developer", { scope = null, scopeConflict = false, scopeLoadError = null } = {}) {
   requestLog = [];
+  detailErrorSequence = [];
+  detailErrorFixture = null;
   scopeConflictFixture = scopeConflict;
   scopeLoadErrorFixture = scopeLoadError;
   scopeFixture = scope ?? {
@@ -210,6 +221,23 @@ async function renderDetail(role = "developer", { scope = null, scopeConflict = 
   const root = createRoot(document.getElementById("root"));
   await act(async () => root.render(React.createElement(App)));
   await waitFor(() => assert.equal(document.querySelector(".detail-hero h1")?.textContent, "Demo Skill"));
+  return root;
+}
+
+async function renderDetailFailure({ code, message, status, sequence = [] }) {
+  requestLog = [];
+  detailErrorSequence = [...sequence];
+  detailErrorFixture = sequence.length > 0 ? null : { code, message, status };
+  document.body.innerHTML = '<div id="root"></div>';
+  window.location.hash = "#/skills/demo-skill";
+  window.localStorage.setItem("skill-center.session", JSON.stringify({
+    userId: "developer-user",
+    role: "developer",
+    displayName: "普通开发者",
+  }));
+  const root = createRoot(document.getElementById("root"));
+  await act(async () => root.render(React.createElement(App)));
+  await waitFor(() => assert.ok(document.querySelector(".system-state")));
   return root;
 }
 
@@ -237,6 +265,8 @@ before(async () => {
   globalThis.HTMLElement = dom.window.HTMLElement;
   globalThis.Event = dom.window.Event;
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  dom.window.HTMLElement.prototype.attachEvent = () => {};
+  dom.window.HTMLElement.prototype.detachEvent = () => {};
   globalThis.fetch = async (input, options) => responseFor(input, options);
   window.scrollTo = () => {};
   vite = await createServer({ root: webRoot, server: { middlewareMode: true }, appType: "custom", logLevel: "silent" });
@@ -257,6 +287,47 @@ test("renders SKILL.md as semantic Markdown and removes synthetic detail section
     assert.equal(document.querySelectorAll(".skill-markdown table").length, 1);
     assert.doesNotMatch(document.body.textContent, /能力介绍|输入 \/ 输出示例|适用场景|不适用场景|功能价值/);
   } finally {
+    await act(async () => root.unmount());
+  }
+});
+
+test("renders a safe system error page when detail access is denied or missing", async () => {
+  const cases = [
+    { code: "FORBIDDEN", message: "internal permission detail", status: 403, title: "无权访问" },
+    { code: "SKILL_NOT_FOUND", message: "internal resource detail", status: 404, title: "页面不存在" },
+  ];
+  for (const failure of cases) {
+    const root = await renderDetailFailure(failure);
+    try {
+      assert.equal(document.querySelector(".system-state h1")?.textContent, failure.title);
+      assert.match(document.querySelector(".system-state")?.textContent || "", /返回技能市场/);
+      assert.doesNotMatch(document.body.textContent || "", /internal permission detail|internal resource detail|demo-skill/);
+    } finally {
+      detailErrorFixture = null;
+      await act(async () => root.unmount());
+    }
+  }
+});
+
+test("renders retryable error states for service failures and retries the detail request", async () => {
+  detailErrorFixture = null;
+  const root = await renderDetailFailure({
+    code: "SERVICE_UNAVAILABLE",
+    message: "upstream detail",
+    status: 503,
+    sequence: [{ code: "SERVICE_UNAVAILABLE", message: "upstream detail", status: 503 }],
+  });
+  try {
+    assert.equal(document.querySelector(".system-state h1")?.textContent, "系统维护中");
+    const retryButton = buttonByText("重试");
+    assert.ok(retryButton);
+    assert.doesNotMatch(document.body.textContent || "", /upstream detail|demo-skill/);
+    await act(async () => retryButton.click());
+    await waitFor(() => assert.equal(document.querySelector(".detail-hero h1")?.textContent, "Demo Skill"));
+    assert.ok(requestLog.filter((request) => request.path === "/api/v1/skills/demo-skill").length >= 2);
+  } finally {
+    detailErrorFixture = null;
+    detailErrorSequence = [];
     await act(async () => root.unmount());
   }
 });

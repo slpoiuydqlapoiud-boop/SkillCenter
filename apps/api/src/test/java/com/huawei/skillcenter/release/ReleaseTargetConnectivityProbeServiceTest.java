@@ -76,6 +76,21 @@ class ReleaseTargetConnectivityProbeServiceTest {
     }
 
     @Test
+    void scheduledProbeRefreshesReleaseTargetWithoutCreatingAuditEvents() {
+        GovernanceStore governance = new GovernanceStore(tempDir.resolve("scheduled.json"), List.of());
+        ReleaseTargetConnectivityProbeService service = service("http", "https://deploy.internal/health",
+                "secret://env/DEPLOY_TOKEN", reference -> "secret-value",
+                (endpoint, credential, timeout) -> ProviderProbeTransportResult.http(204, 3),
+                governance, Clock.fixed(NOW, ZoneOffset.UTC));
+
+        ReleaseTargetProbeResult result = service.probeScheduled();
+
+        assertThat(result.status()).isEqualTo("REACHABLE");
+        assertThat(result.reasonCode()).isEqualTo("PROBE_OK");
+        assertThat(governance.snapshot().audits()).isEmpty();
+    }
+
+    @Test
     void missingCredentialFailsClosedWithoutCallingTransport() {
         AtomicInteger calls = new AtomicInteger();
         ReleaseTargetConnectivityProbeService service = service("http", "https://deploy.internal/health",

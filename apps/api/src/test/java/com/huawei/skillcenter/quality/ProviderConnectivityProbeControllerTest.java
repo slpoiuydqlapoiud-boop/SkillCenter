@@ -47,4 +47,20 @@ class ProviderConnectivityProbeControllerTest {
                 .andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.data[0].providerId").value("openclaw-runner"));
     }
+
+    @Test
+    void adminCanReadLatestSafeProviderProbeResults() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/quality/provider-readiness/probe")
+                        .header("X-User-Role", "admin"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/admin/quality/provider-readiness/probe/latest")
+                        .header("X-User-Role", "admin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(3))
+                .andExpect(jsonPath("$.data[0].providerId").value("deepeval-evaluation"))
+                .andExpect(jsonPath("$.data[0].endpoint").doesNotExist())
+                .andExpect(jsonPath("$.data[0].credentialRef").doesNotExist());
+    }
 }

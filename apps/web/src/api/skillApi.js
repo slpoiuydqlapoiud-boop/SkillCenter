@@ -230,6 +230,9 @@ export function createSkillApi(request) {
     getQualityProviderReadiness() {
       return request(`${API_PREFIX}/admin/quality/provider-readiness`);
     },
+    getLatestQualityProviderProbes() {
+      return request(`${API_PREFIX}/admin/quality/provider-readiness/probe/latest`);
+    },
     getPackageSecurityReadiness() {
       return request(`${API_PREFIX}/admin/package-security/readiness`);
     },

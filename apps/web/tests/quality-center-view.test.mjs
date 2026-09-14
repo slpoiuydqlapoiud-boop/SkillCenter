@@ -71,6 +71,9 @@ test("quality center shows reserved provider contracts separately from active mo
       notConfiguredProviderIds: ["openclaw-runner"],
       reason: "EXTERNAL_PROVIDERS_CONTRACT_ONLY",
     } }),
+    getLatestQualityProviderProbes: async () => ({ data: [
+      { providerId: "openclaw-runner", kind: "runner", status: "STALE", reason: "PROBE_EXPIRED", latencyMs: 17 },
+    ] }),
     getPackageSecurityReadiness: async () => ({ data: {
       mode: "REQUIRED", status: "DEGRADED", scannerId: "external-package-security", scannerVersion: "contract-v1",
       reasonCode: "EXTERNAL_SECURITY_SCANNER_CAPABILITIES_INCOMPLETE",
@@ -106,6 +109,8 @@ test("quality center shows reserved provider contracts separately from active mo
     assert.equal(document.querySelector("[data-testid=provider-readiness]")?.textContent.includes("配置缺失 Provider：openclaw-runner"), true);
     assert.match(document.querySelector("[data-testid=package-security-readiness]")?.textContent || "", /EXTERNAL_SECURITY_SCANNER_CAPABILITIES_INCOMPLETE/);
     assert.match(document.querySelector("[data-testid=package-security-readiness]")?.textContent || "", /DEPENDENCY_VULNERABILITY、LICENSE/);
+    assert.match(document.querySelector("[data-testid=provider-probe-results]")?.textContent || "", /STALE/);
+    assert.match(document.querySelector("[data-testid=provider-probe-results]")?.textContent || "", /PROBE_EXPIRED/);
     await act(async () => document.querySelector("[data-testid=provider-connectivity-probe]").click());
     await waitFor(() => assert.equal(providerProbes.length, 1));
     assert.match(document.querySelector("[data-testid=provider-probe-results]")?.textContent || "", /REACHABLE/);

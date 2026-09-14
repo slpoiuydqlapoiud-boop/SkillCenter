@@ -11,10 +11,10 @@
 本阶段包含：
 
 - 本地 JSON 文件持久化，重启后恢复治理数据。
-- Skill 版本状态：`pending_review`、`published`、`rejected`、`withdrawn`。
+- Skill 版本状态：`pending_review`、`security_review`、`published`、`rejected`、`withdrawn`。
 - 上传创建审核任务；审核通过后才进入公开市场。
 - reviewer/admin 审核通过或驳回，并记录原因和操作者。
-- viewer、maintainer、reviewer、admin 的接口级 RBAC。
+- developer、admin 两种产品角色的接口级 RBAC；`viewer`、`maintainer`、`reviewer` 仅作为既有客户端兼容别名。
 - 安装记录查询和安装动作审计。
 - 审计记录查询，记录动作、资源、操作者、时间、requestId 和脱敏元数据。
 - 前端待审核列表、审核操作、安装记录列表和角色请求头。
@@ -40,7 +40,8 @@
   "uploadedAt": "RFC3339 timestamp",
   "publishedBy": "reviewer-id",
   "publishedAt": "RFC3339 timestamp",
-  "reviewId": "uuid"
+  "reviewId": "uuid",
+  "riskLevel": "low|medium|high"
 }
 ```
 
@@ -52,12 +53,16 @@
   "packageId": "uuid",
   "skillId": "eox-query",
   "version": "1.2.0",
-  "status": "pending|approved|rejected",
+  "status": "pending_review|security_review|approved|rejected",
   "submittedBy": "user-id",
   "submittedAt": "RFC3339 timestamp",
   "reviewedBy": "reviewer-id",
   "reviewedAt": "RFC3339 timestamp",
-  "reason": "optional review reason"
+  "reason": "optional ordinary review reason",
+  "riskLevel": "low|medium|high",
+  "securityReviewedBy": "security-reviewer-id",
+  "securityReviewedAt": "RFC3339 timestamp",
+  "securityReason": "optional security review reason"
 }
 ```
 
@@ -104,20 +109,21 @@
 
 ## 5. API 与权限
 
-角色由 `X-User-Role` 请求头传递。M3 本地开发在请求头缺失时默认 `admin`，生产接入 SSO 时替换为认证过滤器；非法角色返回 `FORBIDDEN`。
+角色由 `X-User-Role` 请求头传递。M3 本地开发在请求头缺失时默认 `admin`，生产接入 SSO 时替换为认证过滤器；非法角色返回 `FORBIDDEN`。高风险安全复核继续使用 `admin`，不新增 `security_reviewer` 登录角色。
 
 | API | viewer | maintainer | reviewer | admin |
 | --- | --- | --- | --- | --- |
 | `GET /skills`、详情、版本公开信息 | ✓ | ✓ | ✓ | ✓ |
 | `POST /skill-packages` |  | ✓ |  | ✓ |
 | `GET /admin/reviews` |  |  | ✓ | ✓ |
-| `POST /admin/reviews/{id}/approve` |  |  | ✓ | ✓ |
+| `POST /admin/reviews/{id}/approve`（普通审核） |  |  | ✓ | ✓ |
+| `POST /admin/reviews/{id}/approve`（安全复核） |  |  |  | ✓ |
 | `POST /admin/reviews/{id}/reject` |  |  | ✓ | ✓ |
 | `POST /skills/{id}/installations` | ✓ | ✓ | ✓ | ✓ |
 | `GET /installations` | ✓（本人） | ✓（本人） | ✓（团队） | ✓（全部） |
 | `GET /audit` |  |  |  | ✓ |
 
-审核接口必须校验状态转换：只有 pending 可以 approve/reject；已处理任务返回 `REVIEW_STATE_CONFLICT`。approve 将版本状态改为 published，reject 将版本状态改为 rejected；每次动作写入审计事件。
+审核接口必须校验状态转换：普通审核只能处理 `pending_review`；高风险普通审核通过后进入 `security_review`，安全复核只能由不同的 `admin` 处理；安全审核通过后才进入 `published`。已处理任务、同人双审和自审返回 `REVIEW_STATE_CONFLICT`；每次动作写入审计事件。
 
 安装接口继续只允许 published 版本，生成 manifest 后同步创建 `InstallationRecord(status=requested)` 并写入审计事件。新增 `GET /api/v1/installations` 支持 `status`、`skillId`、分页；新增 `GET /api/v1/skills/{skillId}/versions` 返回版本状态和时间线。
 

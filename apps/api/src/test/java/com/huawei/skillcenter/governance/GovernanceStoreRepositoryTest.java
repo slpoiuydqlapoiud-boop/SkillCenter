@@ -26,6 +26,22 @@ class GovernanceStoreRepositoryTest {
     }
 
     @Test
+    void auditAppendReloadsLatestStateWhenAnotherInstanceWinsTheRevision() {
+        RecordingRepository repository = new RecordingRepository();
+        GovernanceStore store = new GovernanceStore(repository, List.of());
+        AuditEvent externalAudit = new AuditEvent("audit-external", "EXTERNAL_UPDATE", "SKILL", "skill-1",
+                "other-instance", "admin", "request-external", Instant.parse("2026-08-25T00:00:00Z"), Map.of());
+        repository.conflictOnceWith(externalAudit);
+
+        store.addAudit(new AuditEvent("audit-local", "LOCAL_UPDATE", "SKILL", "skill-1", "admin", "admin",
+                "request-local", Instant.parse("2026-08-25T00:00:01Z"), Map.of()));
+
+        assertThat(repository.state.revision()).isEqualTo(2L);
+        assertThat(repository.state.snapshot().audits()).extracting(AuditEvent::auditId)
+                .containsExactly("audit-external", "audit-local");
+    }
+
+    @Test
     void eventAwareReviewWriteForwardsRefreshIntentToTheRepository() {
         RecordingRepository repository = new RecordingRepository();
         GovernanceStore store = new GovernanceStore(repository, List.of());
@@ -47,6 +63,11 @@ class GovernanceStoreRepositoryTest {
     private static final class RecordingRepository implements GovernanceStateRepository {
         private GovernanceStateRepository.GovernanceState state;
         private List<com.huawei.skillcenter.search.SkillSearchRefreshEvent> refreshEvents = List.of();
+        private AuditEvent conflictAudit;
+
+        private void conflictOnceWith(AuditEvent audit) {
+            conflictAudit = audit;
+        }
 
         @Override
         public Optional<GovernanceStateRepository.GovernanceState> load() {
@@ -61,6 +82,15 @@ class GovernanceStoreRepositoryTest {
 
         @Override
         public GovernanceStateRepository.GovernanceState replace(long expectedRevision, GovernanceSnapshot snapshot) {
+            if (conflictAudit != null) {
+                List<AuditEvent> audits = new java.util.ArrayList<>(state.snapshot().audits());
+                audits.add(conflictAudit);
+                state = new GovernanceStateRepository.GovernanceState(state.revision() + 1,
+                        new GovernanceSnapshot(state.snapshot().versions(), state.snapshot().reviews(),
+                                state.snapshot().installations(), audits));
+                conflictAudit = null;
+                throw new GovernanceStateConflictException("stale");
+            }
             if (state.revision() != expectedRevision) {
                 throw new GovernanceStateConflictException("stale");
             }

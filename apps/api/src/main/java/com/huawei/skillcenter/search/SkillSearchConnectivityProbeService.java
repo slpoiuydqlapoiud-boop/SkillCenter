@@ -54,12 +54,19 @@ public class SkillSearchConnectivityProbeService {
 
     public SkillSearchProbeResult probe(Actor actor, String requestId) {
         RoleGuard.require(actor, Set.of("admin"));
+        SkillSearchProbeResult result = probeScheduled();
+        lastProbe = result;
+        audit(result, actor, requestId);
+        return result;
+    }
+
+    /** Refreshes external health for the scheduler without creating a user audit event. */
+    SkillSearchProbeResult probeScheduled() {
         SkillSearchProbeResult result = index instanceof SkillSearchRemoteHealth remoteHealth
                 ? remoteHealth.probe()
                 : new SkillSearchProbeResult(index.backend(), "SKIPPED", "SEARCH_INDEX_LOCAL_BACKEND", null, 0,
                 clock.instant());
         lastProbe = result;
-        audit(result, actor, requestId);
         return result;
     }
 

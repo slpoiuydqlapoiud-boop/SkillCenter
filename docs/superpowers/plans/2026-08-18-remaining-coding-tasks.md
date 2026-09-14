@@ -78,4 +78,4 @@
 
 - [x] Run `npm.cmd test`, `npm.cmd run build`, `mvn.cmd -B -q test`, and note that no Python runtime is available in this environment.
 - [x] Smoke-test Web/API HTTP health, market page 2, collection page 2, and notification read persistence.
-- [ ] Document external follow-ups separately: Huawei SSO/JWT, production database/object storage/queue/scanner, Redis/monitoring deployment, backup/RPO/RTO and M6 UAT/performance/security gates.
+- [x] Document external follow-ups separately: Huawei SSO/JWT, production database/object storage/queue/scanner, Redis/monitoring deployment, backup/RPO/RTO and M6 UAT/performance/security gates; details are tracked in `docs/project/remaining-coding-tasks-status.md`, `docs/project/M11-external-integration-runbook.md`, `docs/project/slo-evidence-runbook.md` and `docs/project/environment-dependencies.md`.

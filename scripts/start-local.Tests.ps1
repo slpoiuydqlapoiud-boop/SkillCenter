@@ -10,7 +10,9 @@ Describe "start-local contract" {
     It "supports an integration profile and safe dry-run mode" {
         $content = Get-Content -Raw -LiteralPath $scriptPath
 
-        $content | Should Match '\[ValidateSet\("integration", "default"\)\]'
+        $content | Should Match '\[ValidateSet\("department", "integration", "default"\)\]'
+        $content | Should Match '\[string\]\$Profile = "department"'
+        $content | Should Match 'start-department-local\.ps1'
         $content | Should Match '\[switch\]\$DryRun'
         $content | Should Match 'application-integration\.yml'
         $content | Should Match '"compose"'
@@ -45,5 +47,47 @@ Describe "start-local contract" {
         $combined | Should Match 'search-index-backend:\s*opensearch'
         $combined | Should Match 'package-upload-backend:\s*distributed'
         $combined | Should Match 'artifact-storage-backend:\s*object-storage'
+    }
+
+    It "restores process environment variables after a dry-run" {
+        $names = @(
+            "SKILL_CENTER_LOCAL_ONLY",
+            "SKILL_CENTER_SEARCH_INDEX_BACKEND",
+            "SKILL_CENTER_SEARCH_INDEX_EVENTS_ENABLED",
+            "SKILL_CENTER_SEARCH_INDEX_EVENTS_BUS_TRANSPORT",
+            "SKILL_CENTER_PACKAGE_UPLOAD_BACKEND",
+            "SKILL_CENTER_METRICS_TOKEN",
+            "SKILL_CENTER_POSTGRES_URL",
+            "SPRING_CONFIG_ADDITIONAL_LOCATION"
+        )
+        $original = @{}
+        foreach ($name in $names) {
+            $original[$name] = [Environment]::GetEnvironmentVariable($name, "Process")
+        }
+        $sentinel = @{
+            SKILL_CENTER_LOCAL_ONLY = "true"
+            SKILL_CENTER_SEARCH_INDEX_BACKEND = "json"
+            SKILL_CENTER_SEARCH_INDEX_EVENTS_ENABLED = "false"
+            SKILL_CENTER_SEARCH_INDEX_EVENTS_BUS_TRANSPORT = "disabled"
+            SKILL_CENTER_PACKAGE_UPLOAD_BACKEND = "local"
+            SKILL_CENTER_METRICS_TOKEN = "sentinel-token"
+            SKILL_CENTER_POSTGRES_URL = "sentinel-url"
+            SPRING_CONFIG_ADDITIONAL_LOCATION = "sentinel-config"
+        }
+        try {
+            foreach ($name in $names) {
+                [Environment]::SetEnvironmentVariable($name, $sentinel[$name], "Process")
+            }
+
+            & $scriptPath -Profile integration -DryRun -SkipDependencies -SkipApi -SkipWeb
+
+            foreach ($name in $names) {
+                [Environment]::GetEnvironmentVariable($name, "Process") | Should Be $sentinel[$name]
+            }
+        } finally {
+            foreach ($name in $names) {
+                [Environment]::SetEnvironmentVariable($name, $original[$name], "Process")
+            }
+        }
     }
 }

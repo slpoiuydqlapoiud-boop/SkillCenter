@@ -391,6 +391,18 @@ test("skillApi probes provider connectivity without a request body", async () =>
   assert.equal(calls[0].options.body, undefined);
 });
 
+test("skillApi reads the latest provider connectivity evidence", async () => {
+  const paths = [];
+  const api = createSkillApi((path) => {
+    paths.push(path);
+    return Promise.resolve({ data: [] });
+  });
+
+  await api.getLatestQualityProviderProbes();
+
+  assert.equal(paths[0], "/api/v1/admin/quality/provider-readiness/probe/latest");
+});
+
 test("skillApi exposes detail quality and version comparison endpoints", async () => {
   const paths = [];
   const api = createSkillApi((path) => {

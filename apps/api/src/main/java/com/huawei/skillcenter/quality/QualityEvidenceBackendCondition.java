@@ -26,4 +26,8 @@ abstract class QualityEvidenceBackendCondition implements Condition {
     public static final class Postgresql extends QualityEvidenceBackendCondition {
         public Postgresql() { super("postgresql"); }
     }
+
+    public static final class Mysql extends QualityEvidenceBackendCondition {
+        public Mysql() { super("mysql"); }
+    }
 }

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { authenticateAdmin, createDeveloperSession, LOGIN_MODES, requiresAdminCredentials } from "../src/auth.js";
+import { createDeveloperSession, LOGIN_MODES, requiresAdminCredentials } from "../src/auth.js";
 
 test("developer can enter without credentials", () => {
   assert.deepEqual(createDeveloperSession(), {
@@ -11,13 +11,9 @@ test("developer can enter without credentials", () => {
   });
 });
 
-test("admin login requires the configured account and password", () => {
-  assert.equal(authenticateAdmin("admin", "wrong"), null);
-  assert.deepEqual(authenticateAdmin("admin", "SkillCenter@2026"), {
-    userId: "platform-admin",
-    role: "admin",
-    displayName: "平台管理员",
-  });
+test("admin credentials are delegated to the API instead of being stored in the bundle", async () => {
+  const source = await import("node:fs/promises").then((fs) => fs.readFile(new URL("../src/auth.js", import.meta.url), "utf8"));
+  assert.doesNotMatch(source, /SkillCenter@2026/);
 });
 
 test("only the administrator entry mode requires credentials", () => {

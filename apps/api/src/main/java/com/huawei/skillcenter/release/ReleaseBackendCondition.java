@@ -6,10 +6,10 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 class ReleaseBackendCondition implements Condition {
-    private final boolean postgresql;
+    private final String expectedBackend;
 
-    protected ReleaseBackendCondition(boolean postgresql) {
-        this.postgresql = postgresql;
+    protected ReleaseBackendCondition(String expectedBackend) {
+        this.expectedBackend = expectedBackend;
     }
 
     @Override
@@ -18,10 +18,14 @@ class ReleaseBackendCondition implements Condition {
                 context.getEnvironment().getProperty("skill-center.release-backend", "json"));
         String persistence = PersistenceControlProperties.normalizeBackendValue(
                 context.getEnvironment().getProperty("skill-center.persistence.backend", "json"));
-        return postgresql == ("postgresql".equals(release) && "postgresql".equals(persistence));
+        return expectedBackend.equals(release) && expectedBackend.equals(persistence);
     }
 
     static final class Postgresql extends ReleaseBackendCondition {
-        Postgresql() { super(true); }
+        Postgresql() { super("postgresql"); }
+    }
+
+    static final class Mysql extends ReleaseBackendCondition {
+        Mysql() { super("mysql"); }
     }
 }

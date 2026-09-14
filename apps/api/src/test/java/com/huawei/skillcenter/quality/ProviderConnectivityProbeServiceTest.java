@@ -12,6 +12,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -62,6 +63,48 @@ class ProviderConnectivityProbeServiceTest {
     }
 
     @Test
+    void scheduledProbeRefreshesAllTargetsWithoutCreatingAuditEvents() {
+        GovernanceStore governance = new GovernanceStore(tempDir.resolve("scheduled-state.json"), List.of());
+        ProviderConnectivityProbeService service = service((endpoint, timeout) ->
+                        ProviderProbeTransportResult.http(204, 7),
+                Map.of("openclaw-runner", target("openclaw-runner", "runner", "openclaw",
+                        new ProviderAdapterConfig(true, "https://openclaw.internal", "secret://openclaw"))),
+                governance);
+
+        List<ProviderProbeResult> results = service.probeScheduled();
+
+        assertThat(results).singleElement().satisfies(result -> {
+            assertThat(result.providerId()).isEqualTo("openclaw-runner");
+            assertThat(result.status()).isEqualTo("REACHABLE");
+        });
+        assertThat(governance.snapshot().audits()).isEmpty();
+    }
+
+    @Test
+    void latestScheduledProbeIsQueryableAndExpiresSafely() {
+        AtomicReference<Instant> now = new AtomicReference<>(Instant.parse("2026-08-24T00:00:00Z"));
+        GovernanceStore governance = new GovernanceStore(tempDir.resolve("latest-state.json"), List.of());
+        ProviderConnectivityProbeService service = new ProviderConnectivityProbeService(
+                Map.of("openclaw-runner", target("openclaw-runner", "runner", "openclaw",
+                        new ProviderAdapterConfig(true, "https://openclaw.internal", "secret://openclaw"))),
+                (endpoint, timeout) -> ProviderProbeTransportResult.http(204, 7), governance,
+                mutableClock(now), java.time.Duration.ofSeconds(30));
+
+        service.probeScheduled();
+        assertThat(service.lastProbes()).singleElement().satisfies(result -> {
+            assertThat(result.status()).isEqualTo("REACHABLE");
+            assertThat(result.reason()).isEqualTo("PROBE_OK");
+        });
+
+        now.set(now.get().plusSeconds(31));
+
+        assertThat(service.lastProbes()).singleElement().satisfies(result -> {
+            assertThat(result.status()).isEqualTo("STALE");
+            assertThat(result.reason()).isEqualTo("PROBE_EXPIRED");
+        });
+    }
+
+    @Test
     void providerFailuresAreReturnedAsStableDiagnosticStatesWithoutLeakingResponseData() {
         ProviderConnectivityProbeService service = service((endpoint, timeout) -> ProviderProbeTransportResult.failure("PROBE_TIMEOUT", 1500),
                 Map.of("deepeval-evaluation", target("deepeval-evaluation", "evaluation", "deepeval",
@@ -99,6 +142,25 @@ class ProviderConnectivityProbeServiceTest {
                                                        GovernanceStore governance) {
         return new ProviderConnectivityProbeService(targets, transport, governance,
                 Clock.fixed(Instant.parse("2026-08-24T00:00:00Z"), ZoneOffset.UTC));
+    }
+
+    private Clock mutableClock(AtomicReference<Instant> now) {
+        return new Clock() {
+            @Override
+            public ZoneOffset getZone() {
+                return ZoneOffset.UTC;
+            }
+
+            @Override
+            public Clock withZone(java.time.ZoneId zone) {
+                return this;
+            }
+
+            @Override
+            public Instant instant() {
+                return now.get();
+            }
+        };
     }
 
     private ProviderProbeTarget target(String id, String kind, String mode, ProviderAdapterConfig config) {

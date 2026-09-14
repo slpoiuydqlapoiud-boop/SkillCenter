@@ -30,4 +30,8 @@ abstract class OptimizationExperimentBackendCondition implements Condition {
     static final class Postgresql extends OptimizationExperimentBackendCondition {
         Postgresql() { super("postgresql"); }
     }
+
+    static final class Mysql extends OptimizationExperimentBackendCondition {
+        Mysql() { super("mysql"); }
+    }
 }

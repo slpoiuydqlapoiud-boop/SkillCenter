@@ -29,4 +29,8 @@ abstract class BenchmarkBackendCondition implements Condition {
     static final class Postgresql extends BenchmarkBackendCondition {
         Postgresql() { super("postgresql"); }
     }
+
+    static final class Mysql extends BenchmarkBackendCondition {
+        Mysql() { super("mysql"); }
+    }
 }

@@ -35,4 +35,12 @@ public class ProviderConnectivityProbeController {
         String requestId = String.valueOf(request.getAttribute(RequestIdFilter.REQUEST_ID_ATTRIBUTE));
         return ResponseEntity.ok(new ApiResponse<>(service.probe(providerId, actor, requestId), requestId));
     }
+
+    @org.springframework.web.bind.annotation.GetMapping("/probe/latest")
+    ResponseEntity<ApiResponse<List<ProviderProbeResult>>> latest(HttpServletRequest request) {
+        Actor actor = actorResolver.resolve(request);
+        RoleGuard.require(actor, java.util.Set.of("admin"));
+        String requestId = String.valueOf(request.getAttribute(RequestIdFilter.REQUEST_ID_ATTRIBUTE));
+        return ResponseEntity.ok(new ApiResponse<>(service.lastProbes(), requestId));
+    }
 }

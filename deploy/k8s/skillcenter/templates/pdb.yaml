@@ -1,0 +1,14 @@
+{{- if .Values.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "skillcenter.fullname" . }}-api
+  labels:
+    {{- include "skillcenter.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "skillcenter.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+{{- end }}

@@ -35,6 +35,19 @@ class BenchmarkBackendReadinessServiceTest {
     }
 
     @Test
+    void mysqlBackendIsReadyAfterDepartmentDocumentSchemaIsMigrated() {
+        PersistenceControlProperties properties = mock(PersistenceControlProperties.class);
+        PersistenceBackend persistence = mock(PersistenceBackend.class);
+        when(properties.normalizedBenchmarkBackend()).thenReturn("mysql");
+        when(properties.normalizedBackend()).thenReturn("mysql");
+        when(persistence.status()).thenReturn(PersistenceBackendStatus.ready("mysql", "2", null));
+
+        assertThat(new BenchmarkBackendReadinessService(properties, persistence).readiness())
+                .isEqualTo(new BenchmarkBackendReadiness("mysql", "READY", "BENCHMARK_MYSQL_READY",
+                        "Benchmark MySQL 存储已就绪"));
+    }
+
+    @Test
     void postgresqlBackendFailsClosedWhenV13IsMissing() {
         PersistenceControlProperties properties = mock(PersistenceControlProperties.class);
         PersistenceBackend persistence = mock(PersistenceBackend.class);

@@ -1,0 +1,55 @@
+server:
+  port: 8080
+
+skill-center:
+  governance-backend: mysql
+  quality-evidence-backend: mysql
+  benchmark-backend: mysql
+  release-backend: mysql
+  optimization-work-item-backend: mysql
+  optimization-experiment-backend: mysql
+  production-evidence-backend: mysql
+  execution-environment-backend: mysql
+  skill-scope-backend: mysql
+  skill-relation-backend: mysql
+  search-index-backend: json
+  runtime-summary-backend: memory
+  governance-storage: ${SKILL_CENTER_GOVERNANCE_STORAGE:./data/governance/state.json}
+  package-storage: ${SKILL_CENTER_PACKAGE_STORAGE:./data/packages}
+  artifact-storage-backend: local
+  package-upload-backend: local
+  package-security:
+    external:
+      mode: disabled
+  providers:
+    runner: mock
+    evaluation: mock
+    observability: mock
+    trace: mock
+  search-index-events:
+    enabled: false
+  persistence:
+    backend: mysql
+    configured-root: ${user.dir}
+    startup-mode: fail-closed
+    control-storage: ./data/control
+    snapshot-storage: ./data/backups
+    mysql:
+      url: ${SKILL_CENTER_MYSQL_URL:jdbc:mysql://127.0.0.1:3306/skillcenter?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai}
+      username: ${SKILL_CENTER_MYSQL_USERNAME:skillcenter}
+      password: ${SKILL_CENTER_MYSQL_PASSWORD:CHANGE-ME}
+      timeout: 5s
+      minimum-idle: 2
+      maximum-pool-size: 10
+      readiness-slo: 250ms
+  security:
+    authentication:
+      mode: local
+      local:
+        require-token: true
+        allow-guest: true
+        guest-user-id: developer-user
+        guest-role: MEMBER
+        username: ${SKILL_CENTER_LOCAL_ADMIN_USERNAME:admin}
+        password-hash: ${SKILL_CENTER_LOCAL_ADMIN_PASSWORD_HASH:pbkdf2-sha256$120000$U2tpbGxDZW50ZXJMb2NhbFNhbHQ$e1QnAQ19YTm-zmHQ-memEz1EjWy_2I4x7jDuO9nOj2k}
+        role: ADMIN

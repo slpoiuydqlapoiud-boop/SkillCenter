@@ -53,6 +53,22 @@ class ArtifactStorageConnectivityProbeServiceTest {
     }
 
     @Test
+    void scheduledProbeRefreshesReadinessWithoutCreatingAnAdminAuditEvent() {
+        GovernanceStore governance = new GovernanceStore(tempDir.resolve("scheduled-state.json"), List.of());
+        ArtifactStorageProbeResult result = new ArtifactStorageProbeResult(
+                "object-storage", "REACHABLE", "ARTIFACT_STORAGE_PROBE_OK", 200, 9,
+                Instant.parse("2026-08-25T00:00:00Z"));
+        ArtifactStorage storage = probeStorage(result);
+        ArtifactStorageConnectivityProbeService service = new ArtifactStorageConnectivityProbeService(
+                storage, governance, Clock.fixed(result.checkedAt(), ZoneOffset.UTC), Duration.ofMinutes(5));
+
+        service.probeScheduled();
+
+        assertThat(service.lastProbe()).isEqualTo(result);
+        assertThat(governance.snapshot().audits()).isEmpty();
+    }
+
+    @Test
     void nonAdminCannotTriggerArtifactStorageProbe() {
         ArtifactStorage storage = probeStorage(new ArtifactStorageProbeResult(
                 "object-storage", "REACHABLE", "ARTIFACT_STORAGE_PROBE_OK", 200, 1, Instant.EPOCH));

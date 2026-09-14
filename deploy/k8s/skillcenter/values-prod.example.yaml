@@ -1,0 +1,194 @@
+nameOverride: skillcenter
+
+imagePullSecrets:
+  - name: skillcenter-swr
+
+serviceAccount:
+  create: true
+  name: skillcenter-api
+  annotations: {}
+
+csms:
+  enabled: true
+  provider: cce
+  useWorkloadCred: true
+  secretName: skillcenter-runtime-secrets
+  objects:
+    - csmsName: skillcenter-prod-postgres-username
+      alias: postgres-username
+      version: latest
+      key: SKILL_CENTER_POSTGRES_USERNAME
+    - csmsName: skillcenter-prod-postgres-password
+      alias: postgres-password
+      version: latest
+      key: SKILL_CENTER_POSTGRES_PASSWORD
+    - csmsName: skillcenter-prod-redis-password
+      alias: redis-password
+      version: latest
+      key: SKILL_CENTER_REDIS_PASSWORD
+    - csmsName: skillcenter-prod-obs-access-key
+      alias: object-storage-access-key
+      version: latest
+      key: SKILL_CENTER_OBJECT_STORAGE_ACCESS_KEY_ID
+    - csmsName: skillcenter-prod-obs-secret-key
+      alias: object-storage-secret-key
+      version: latest
+      key: SKILL_CENTER_OBJECT_STORAGE_SECRET_ACCESS_KEY
+    - csmsName: skillcenter-prod-scanner-token
+      alias: scanner-token
+      version: latest
+      key: SKILL_CENTER_SCANNER_TOKEN
+    - csmsName: skillcenter-prod-openclaw-token
+      alias: openclaw-token
+      version: latest
+      key: SKILL_CENTER_OPENCLAW_TOKEN
+    - csmsName: skillcenter-prod-deepeval-token
+      alias: deepeval-token
+      version: latest
+      key: SKILL_CENTER_DEEPEVAL_TOKEN
+    - csmsName: skillcenter-prod-langfuse-token
+      alias: langfuse-token
+      version: latest
+      key: SKILL_CENTER_LANGFUSE_TOKEN
+    - csmsName: skillcenter-prod-release-target-token
+      alias: release-target-token
+      version: latest
+      key: SKILL_CENTER_RELEASE_TARGET_TOKEN
+    - csmsName: skillcenter-prod-org-directory-token
+      alias: org-directory-token
+      version: latest
+      key: SKILL_CENTER_ORGANIZATION_DIRECTORY_TOKEN
+
+api:
+  image:
+    repository: CHANGE-ME.swr.cn-north-4.myhuaweicloud.com/skillcenter/api
+    tag: CHANGE-ME
+    pullPolicy: IfNotPresent
+  replicaCount: 3
+  env:
+    SKILL_CENTER_ENVIRONMENT: production
+    SKILL_CENTER_INSTANCE_ID: skillcenter-api
+    SKILL_CENTER_PERSISTENCE_BACKEND: postgresql
+    SKILL_CENTER_GOVERNANCE_BACKEND: postgresql
+    SKILL_CENTER_QUALITY_EVIDENCE_BACKEND: postgresql
+    SKILL_CENTER_BENCHMARK_BACKEND: postgresql
+    SKILL_CENTER_RELEASE_BACKEND: postgresql
+    SKILL_CENTER_OPTIMIZATION_WORK_ITEM_BACKEND: postgresql
+    SKILL_CENTER_OPTIMIZATION_EXPERIMENT_BACKEND: postgresql
+    SKILL_CENTER_PRODUCTION_EVIDENCE_BACKEND: postgresql
+    SKILL_CENTER_EXECUTION_ENVIRONMENT_BACKEND: postgresql
+    SKILL_CENTER_SKILL_SCOPE_BACKEND: postgresql
+    SKILL_CENTER_SKILL_RELATION_BACKEND: postgresql
+    SKILL_CENTER_LIFECYCLE_PROJECTION_BACKEND: postgresql
+    SKILL_CENTER_POSTGRES_URL: jdbc:postgresql://CHANGE-ME.pg-cluster.prod.svc:5432/skillcenter
+    SKILL_CENTER_RUNTIME_SUMMARY_BACKEND: redis
+    SKILL_CENTER_OPERATIONS_ALERT_STATE_BACKEND: redis
+    SKILL_CENTER_OPERATIONS_METRICS_STORAGE: redis
+    SKILL_CENTER_REDIS_MODE: sentinel
+    SKILL_CENTER_REDIS_SENTINEL_MASTER: skillcenter-redis-master
+    SKILL_CENTER_REDIS_SENTINEL_NODES: CHANGE-ME-1:26379,CHANGE-ME-2:26379,CHANGE-ME-3:26379
+    SKILL_CENTER_REDIS_PASSWORD_REF: secret://env/SKILL_CENTER_REDIS_PASSWORD
+    SKILL_CENTER_REDIS_TLS_ENABLED: "true"
+    SKILL_CENTER_OPERATIONS_ALERT_SCHEDULER_ENABLED: "true"
+    SKILL_CENTER_OPERATIONS_ALERT_NOTIFICATION_URL: https://CHANGE-ME.alerts.prod.internal/ingest
+    SKILL_CENTER_ARTIFACT_STORAGE_BACKEND: object-storage
+    SKILL_CENTER_ARTIFACT_STORAGE_MODE: http
+    SKILL_CENTER_ARTIFACT_STORAGE_ENDPOINT: https://CHANGE-ME.s3.prod.internal
+    SKILL_CENTER_ARTIFACT_STORAGE_BUCKET: skillcenter-prod
+    SKILL_CENTER_ARTIFACT_STORAGE_REGION: cn-north-1
+    SKILL_CENTER_ARTIFACT_STORAGE_ACCESS_KEY_ID_REF: secret://env/SKILL_CENTER_OBJECT_STORAGE_ACCESS_KEY_ID
+    SKILL_CENTER_ARTIFACT_STORAGE_SECRET_ACCESS_KEY_REF: secret://env/SKILL_CENTER_OBJECT_STORAGE_SECRET_ACCESS_KEY
+    SKILL_CENTER_ARTIFACT_BASE_URL: https://CHANGE-ME.cdn.prod.example.com
+    SKILL_CENTER_PACKAGE_UPLOAD_BACKEND: distributed
+    SKILL_CENTER_PACKAGE_SECURITY_EXTERNAL_MODE: required
+    SKILL_CENTER_PACKAGE_SECURITY_EXTERNAL_ENDPOINT: https://CHANGE-ME.security-scanner.prod.internal
+    SKILL_CENTER_PACKAGE_SECURITY_EXTERNAL_CREDENTIAL_REF: secret://env/SKILL_CENTER_SCANNER_TOKEN
+    SKILL_CENTER_PACKAGE_SECURITY_EXTERNAL_CAPABILITIES: MALWARE,SENSITIVE_INFORMATION,DEPENDENCY_VULNERABILITY,LICENSE
+    SKILL_CENTER_PROVIDERS_RUNNER: openclaw
+    SKILL_CENTER_PROVIDERS_EVALUATION: deepeval
+    SKILL_CENTER_PROVIDERS_OBSERVABILITY: langfuse
+    SKILL_CENTER_PROVIDERS_TRACE: langfuse
+    SKILL_CENTER_OPENCLAW_MODE: http
+    SKILL_CENTER_OPENCLAW_ENDPOINT: https://CHANGE-ME.openclaw-runtime.prod.internal
+    SKILL_CENTER_OPENCLAW_CREDENTIAL_REF: secret://env/SKILL_CENTER_OPENCLAW_TOKEN
+    SKILL_CENTER_DEEPEVAL_MODE: http
+    SKILL_CENTER_DEEPEVAL_ENDPOINT: https://CHANGE-ME.deepeval.prod.internal
+    SKILL_CENTER_DEEPEVAL_CREDENTIAL_REF: secret://env/SKILL_CENTER_DEEPEVAL_TOKEN
+    SKILL_CENTER_LANGFUSE_MODE: http
+    SKILL_CENTER_LANGFUSE_ENDPOINT: https://CHANGE-ME.langfuse.prod.internal
+    SKILL_CENTER_LANGFUSE_TRACE_ENDPOINT: https://CHANGE-ME.langfuse.prod.internal/api/public/ingestion
+    SKILL_CENTER_LANGFUSE_CREDENTIAL_REF: secret://env/SKILL_CENTER_LANGFUSE_TOKEN
+    SKILL_CENTER_RELEASE_TARGET_MODE: http
+    SKILL_CENTER_RELEASE_TARGET_ENDPOINT: https://CHANGE-ME.release-target.prod.internal
+    SKILL_CENTER_RELEASE_TARGET_CREDENTIAL_REF: secret://env/SKILL_CENTER_RELEASE_TARGET_TOKEN
+    SKILL_CENTER_RELEASE_ADMISSION_MODE: CONTROLLED
+    SKILL_CENTER_SEARCH_INDEX_BACKEND: opensearch
+    SKILL_CENTER_SEARCH_INDEX_MODE: http
+    SKILL_CENTER_SEARCH_INDEX_ENDPOINT: https://CHANGE-ME.opensearch.prod.internal:9200
+    SKILL_CENTER_SEARCH_INDEX_NAME: skillcenter-skills-v1
+    SKILL_CENTER_SEARCH_INDEX_EVENTS_ENABLED: "true"
+    SKILL_CENTER_SEARCH_INDEX_EVENTS_CONSUMER_ID: skillcenter-api
+    SKILL_CENTER_AUTHENTICATION_MODE: jwt
+    SKILL_CENTER_JWT_JWKS_URI: https://CHANGE-ME.sso.prod.internal/.well-known/jwks.json
+    SKILL_CENTER_JWT_ISSUER: https://CHANGE-ME.sso.prod.internal/
+    SKILL_CENTER_JWT_AUDIENCE: skillcenter-api
+    SKILL_CENTER_JWT_TEAM_CLAIM: teams
+    SKILL_CENTER_JWT_TEAM_CLAIM_REQUIRED: "true"
+    SKILL_CENTER_ORGANIZATION_DIRECTORY_MODE: http
+    SKILL_CENTER_ORGANIZATION_DIRECTORY_ENDPOINT: https://CHANGE-ME.org-directory.prod.internal
+    SKILL_CENTER_ORGANIZATION_DIRECTORY_CREDENTIAL_REF: secret://env/SKILL_CENTER_ORGANIZATION_DIRECTORY_TOKEN
+  secretRef:
+    enabled: true
+
+web:
+  image:
+    repository: CHANGE-ME.swr.cn-north-4.myhuaweicloud.com/skillcenter/web
+    tag: CHANGE-ME
+    pullPolicy: IfNotPresent
+  replicaCount: 3
+
+ingress:
+  enabled: true
+  className: nginx
+  host: CHANGE-ME.skillcenter.prod.internal
+  tlsSecretName: skillcenter-tls
+  annotations: {}
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+pdb:
+  enabled: true
+  minAvailable: 2
+
+networkPolicy:
+  enabled: true
+  ingressNamespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: ingress-nginx
+  apiEgress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: skillcenter-data
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 9200
+    - ports:
+        - protocol: TCP
+          port: 443
+
+migration:
+  enabled: true
+
+serviceMonitor:
+  enabled: true
+  interval: 30s

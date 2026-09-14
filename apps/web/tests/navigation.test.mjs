@@ -11,5 +11,9 @@ test("encodes public views and skill details as browser routes", () => {
 test("restores a view and selected skill from the URL hash", () => {
   assert.deepEqual(routeFromHash("#/market"), { view: "market", selectedId: null });
   assert.deepEqual(routeFromHash("#/skills/eox%20query"), { view: "detail", selectedId: "eox query" });
-  assert.deepEqual(routeFromHash("#/unknown"), { view: "market", selectedId: null });
+  assert.deepEqual(routeFromHash("#/unknown"), { view: "not-found", selectedId: null });
+});
+
+test("serializes the not-found page as a stable browser route", () => {
+  assert.equal(hashForRoute({ view: "not-found" }), "#/404");
 });

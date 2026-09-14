@@ -143,8 +143,10 @@ class CompatibilityMatrixServiceTest {
         assertThat(slowEvaluations.find(childId).status()).isEqualTo(EvaluationRunStatus.CANCELLED);
         assertThat(cancellable.cases(submitted.matrixRunId(), admin)).singleElement()
                 .satisfies(matrixCase -> assertThat(matrixCase.status()).isEqualTo(CompatibilityMatrixCaseStatus.CANCELLED));
+        assertThat(cancellable.awaitQuiescence(Duration.ofMillis(20))).isFalse();
         slowRunner.release.countDown();
         assertThat(slowRunner.finished.await(1, TimeUnit.SECONDS)).isTrue();
+        assertThat(cancellable.awaitQuiescence(Duration.ofSeconds(1))).isTrue();
     }
 
     private CompatibilityMatrixCreateRequest request(List<String> runtimes, List<String> mcps,

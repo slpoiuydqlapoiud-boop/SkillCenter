@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NAV_ITEMS, ROLES, MARKET_SORT_OPTIONS, formatMarketTitle, formatMetric, getNavigationForRole } from "./state.js";
-import { authenticateAdmin, createDeveloperSession, clearSession, readSession, saveSession, LOGIN_MODES, requiresAdminCredentials } from "./auth.js";
+import { clearSession, readSession, saveSession, LOGIN_MODES, requiresAdminCredentials } from "./auth.js";
 import { createApiClient } from "./api/client.js";
 import { createSkillApi } from "./api/skillApi.js";
 import { buildPromptInstallInstruction, triggerFileDownload } from "./distribution.js";
@@ -16,6 +16,8 @@ import { SkillMarkdown } from "./SkillMarkdown.jsx";
 import { pendingReviewCount, removeReviewById, reviewIdOf, securityEvidenceLabel } from "./reviewQueue.js";
 import { normalizeQualityBenchmarks, normalizeQualityComparison, normalizeQualitySuggestions, normalizeSkillQualityDetail } from "./qualityDetail.js";
 import { formatExecutionEnvironmentSnapshot } from "./quality.js";
+import { useDialogKeyboard } from "./accessibility.js";
+import { errorStateCopy, normalizeErrorState } from "./errorState.js";
 import "./detailQuality.css";
 
 const apiClient = createApiClient();
@@ -81,6 +83,19 @@ function Toast({ message, onClose }) {
   return <div className="toast" role="status"><Icon name="check-circle" size={18} weight="fill" /><span>{message}</span><button className="toast-close" onClick={onClose} aria-label="关闭提示"><Icon name="x" size={16} /></button></div>;
 }
 
+function SystemStateView({ state, onBack, onRetry }) {
+  const copy = errorStateCopy(state);
+  return <main className="system-state content" role="alert" aria-live="assertive">
+    <div className="system-state-icon"><Icon name="warning" size={38} weight="duotone" /></div>
+    <h1>{copy.title}</h1>
+    <p>{copy.description}</p>
+    <div className="system-state-actions">
+      <button className="secondary-button" onClick={onBack}>{copy.action}</button>
+      {copy.retry && <button className="primary-action" onClick={onRetry}>重试</button>}
+    </div>
+  </main>;
+}
+
 function NotificationPanel({ notifications, onRead }) {
   return <div className="notification-panel" role="dialog" aria-label="通知列表"><div className="notification-panel-head"><strong>通知</strong><button className="text-button" onClick={() => onRead()}>全部已读</button></div>{notifications.length ? notifications.map((item) => <button className={`notification-item ${item.read ? "read" : ""}`} key={item.id || item.notificationId} onClick={() => onRead(item.id || item.notificationId)}><span className="notification-item-icon"><Icon name={item.icon || "bell"} size={16} /></span><span><strong>{item.title}</strong><small>{item.detail}</small><time>{item.time || item.createdAt || ""}</time></span>{!item.read && <i />}</button>) : <div className="notification-empty">暂无新通知</div>}</div>;
 }
@@ -99,6 +114,7 @@ function LoginView({ onDeveloperEnter, onAdminLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const selectMode = (event) => {
     const nextMode = event.target.value;
     setLoginMode(nextMode);
@@ -108,13 +124,24 @@ function LoginView({ onDeveloperEnter, onAdminLogin }) {
       setPassword("");
     }
   };
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault();
-    const session = authenticateAdmin(username.trim(), password);
-    if (!session) { setError("管理员账号或密码不正确"); return; }
-    setError(""); onAdminLogin(session);
+    setLoading(true);
+    try {
+      const session = await onAdminLogin(username.trim(), password);
+      setError("");
+      if (session) return;
+    } catch (loginError) {
+      setError(loginError.message || "管理员账号或密码不正确");
+    } finally {
+      setLoading(false);
+    }
   };
-  return <main className="login-shell"><section className="login-card"><div className="login-brand"><span className="brand-mark"><Icon name="sparkle" size={22} weight="fill" /></span><div><strong>AI Skill 管理中心</strong><span>华为开发部门内部 Skill 平台</span></div></div><div className="login-heading"><h1>选择进入方式</h1><p>普通开发者无需账号即可浏览和使用 Skill；平台管理员使用管理员账号进入管理工作台。</p></div><div className="login-entry"><label className="login-field login-mode-field"><span>进入身份</span><select value={loginMode} onChange={selectMode} aria-label="进入身份"><option value={LOGIN_MODES.developer}>普通开发者</option><option value={LOGIN_MODES.admin}>平台管理员</option></select></label>{requiresAdminCredentials(loginMode) ? <form className="login-entry-panel admin-option" onSubmit={submit}><div className="login-option-icon"><Icon name="shield-check" size={24} /></div><div><h2>平台管理员登录</h2><p>登录后可审核、统计、导出和维护平台配置。</p></div><label className="login-field"><span>管理员账号</span><input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" placeholder="请输入账号" /></label><label className="login-field"><span>管理员密码</span><input value={password} onChange={(event) => setPassword(event.target.value)} type="password" autoComplete="current-password" placeholder="请输入密码" /></label>{error && <div className="login-error" role="alert"><Icon name="warning" size={16} />{error}</div>}<button className="primary-action" type="submit">管理员登录</button><small className="login-hint">演示账号：admin / SkillCenter@2026</small></form> : <section className="login-entry-panel developer-option"><div className="login-option-icon"><Icon name="code" size={24} /></div><div><h2>普通开发者</h2><p>无需账号，直接浏览、安装和上传本地 Skill。</p></div><button className="primary-action" onClick={onDeveloperEnter}>直接进入</button></section>}</div></section></main>;
+  const enterDeveloper = async () => {
+    setLoading(true);
+    try { await onDeveloperEnter(); } catch (loginError) { setError(loginError.message || "无法进入部门平台"); } finally { setLoading(false); }
+  };
+  return <main className="login-shell"><section className="login-card"><div className="login-brand"><span className="brand-mark"><Icon name="sparkle" size={22} weight="fill" /></span><div><strong>AI Skill 管理中心</strong><span>华为开发部门内部 Skill 平台</span></div></div><div className="login-heading"><h1>选择进入方式</h1><p>部门开发者通过受控本地会话进入；平台管理员使用管理员账号进入管理工作台。</p></div><div className="login-entry"><label className="login-field login-mode-field"><span>进入身份</span><select value={loginMode} onChange={selectMode} aria-label="进入身份"><option value={LOGIN_MODES.developer}>普通开发者</option><option value={LOGIN_MODES.admin}>平台管理员</option></select></label>{requiresAdminCredentials(loginMode) ? <form className="login-entry-panel admin-option" onSubmit={submit}><div className="login-option-icon"><Icon name="shield-check" size={24} /></div><div><h2>平台管理员登录</h2><p>登录后可审核、统计、导出和维护平台配置。</p></div><label className="login-field"><span>管理员账号</span><input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" placeholder="请输入账号" /></label><label className="login-field"><span>管理员密码</span><input value={password} onChange={(event) => setPassword(event.target.value)} type="password" autoComplete="current-password" placeholder="请输入密码" /></label>{error && <div className="login-error" role="alert"><Icon name="warning" size={16} />{error}</div>}<button className="primary-action" type="submit" disabled={loading}>{loading ? "登录中…" : "管理员登录"}</button><small className="login-hint">账号和密码由部门本地配置提供</small></form> : <section className="login-entry-panel developer-option"><div className="login-option-icon"><Icon name="code" size={24} /></div><div><h2>普通开发者</h2><p>获取受控的本地会话后浏览、安装和上传 Skill。</p></div>{error && <div className="login-error" role="alert"><Icon name="warning" size={16} />{error}</div>}<button className="primary-action" onClick={enterDeveloper} disabled={loading}>{loading ? "进入中…" : "直接进入"}</button></section>}</div></section></main>;
 }
 
 function Sidebar({ role, view, onNavigate, onUpload, pendingReviewTotal = 0 }) {
@@ -341,6 +368,7 @@ function VersionHistoryPanel({ skill, role, onToast }) {
   const [relationImpact, setRelationImpact] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const dialogRef = useRef(null);
   const load = () => skillApi.listVersions(skill.id).then((response) => setVersions(response.data ?? [])).catch((loadError) => setError(loadError.message || "版本历史加载失败"));
   useEffect(() => { if (skill?.id) load(); }, [skill?.id]);
   useEffect(() => {
@@ -364,7 +392,9 @@ function VersionHistoryPanel({ skill, role, onToast }) {
     finally { setLoading(false); }
   };
   const relationNodes = Array.isArray(relationImpact?.nodes) ? relationImpact.nodes : [];
-  return <section className="version-history panel"><div className="section-heading"><div><h2>版本历史</h2><p>普通用户可见已发布和已废弃版本，管理员可执行生命周期操作。</p></div></div>{error && <div className="api-state error-state">{error}</div>}<div className="governance-list">{versions.length ? versions.map((version) => <article className="governance-row" key={`${version.skillId}-${version.version}`}><div><strong>{version.version}</strong><span>{version.statusReason || "无生命周期备注"}</span></div><Badge tone={version.status === "withdrawn" ? "danger" : version.status === "deprecated" ? "warning" : "stable"}>{version.status}</Badge><span>{version.replacementVersion ? `替代 ${version.replacementVersion}` : ""}</span>{role === "admin" && version.status !== "withdrawn" && <div className="governance-actions"><button className="secondary-button" onClick={() => { setSelected(version); setReason(""); setReplacementVersion(version.replacementVersion || ""); setImpact(null); }}>生命周期操作</button></div>}</article>) : <div className="empty-state">暂无版本历史</div>}</div>{selected && <div className="modal-backdrop" role="presentation"><section className="upload-modal" role="dialog" aria-modal="true"><div className="modal-head"><div><h2>更新 {selected.version} 生命周期</h2><p>废弃可继续分发；下架会立即阻止新的授权、Manifest 和制品下载。</p></div><button className="icon-button" onClick={() => { setSelected(null); setRelationImpact(null); }} aria-label="关闭"><Icon name="x" size={20} /></button></div>{impact && <div className="placeholder-note">影响面：{impact.installationCount} 条安装记录，{impact.activeInstallationCount} 条活跃安装，{impact.invocationCount} 次调用。</div>}{role === "admin" && relationImpact && <div className="skill-relation-impact" data-testid="skill-relation-impact"><div className="skill-relation-impact-head"><strong>关系影响面</strong><span>受影响下游：{relationNodes.length} 个版本</span></div>{relationImpact.truncated && <div className="skill-relation-impact-warning">影响结果已截断，请缩小范围后继续分析。</div>}{relationNodes.length === 0 ? <div className="skill-relation-impact-empty">暂无已登记的下游版本关系。</div> : <div className="skill-relation-impact-list">{relationNodes.map((node) => <div className="skill-relation-impact-row" key={`${node.relationId}-${node.skillId}-${node.version}`}><div><strong>{node.skillId} · {node.version}</strong><span>{node.relationType} · 深度 {node.depth} · {node.status}</span></div><span>{node.productionPromoted ? "生产已晋级" : "生产未晋级"} · {node.activeInstallationCount ?? 0} 条活跃安装</span></div>)}</div>}</div>}{<label className="distribution-field"><span>原因（必填）</span><textarea value={reason} onChange={(event) => setReason(event.target.value)} /></label>}<label className="distribution-field"><span>替代版本（可选）</span><input value={replacementVersion} onChange={(event) => setReplacementVersion(event.target.value)} placeholder="例如 1.1.0" /></label><div className="modal-actions"><button className="secondary-button" onClick={() => { setSelected(null); setRelationImpact(null); }}>取消</button><button className="secondary-button" disabled={loading} onClick={() => submit("deprecate")}>废弃版本</button><button className="primary-action" disabled={loading} onClick={() => submit("withdraw")}>下架版本</button></div></section></div>}</section>;
+  const closeDialog = () => { setSelected(null); setRelationImpact(null); };
+  useDialogKeyboard(dialogRef, closeDialog, Boolean(selected));
+  return <section className="version-history panel"><div className="section-heading"><div><h2>版本历史</h2><p>普通用户可见已发布和已废弃版本，管理员可执行生命周期操作。</p></div></div>{error && <div className="api-state error-state">{error}</div>}<div className="governance-list">{versions.length ? versions.map((version) => <article className="governance-row" key={`${version.skillId}-${version.version}`}><div><strong>{version.version}</strong><span>{version.statusReason || "无生命周期备注"}</span></div><Badge tone={version.status === "withdrawn" ? "danger" : version.status === "deprecated" ? "warning" : "stable"}>{version.status}</Badge><span>{version.replacementVersion ? `替代 ${version.replacementVersion}` : ""}</span>{role === "admin" && version.status !== "withdrawn" && <div className="governance-actions"><button className="secondary-button" onClick={() => { setSelected(version); setReason(""); setReplacementVersion(version.replacementVersion || ""); setImpact(null); }}>生命周期操作</button></div>}</article>) : <div className="empty-state">暂无版本历史</div>}</div>{selected && <div className="modal-backdrop" role="presentation"><section ref={dialogRef} className="upload-modal" role="dialog" aria-modal="true" aria-labelledby="lifecycle-dialog-title" tabIndex={-1}><div className="modal-head"><div><h2 id="lifecycle-dialog-title">更新 {selected.version} 生命周期</h2><p>废弃可继续分发；下架会立即阻止新的授权、Manifest 和制品下载。</p></div><button className="icon-button" onClick={closeDialog} aria-label="关闭"><Icon name="x" size={20} /></button></div>{impact && <div className="placeholder-note">影响面：{impact.installationCount} 条安装记录，{impact.activeInstallationCount} 条活跃安装，{impact.invocationCount} 次调用。</div>}{role === "admin" && relationImpact && <div className="skill-relation-impact" data-testid="skill-relation-impact"><div className="skill-relation-impact-head"><strong>关系影响面</strong><span>受影响下游：{relationNodes.length} 个版本</span></div>{relationImpact.truncated && <div className="skill-relation-impact-warning">影响结果已截断，请缩小范围后继续分析。</div>}{relationNodes.length === 0 ? <div className="skill-relation-impact-empty">暂无已登记的下游版本关系。</div> : <div className="skill-relation-impact-list">{relationNodes.map((node) => <div className="skill-relation-impact-row" key={`${node.relationId}-${node.skillId}-${node.version}`}><div><strong>{node.skillId} · {node.version}</strong><span>{node.relationType} · 深度 {node.depth} · {node.status}</span></div><span>{node.productionPromoted ? "生产已晋级" : "生产未晋级"} · {node.activeInstallationCount ?? 0} 条活跃安装</span></div>)}</div>}</div>}{<label className="distribution-field"><span>原因（必填）</span><textarea data-dialog-initial-focus value={reason} onChange={(event) => setReason(event.target.value)} /></label>}<label className="distribution-field"><span>替代版本（可选）</span><input value={replacementVersion} onChange={(event) => setReplacementVersion(event.target.value)} placeholder="例如 1.1.0" /></label><div className="modal-actions"><button className="secondary-button" onClick={closeDialog}>取消</button><button className="secondary-button" disabled={loading} onClick={() => submit("deprecate")}>废弃版本</button><button className="primary-action" disabled={loading} onClick={() => submit("withdraw")}>下架版本</button></div></section></div>}</section>;
 }
 
 function PlaceholderView({ view, onUpload, onOpen }) {
@@ -393,6 +423,7 @@ function UploadModal({ onClose, onUpload, onCancelUpload = (uploadId) => skillAp
   const [error, setError] = useState("");
   const [uploadSession, setUploadSession] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const dialogRef = useRef(null);
   const close = async () => {
     if (submitting) return;
     if (uploadSession?.uploadId) {
@@ -434,7 +465,8 @@ function UploadModal({ onClose, onUpload, onCancelUpload = (uploadId) => skillAp
       setSubmitting(false);
     }
   };
-  return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) void close(); }}><section className="upload-modal" role="dialog" aria-modal="true" aria-labelledby="upload-title"><div className="modal-head"><div><h2 id="upload-title">发布 Skill</h2><p>Skill 需从本地开发环境以 ZIP 包上传，网络中断后可继续。</p></div><button className="icon-button" onClick={() => void close()} disabled={submitting} aria-label="关闭"><Icon name="x" size={20} /></button></div><label className="dropzone"><Icon name="upload-simple" size={32} /><strong>{file?.name || "选择 Skill ZIP 包"}</strong><span>包含 SKILL.md（skill.json 可选）</span><input type="file" accept=".zip" onChange={(event) => selectFile(event.target.files?.[0] || null)} /></label>{uploadSession && <div className="upload-progress" role="status" aria-label="上传进度"><div><span>上传进度</span><strong>{uploadProgress}%</strong></div><progress max="100" value={uploadProgress} /></div>}{error && <div className="upload-error" role="alert"><Icon name="warning-circle" size={16} weight="fill" />{error}</div>}<div className="upload-rules"><span><Icon name="check-circle" size={16} weight="fill" />自动校验目录结构</span><span><Icon name="check-circle" size={16} weight="fill" />校验权限与依赖</span><span><Icon name="check-circle" size={16} weight="fill" />发布后进入审核</span></div><div className="modal-actions"><button className="secondary-button" disabled={submitting} onClick={() => void close()}>取消</button><button className="primary-action" disabled={!file || submitting} onClick={submit}>{submitting ? `正在上传… ${uploadProgress}%` : uploadSession ? "继续上传" : "开始上传并校验"}</button></div></section></div>;
+  useDialogKeyboard(dialogRef, close);
+  return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) void close(); }}><section ref={dialogRef} className="upload-modal" role="dialog" aria-modal="true" aria-labelledby="upload-title" tabIndex={-1}><div className="modal-head"><div><h2 id="upload-title">发布 Skill</h2><p>Skill 需从本地开发环境以 ZIP 包上传，网络中断后可继续。</p></div><button className="icon-button" onClick={() => void close()} disabled={submitting} aria-label="关闭"><Icon name="x" size={20} /></button></div><label className="dropzone"><Icon name="upload-simple" size={32} /><strong>{file?.name || "选择 Skill ZIP 包"}</strong><span>包含 SKILL.md（skill.json 可选）</span><input data-dialog-initial-focus type="file" accept=".zip" onChange={(event) => selectFile(event.target.files?.[0] || null)} /></label>{uploadSession && <div className="upload-progress" role="status" aria-label="上传进度"><div><span>上传进度</span><strong>{uploadProgress}%</strong></div><progress max="100" value={uploadProgress} /></div>}{error && <div className="upload-error" role="alert"><Icon name="warning" size={16} weight="fill" />{error}</div>}<div className="upload-rules"><span><Icon name="check-circle" size={16} weight="fill" />自动校验目录结构</span><span><Icon name="check-circle" size={16} weight="fill" />校验权限与依赖</span><span><Icon name="check-circle" size={16} weight="fill" />发布后进入审核</span></div><div className="modal-actions"><button className="secondary-button" disabled={submitting} onClick={() => void close()}>取消</button><button className="primary-action" disabled={!file || submitting} onClick={submit}>{submitting ? `正在上传… ${uploadProgress}%` : uploadSession ? "继续上传" : "开始上传并校验"}</button></div></section></div>;
 }
 
 export function App() {
@@ -478,6 +510,9 @@ export function App() {
   const [toast, setToast] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const initialRoute = routeFromHash(typeof window === "undefined" ? "" : window.location.hash);
+  const [systemState, setSystemState] = useState(() => initialRoute.view === "not-found" ? "not-found" : "");
+  const [retryNonce, setRetryNonce] = useState(0);
   const loadSequence = useRef(0);
   const showToast = (message) => { setToast(message); window.clearTimeout(window.__skillToastTimer); window.__skillToastTimer = window.setTimeout(() => setToast(""), 3200); };
   const role = session?.role ?? "developer";
@@ -513,6 +548,7 @@ export function App() {
       const nextRoute = routeFromHash(window.location.hash);
       setView(nextRoute.view);
       setSelectedId(nextRoute.selectedId);
+      setSystemState(nextRoute.view === "not-found" ? "not-found" : "");
       setSelectedSkill(null);
       setNotificationsOpen(false);
     };
@@ -524,7 +560,7 @@ export function App() {
       window.removeEventListener("hashchange", restoreRoute);
     };
   }, []);
-  useEffect(() => { if (session) apiClient.setActor({ userId: session.userId, role: ROLES[session.role]?.actorRole || "developer" }); }, [session]);
+  useEffect(() => { if (session) apiClient.setActor({ userId: session.userId, role: ROLES[session.role]?.actorRole || "developer", token: session.token }); }, [session]);
   useEffect(() => {
     if (!session) return;
     skillApi.listFavorites().then((response) => setFavoriteSkillIds(new Set((response.data ?? []).map((item) => item.id)))).catch(() => setFavoriteSkillIds(new Set()));
@@ -601,8 +637,7 @@ export function App() {
       .then((response) => { if (active) setSelectedSkill(normalizeSkill(response.data)); })
       .catch((detailError) => {
         if (!active) return;
-        setError(detailError.message || "Skill 详情加载失败");
-        navigate("market", { replace: true });
+        setSystemState(normalizeErrorState(detailError));
       });
     skillApi.getSkillContent(selectedId)
       .then((response) => { if (active) setSkillContent(typeof response.data === "string" ? response.data : ""); })
@@ -617,7 +652,7 @@ export function App() {
       .then((response) => { if (active) setQualitySuggestions(normalizeQualitySuggestions(response)); })
       .catch(() => { if (active) setQualitySuggestions([]); });
     return () => { active = false; };
-  }, [selectedId, view, session, qualityEnvironmentFilters.dataSource, qualityEnvironmentFilters.runtimeId, qualityEnvironmentFilters.mcpServerId, qualityEnvironmentFilters.llmProviderId]);
+  }, [selectedId, view, session, retryNonce, qualityEnvironmentFilters.dataSource, qualityEnvironmentFilters.runtimeId, qualityEnvironmentFilters.mcpServerId, qualityEnvironmentFilters.llmProviderId]);
   useEffect(() => {
     if (view !== "review" && view !== "installations") return;
     setGovernanceLoading(true);
@@ -654,6 +689,7 @@ export function App() {
     }
     setView(nextView);
     setSelectedId(nextSelectedId);
+    setSystemState(nextView === "not-found" ? "not-found" : "");
     if (nextView !== "detail") setSelectedSkill(null);
   };
   const navigate = (nextView, options = {}) => { if (nextView === "upload") { setUploadOpen(true); return; } if ((nextView === "operations" || nextView === "quality") && role !== "admin") { commitRoute("market", null, { replace: true }); return; } if (nextView === "quality" && selectedSkill) { const context = { skillId: selectedId, skillVersion: String(selectedSkill.version || "").replace(/^v/, ""), environmentFilters: qualityEnvironmentFilters }; if (typeof window !== "undefined") window.__skillQualityNavigationContext = context; } commitRoute(nextView, null, options); };
@@ -733,7 +769,7 @@ export function App() {
     }
   };
   const handleDetailToast = (message) => { if (message === "已收藏该 Skill") { toggleFavorite(); } else showToast(message); };
-  if (!session) return <LoginView onDeveloperEnter={() => { const next = createDeveloperSession(); saveSession(next); setSession(next); }} onAdminLogin={(next) => { saveSession(next); setSession(next); }} />;
+  if (!session) return <LoginView onDeveloperEnter={async () => { const next = await apiClient.loginAsGuest(); saveSession(next); setSession(next); }} onAdminLogin={async (username, password) => { const next = await apiClient.login(username, password); saveSession(next); setSession(next); return next; }} />;
   const readNotifications = async (id) => {
     try {
       if (id) await skillApi.readNotification(id); else await skillApi.readAllNotifications();
@@ -744,6 +780,7 @@ export function App() {
       showToast(readError.message || "通知状态更新失败");
     }
   };
-  const logout = () => { clearSession(); setSession(null); setNotificationsOpen(false); commitRoute("market", null, { replace: true }); };
-  return <div className="app-shell"><TopBar session={session} view={view} onNavigate={navigate} onLogout={logout} notifications={notifications} notificationsOpen={notificationsOpen} onToggleNotifications={() => setNotificationsOpen((open) => !open)} onReadNotifications={(id) => { readNotifications(id); if (id) setNotificationsOpen(false); }} /><div className="workspace">{view !== "detail" && <Sidebar role={role} view={view} onNavigate={navigate} onUpload={() => setUploadOpen(true)} pendingReviewTotal={pendingReviewTotal} />}{view === "market" && <MarketView skills={visibleSkills} total={marketTotal} query={query} category={category} status={marketStatus} risk={marketRisk} sort={marketSort} viewMode={marketViewMode} page={marketPage} totalPages={totalMarketPages} onQueryChange={(nextQuery) => { setQuery(nextQuery); setMarketPage(1); navigate("market", { replace: true }); }} onCategory={(nextCategory) => { setCategory(nextCategory); setMarketPage(1); }} onStatus={(nextStatus) => { setMarketStatus(nextStatus); setMarketPage(1); }} onRisk={(nextRisk) => { setMarketRisk(nextRisk); setMarketPage(1); }} onSort={(nextSort) => { setMarketSort(nextSort); setMarketPage(1); }} onViewModeChange={setMarketViewMode} onPage={setMarketPage} onOpen={openSkill} onPublish={() => setUploadOpen(true)} loading={loading} error={error} />}{view === "detail" && <DetailView skill={selectedSkill} skillContent={skillContent} skillQuality={skillQuality} qualityBenchmarks={qualityBenchmarks} qualitySuggestions={qualitySuggestions} qualityEnvironmentFilters={qualityEnvironmentFilters} onQualityEnvironmentChange={setQualityEnvironmentFilters} role={role} favorite={favoriteSkillIds.has(selectedId)} onBack={() => navigate("market")} onToast={handleDetailToast} onToggleFavorite={toggleFavorite} onPromptInstall={copyPromptInstall} onDownload={downloadZip} downloadLoading={downloadLoading} onOpenQuality={() => navigate("quality")} onOpenOperations={() => navigate("operations")} onDisposition={updateQualitySuggestionDisposition} dispositionLoadingId={qualityDispositionLoadingId} scopeDraft={skillScopeDraft} scopeLoading={skillScopeLoading} scopeSaving={skillScopeSaving} scopeError={skillScopeError} onScopeDraftChange={updateScopeDraft} onScopeSave={saveScope} />}{view === "analytics" && <AnalyticsView analytics={analytics} analyticsQuery={analyticsQuery} onAnalyticsQueryChange={setAnalyticsQuery} analyticsLoading={analyticsLoading} analyticsError={analyticsError} />}{view === "quality" && <QualityCenterView api={skillApi} role={role} />}{view === "review" && <ReviewView reviews={reviews} loading={governanceLoading} error={governanceError} onApprove={approveReview} onReject={rejectReview} />}{view === "installations" && <InstallationsView installations={installations} loading={governanceLoading} error={governanceError} />}{(view === "collection" || view === "my-skills") && <CollectionsView api={skillApi} role={role} onOpenSkill={openSkill} onToast={showToast} />}{view === "settings" && <GovernanceSettingsView api={skillApi} role={role} onToast={showToast} />}{view === "exports" && <AuditExportView api={skillApi} role={role} onToast={showToast} />}{view === "operations" && <OperationsMetricsView api={skillApi} role={role} initialSkillId={selectedId} initialSkillVersion={String(selectedSkill?.version || "").replace(/^v/, "")} initialEnvironmentFilters={qualityEnvironmentFilters} />}{!["market", "detail", "analytics", "quality", "review", "installations", "collection", "my-skills", "settings", "exports", "operations"].includes(view) && <PlaceholderView view={view} onUpload={() => setUploadOpen(true)} onOpen={openSkill} />}</div><Toast message={toast} onClose={() => setToast("")} />{uploadOpen && <UploadModal onClose={() => setUploadOpen(false)} onUpload={upload} />}</div>;
+  const logout = () => { void apiClient.logout(); clearSession(); setSession(null); setNotificationsOpen(false); commitRoute("market", null, { replace: true }); };
+  if (systemState) return <div className="app-shell"><a className="skip-link" href="#main-content">跳转到主要内容</a><TopBar session={session} view={view} onNavigate={navigate} onLogout={logout} notifications={notifications} notificationsOpen={notificationsOpen} onToggleNotifications={() => setNotificationsOpen((open) => !open)} onReadNotifications={(id) => { readNotifications(id); if (id) setNotificationsOpen(false); }} /><div id="main-content" tabIndex={-1}><SystemStateView state={systemState} onBack={() => navigate("market", { replace: true })} onRetry={() => { setSystemState(""); setRetryNonce((value) => value + 1); }} /></div><Toast message={toast} onClose={() => setToast("")} /></div>;
+  return <div className="app-shell"><a className="skip-link" href="#main-content">跳转到主要内容</a><TopBar session={session} view={view} onNavigate={navigate} onLogout={logout} notifications={notifications} notificationsOpen={notificationsOpen} onToggleNotifications={() => setNotificationsOpen((open) => !open)} onReadNotifications={(id) => { readNotifications(id); if (id) setNotificationsOpen(false); }} /><div className="workspace" id="main-content" tabIndex={-1}>{view !== "detail" && <Sidebar role={role} view={view} onNavigate={navigate} onUpload={() => setUploadOpen(true)} pendingReviewTotal={pendingReviewTotal} />}{view === "market" && <MarketView skills={visibleSkills} total={marketTotal} query={query} category={category} status={marketStatus} risk={marketRisk} sort={marketSort} viewMode={marketViewMode} page={marketPage} totalPages={totalMarketPages} onQueryChange={(nextQuery) => { setQuery(nextQuery); setMarketPage(1); navigate("market", { replace: true }); }} onCategory={(nextCategory) => { setCategory(nextCategory); setMarketPage(1); }} onStatus={(nextStatus) => { setMarketStatus(nextStatus); setMarketPage(1); }} onRisk={(nextRisk) => { setMarketRisk(nextRisk); setMarketPage(1); }} onSort={(nextSort) => { setMarketSort(nextSort); setMarketPage(1); }} onViewModeChange={setMarketViewMode} onPage={setMarketPage} onOpen={openSkill} onPublish={() => setUploadOpen(true)} loading={loading} error={error} />}{view === "detail" && <DetailView skill={selectedSkill} skillContent={skillContent} skillQuality={skillQuality} qualityBenchmarks={qualityBenchmarks} qualitySuggestions={qualitySuggestions} qualityEnvironmentFilters={qualityEnvironmentFilters} onQualityEnvironmentChange={setQualityEnvironmentFilters} role={role} favorite={favoriteSkillIds.has(selectedId)} onBack={() => navigate("market")} onToast={handleDetailToast} onToggleFavorite={toggleFavorite} onPromptInstall={copyPromptInstall} onDownload={downloadZip} downloadLoading={downloadLoading} onOpenQuality={() => navigate("quality")} onOpenOperations={() => navigate("operations")} onDisposition={updateQualitySuggestionDisposition} dispositionLoadingId={qualityDispositionLoadingId} scopeDraft={skillScopeDraft} scopeLoading={skillScopeLoading} scopeSaving={skillScopeSaving} scopeError={skillScopeError} onScopeDraftChange={updateScopeDraft} onScopeSave={saveScope} />}{view === "analytics" && <AnalyticsView analytics={analytics} analyticsQuery={analyticsQuery} onAnalyticsQueryChange={setAnalyticsQuery} analyticsLoading={analyticsLoading} analyticsError={analyticsError} />}{view === "quality" && <QualityCenterView api={skillApi} role={role} />}{view === "review" && <ReviewView reviews={reviews} loading={governanceLoading} error={governanceError} onApprove={approveReview} onReject={rejectReview} />}{view === "installations" && <InstallationsView installations={installations} loading={governanceLoading} error={governanceError} />}{(view === "collection" || view === "my-skills") && <CollectionsView api={skillApi} role={role} onOpenSkill={openSkill} onToast={showToast} />}{view === "settings" && <GovernanceSettingsView api={skillApi} role={role} onToast={showToast} />}{view === "exports" && <AuditExportView api={skillApi} role={role} onToast={showToast} />}{view === "operations" && <OperationsMetricsView api={skillApi} role={role} initialSkillId={selectedId} initialSkillVersion={String(selectedSkill?.version || "").replace(/^v/, "")} initialEnvironmentFilters={qualityEnvironmentFilters} />}{!["market", "detail", "analytics", "quality", "review", "installations", "collection", "my-skills", "settings", "exports", "operations"].includes(view) && <PlaceholderView view={view} onUpload={() => setUploadOpen(true)} onOpen={openSkill} />}</div><Toast message={toast} onClose={() => setToast("")} />{uploadOpen && <UploadModal onClose={() => setUploadOpen(false)} onUpload={upload} />}</div>;
 }

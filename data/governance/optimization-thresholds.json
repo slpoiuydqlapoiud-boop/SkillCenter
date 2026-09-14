@@ -1,0 +1,5 @@
+{
+  "minSuccessRatePercent" : 96.5,
+  "maxP95Ms" : 900,
+  "minRuntimeSamples" : 8
+}

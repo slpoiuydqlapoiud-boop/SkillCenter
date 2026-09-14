@@ -30,4 +30,8 @@ abstract class ExecutionEnvironmentBackendCondition implements Condition {
     public static final class Postgresql extends ExecutionEnvironmentBackendCondition {
         public Postgresql() { super("postgresql"); }
     }
+
+    public static final class Mysql extends ExecutionEnvironmentBackendCondition {
+        public Mysql() { super("mysql"); }
+    }
 }

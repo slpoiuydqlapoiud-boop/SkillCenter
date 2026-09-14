@@ -218,6 +218,25 @@ test("api client sends local actor headers and allows role switching", async () 
   assert.equal(calls[1].options.headers["X-User-Role"], "reviewer");
 });
 
+test("api client exchanges local credentials for a bearer session", async () => {
+  const calls = [];
+  const client = createApiClient({
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      return new Response(JSON.stringify({
+        data: { token: "token-1", actor: { userId: "admin", role: "admin" }, expiresAt: "2026-09-09T10:00:00Z" },
+      }), { status: 200, headers: { "content-type": "application/json" } });
+    },
+  });
+
+  const session = await client.login("admin", "secret");
+  await client.request("/api/v1/admin/reviews");
+
+  assert.equal(session.token, "token-1");
+  assert.equal(calls[0].url, "/api/v1/auth/login");
+  assert.equal(calls[1].options.headers.Authorization, "Bearer token-1");
+});
+
 test("api client exposes retry metadata and friendly rate-limit message", async () => {
   const client = createApiClient({
     fetchImpl: async () => new Response(JSON.stringify({

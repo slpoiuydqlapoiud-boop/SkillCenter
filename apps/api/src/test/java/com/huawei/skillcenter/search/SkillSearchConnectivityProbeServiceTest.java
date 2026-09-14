@@ -17,8 +17,10 @@ import java.util.concurrent.Executors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 class SkillSearchConnectivityProbeServiceTest {
     @Test
@@ -57,6 +59,25 @@ class SkillSearchConnectivityProbeServiceTest {
                 index, governanceStore, Clock.systemUTC(), Duration.ofMinutes(5));
 
         assertThat(service.lastProbe()).isNull();
+    }
+
+    @Test
+    void scheduledProbeRefreshesHealthWithoutCreatingAuditEvent() throws Exception {
+        try (var server = new ProbeServer(200)) {
+            HttpSkillSearchIndex index = new HttpSkillSearchIndex(server.endpoint(), "skills-v1", "",
+                    Duration.ofSeconds(1), Duration.ofSeconds(2), 16_384, HttpClient.newHttpClient(),
+                    new com.fasterxml.jackson.databind.ObjectMapper(), reference -> "", Clock.systemUTC());
+            GovernanceStore governanceStore = mock(GovernanceStore.class);
+            SkillSearchConnectivityProbeService service = new SkillSearchConnectivityProbeService(
+                    index, governanceStore, Clock.systemUTC(), Duration.ofMinutes(5));
+            clearInvocations(governanceStore);
+
+            SkillSearchProbeResult result = service.probeScheduled();
+
+            assertThat(result.status()).isEqualTo("REACHABLE");
+            assertThat(service.probeFresh()).isTrue();
+            verifyNoInteractions(governanceStore);
+        }
     }
 
     private static final class ProbeServer implements AutoCloseable {

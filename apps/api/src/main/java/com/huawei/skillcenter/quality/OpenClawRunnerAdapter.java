@@ -44,6 +44,11 @@ public final class OpenClawRunnerAdapter implements SkillRunner {
     }
 
     @Override
+    public String dataSource() {
+        return "production";
+    }
+
+    @Override
     public List<String> capabilities() {
         return List.of("execute", "timeout", "cancel");
     }

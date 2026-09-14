@@ -17,7 +17,7 @@
 *.ear
 *.zip
 *.tar.gz
-*.rar
+
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
@@ -31,8 +31,14 @@ __pycache__/
 dist/
 target/
 build/
+data/governance/exports
 *.log
 node_modules/
 apps/web/dist/
 apps/api/data/
 deploy/local/.env
+deploy/prod/.env.prod.*
+!deploy/prod/.env.prod.template
+# Spring production profile：保留 .example 模板，实际配置由部署平台注入
+apps/api/src/main/resources/application-prod.yml
+!apps/api/src/main/resources/application-prod.yml.example

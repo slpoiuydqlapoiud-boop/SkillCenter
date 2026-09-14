@@ -1,0 +1,360 @@
+# =============================================================================
+# SkillCenter API - production Spring profile (示例)
+# =============================================================================
+# 用法：
+#   1. 复制本文件为目标文件并去掉 .example 后缀：
+#        cp apps/api/src/main/resources/application-prod.yml.example \
+#           apps/api/src/main/resources/application-prod.yml
+#   2. 生产部署**不**打包本文件进镜像；本文件仅作运维配置参考。
+#      实际生产配置通过 SPRING_CONFIG_LOCATION / SPRING_CONFIG_ADDITIONAL_LOCATION
+#      或 ConfigMap / Secret 注入；与 deploy/prod/.env.prod.template 协同使用。
+#   3. 所有 *_REF 变量必须为 secret://<path>，由 Secret Manager 解析为真实凭据。
+#
+# 适配契约：
+#   - JWKS：docs/superpowers/specs/2026-08-25-jwks-actor-authentication-design.md
+#   - JWT 边界：docs/superpowers/specs/2026-08-25-jwt-actor-authentication-boundary-design.md
+#   - 组织目录：docs/superpowers/specs/2026-08-25-organization-directory-snapshot-design.md
+#   - 完整部署指南：deploy/prod/sso-integration.md
+# =============================================================================
+
+server:
+  port: 8080
+  # 生产必须 HTTPS，由前置 ingress/load balancer 终止 TLS；这里仍可保留 HTTP 以便健康检查
+  # ssl:
+  #   enabled: false  # 由平台层（Ingress / NLB）终止
+
+spring:
+  application:
+    name: skill-center-api
+  profiles:
+    active: prod
+  data:
+    redis:
+      connect-timeout: 2s
+      timeout: 2s
+      lettuce:
+        # Lettuce 自动 fail-over（Sentinel 模式下订阅 +switch-master 频道）
+        # Cluster 模式下自动路由到正确 slot
+        pool:
+          enabled: true
+          max-active: 32
+          max-idle: 16
+          min-idle: 4
+          max-wait: 1s
+      # ===== Sentinel 模式（生产推荐）=====
+      # 拓扑：3 sentinel + 1 master + 2 replica
+      # 端点和密码由 SKILL_CENTER_REDIS_SENTINEL_* 注入
+      sentinel:
+        master: ${SKILL_CENTER_REDIS_SENTINEL_MASTER:skillcenter-redis-master}
+        nodes: ${SKILL_CENTER_REDIS_SENTINEL_NODES:sentinel-1.sentinel.prod.internal:26379,sentinel-2.sentinel.prod.internal:26379,sentinel-3.sentinel.prod.internal:26379}
+        # sentinel 读 master 还是 replica（生产推荐 master 强一致）
+        read-from: MASTER
+      password: ${SKILL_CENTER_REDIS_PASSWORD:}
+      username: ${SKILL_CENTER_REDIS_USERNAME:}
+      ssl:
+        enabled: ${SKILL_CENTER_REDIS_TLS_ENABLED:true}
+      # ===== Cluster 模式（仅 mode=cluster 时启用）=====
+      # 必须用 hash tag 隔离 Streams key（如 skill-center:{stream}:skill-events）
+      # cluster:
+      #   nodes: ${SKILL_CENTER_REDIS_CLUSTER_NODES:}
+      #   max-redirects: 3
+      #   read-from: MASTER
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
+
+skill-center:
+  # 第 0 节：部署标识（实例 ID 用于 Prometheus / 日志关联）
+  environment: production
+  instance-id: ${SKILL_CENTER_INSTANCE_ID:skillcenter-api-1}
+
+  # ---------------------------------------------------------------------------
+  # 第 1 节：持久化（PostgreSQL HA）
+  # ---------------------------------------------------------------------------
+  governance-storage: ./data/governance/state.json  # JSON 仅作本地缓存兜底
+  production-evidence-storage: ./data/governance/production-evidence.json
+  persistence:
+    backend: ${SKILL_CENTER_PERSISTENCE_BACKEND:postgresql}
+    configured-root: ${user.dir}
+    control-storage: ./data/control
+    snapshot-storage: ./data/backups
+    startup-mode: fail-closed
+    manifest-retention: 10
+    postgresql:
+      url: ${SKILL_CENTER_POSTGRES_URL:}
+      username: ${SKILL_CENTER_POSTGRES_USERNAME:__INJECT_FROM_SECRET_MANAGER__}
+      password: ${SKILL_CENTER_POSTGRES_PASSWORD:__INJECT_FROM_SECRET_MANAGER__}
+      timeout: 5s
+      minimum-idle: ${SKILL_CENTER_POSTGRES_MINIMUM_IDLE:2}
+      maximum-pool-size: ${SKILL_CENTER_POSTGRES_MAXIMUM_POOL_SIZE:10}
+      readiness-slo: ${SKILL_CENTER_POSTGRES_READINESS_SLO:250ms}
+
+  lifecycle-projection:
+    backend: ${SKILL_CENTER_LIFECYCLE_PROJECTION_BACKEND:postgresql}
+    source-mode: offline-snapshot
+    import-mode: explicit-admin
+    startup-mode: fail-closed
+    allow-json-fallback: false
+    max-source-age-seconds: 900
+
+  # ---------------------------------------------------------------------------
+  # 第 2 节：企业身份（SSO / JWKS / JWT）
+  # ---------------------------------------------------------------------------
+  security:
+    authentication:
+      mode: ${SKILL_CENTER_AUTHENTICATION_MODE:jwt}
+      jwt:
+        # JWKS 模式（生产）：HTTPS JWKS endpoint，必须配置
+        jwks-uri: ${SKILL_CENTER_JWT_JWKS_URI:}
+        # 静态 PEM 模式（兜底/灾备）：与 jwks-uri 二选一；生产留空
+        public-key: ${SKILL_CENTER_JWT_PUBLIC_KEY:}
+        issuer: ${SKILL_CENTER_JWT_ISSUER:}
+        audience: ${SKILL_CENTER_JWT_AUDIENCE:skillcenter-api}
+        team-claim: ${SKILL_CENTER_JWT_TEAM_CLAIM:teams}
+        team-claim-required: ${SKILL_CENTER_JWT_TEAM_CLAIM_REQUIRED:true}
+        clock-skew-seconds: ${SKILL_CENTER_JWT_CLOCK_SKEW_SECONDS:60}
+        connect-timeout-ms: ${SKILL_CENTER_JWT_CONNECT_TIMEOUT_MS:1500}
+        request-timeout-ms: ${SKILL_CENTER_JWT_REQUEST_TIMEOUT_MS:3000}
+        cache-ttl-seconds: ${SKILL_CENTER_JWT_CACHE_TTL_SECONDS:300}
+        max-response-bytes: ${SKILL_CENTER_JWT_MAX_RESPONSE_BYTES:262144}
+    allowed-origins:
+      # 生产域名白名单；不要保留 localhost
+      - https://skill-center.prod.example.com
+    idempotency-ttl-seconds: 900
+    rate-limit:
+      window-seconds: 60
+      installation-create: 30
+      distribution-consume: 60
+      distribution-download: 60
+      invocation-ingest: 120
+      runtime-summary-ingest: 120
+      export-create: 10
+
+  # ---------------------------------------------------------------------------
+  # 第 3 节：组织目录（同步快照）
+  # ---------------------------------------------------------------------------
+  governance:
+    organization-directory:
+      mode: ${SKILL_CENTER_ORGANIZATION_DIRECTORY_MODE:http}
+      endpoint: ${SKILL_CENTER_ORGANIZATION_DIRECTORY_ENDPOINT:}
+      credential-ref: ${SKILL_CENTER_ORGANIZATION_DIRECTORY_CREDENTIAL_REF:}
+      connect-timeout-ms: ${SKILL_CENTER_ORGANIZATION_DIRECTORY_CONNECT_TIMEOUT_MS:1500}
+      request-timeout-ms: ${SKILL_CENTER_ORGANIZATION_DIRECTORY_REQUEST_TIMEOUT_MS:3000}
+      max-response-bytes: ${SKILL_CENTER_ORGANIZATION_DIRECTORY_MAX_RESPONSE_BYTES:1048576}
+      max-age-seconds: ${SKILL_CENTER_ORGANIZATION_DIRECTORY_MAX_AGE_SECONDS:900}
+      storage: ./data/governance/organization-directory.json
+
+  # ---------------------------------------------------------------------------
+  # 第 4 节：运行时状态（Redis HA）
+  # ---------------------------------------------------------------------------
+  runtime-summary-backend: ${SKILL_CENTER_RUNTIME_SUMMARY_BACKEND:redis}
+  alert-state-backend: ${SKILL_CENTER_OPERATIONS_ALERT_STATE_BACKEND:redis}
+  operations:
+    metrics-storage: ${SKILL_CENTER_OPERATIONS_METRICS_STORAGE:redis}
+    metrics-token: ${SKILL_CENTER_METRICS_TOKEN:}
+    alerts:
+      state-key: skill-center:operations:alerts:state
+      p95-latency-ms: 1000
+      server-error-rate: 0.05
+      minimum-requests: 10
+      security-event-count: 10
+      scheduler-enabled: ${SKILL_CENTER_OPERATIONS_ALERT_SCHEDULER_ENABLED:true}
+      evaluation-window: ${SKILL_CENTER_OPERATIONS_ALERT_EVALUATION_WINDOW:5m}
+      evaluation-interval-ms: ${SKILL_CENTER_OPERATIONS_ALERT_EVALUATION_INTERVAL_MS:60000}
+      evaluation-initial-delay-ms: ${SKILL_CENTER_OPERATIONS_ALERT_EVALUATION_INITIAL_DELAY_MS:60000}
+      notification-url: ${SKILL_CENTER_OPERATIONS_ALERT_NOTIFICATION_URL:}
+      notification-timeout-ms: 1500
+  redis:
+    # 由 spring.data.redis.* + spring.data.redis.sentinel.* / cluster.* 注入
+    key: skill-center:operations:metrics
+    ttl-seconds: 3660
+
+  # ---------------------------------------------------------------------------
+  # 第 5 节：告警与通知
+  # ---------------------------------------------------------------------------
+  operations-alert-state-backend: ${SKILL_CENTER_OPERATIONS_ALERT_STATE_BACKEND:redis}
+
+  # ---------------------------------------------------------------------------
+  # 第 6 节：对象存储（生产制品 / PIT 备份）
+  # ---------------------------------------------------------------------------
+  package-storage: ./data/packages
+  artifact-storage-backend: ${SKILL_CENTER_ARTIFACT_STORAGE_BACKEND:object-storage}
+  artifact-storage:
+    mode: ${SKILL_CENTER_ARTIFACT_STORAGE_MODE:http}
+    # 连接性探针：HEAD bucket，2s 超时，结果缓存 probe-ttl-seconds 秒
+    probe-ttl-seconds: ${SKILL_CENTER_ARTIFACT_STORAGE_PROBE_TTL_SECONDS:300}
+    # 生产 scheduler 每分钟拉一次，结果在 /api/v1/admin/artifact-storage/probe 可查
+    probe-scheduler-enabled: ${SKILL_CENTER_ARTIFACT_STORAGE_PROBE_SCHEDULER_ENABLED:true}
+    probe-scheduler-interval-ms: ${SKILL_CENTER_ARTIFACT_STORAGE_PROBE_SCHEDULER_INTERVAL_MS:60000}
+    probe-scheduler-initial-delay-ms: ${SKILL_CENTER_ARTIFACT_STORAGE_PROBE_SCHEDULER_INITIAL_DELAY_MS:1000}
+    # HTTPS endpoint（无 user-info / query / fragment），bucket 1-63 字符小写 + . -
+    endpoint: ${SKILL_CENTER_ARTIFACT_STORAGE_ENDPOINT:}
+    bucket: ${SKILL_CENTER_ARTIFACT_STORAGE_BUCKET:}
+    # SigV4 区域：影响 HMAC 签名 scope，不允许 default / 自定义字符串
+    region: ${SKILL_CENTER_ARTIFACT_STORAGE_REGION:us-east-1}
+    # prefix 用于多租户隔离（[A-Za-z0-9._/-]），留空直接落到 bucket root
+    prefix: ${SKILL_CENTER_ARTIFACT_STORAGE_PREFIX:skill-packages}
+    # 凭据两条路径：① 默认 EnvironmentObjectStorageCredentialResolver 仅识别 secret://env/<NAME>
+    # ② 生产推荐替换为 Secret Manager 解析器（K8s ESO / Vault Agent / 阿里云 KMS）
+    access-key-id-ref: ${SKILL_CENTER_ARTIFACT_STORAGE_ACCESS_KEY_ID_REF:}
+    secret-access-key-ref: ${SKILL_CENTER_ARTIFACT_STORAGE_SECRET_ACCESS_KEY_REF:}
+  artifact-base-url: ${SKILL_CENTER_ARTIFACT_BASE_URL:https://skill-center.prod.example.com/artifacts}
+
+  # ---------------------------------------------------------------------------
+  # 第 7 节：制品上传与外部安全扫描
+  # ---------------------------------------------------------------------------
+  # 适配契约：deploy/prod/security-scanner.md
+  # 关键约束（生产强制）：
+  #   - mode=required：扫描不可达/能力不全/响应非法 → 上传拒绝（fail-closed）
+  #   - capabilities 必须含全集：
+  #       MALWARE,SENSITIVE_INFORMATION,DEPENDENCY_VULNERABILITY,LICENSE
+  #   - endpoint 必须 HTTPS（loopback 测试例外）
+  #   - credential-ref 必须是 secret:// 格式：
+  #       * 默认 Bean 解析 secret://env/<ENV_VAR_NAME>，从 System.getenv() 取值
+  #       * 生产推荐替换 ProviderCredentialResolver Bean，使用真正的 Secret Manager 路径
+  #   - max-request-bytes 与 package-max-bytes（20MB）对齐
+  #   - max-response-bytes 默认 1MB，可容 1000 条 findings
+  package-max-bytes: 20971520
+  package-max-uncompressed-bytes: 104857600
+  package-upload-chunk-bytes: ${SKILL_CENTER_PACKAGE_UPLOAD_CHUNK_BYTES:1048576}
+  package-upload-backend: ${SKILL_CENTER_PACKAGE_UPLOAD_BACKEND:distributed}
+  package-upload-session-ttl-seconds: ${SKILL_CENTER_PACKAGE_UPLOAD_SESSION_TTL_SECONDS:1800}
+  package-upload-max-sessions: ${SKILL_CENTER_PACKAGE_UPLOAD_MAX_SESSIONS:100}
+  package-upload-max-active-bytes: ${SKILL_CENTER_PACKAGE_UPLOAD_MAX_ACTIVE_BYTES:536870912}
+  package-upload-cleanup-interval-ms: ${SKILL_CENTER_PACKAGE_UPLOAD_CLEANUP_INTERVAL_MS:60000}
+  package-security:
+    external:
+      mode: ${SKILL_CENTER_PACKAGE_SECURITY_EXTERNAL_MODE:required}
+      endpoint: ${SKILL_CENTER_PACKAGE_SECURITY_EXTERNAL_ENDPOINT:}
+      credential-ref: ${SKILL_CENTER_PACKAGE_SECURITY_EXTERNAL_CREDENTIAL_REF:}
+      connect-timeout-ms: ${SKILL_CENTER_PACKAGE_SECURITY_EXTERNAL_CONNECT_TIMEOUT_MS:2000}
+      request-timeout-ms: ${SKILL_CENTER_PACKAGE_SECURITY_EXTERNAL_REQUEST_TIMEOUT_MS:30000}
+      max-response-bytes: ${SKILL_CENTER_PACKAGE_SECURITY_EXTERNAL_MAX_RESPONSE_BYTES:1048576}
+      max-request-bytes: ${SKILL_CENTER_PACKAGE_SECURITY_EXTERNAL_MAX_REQUEST_BYTES:20971520}
+      capabilities: ${SKILL_CENTER_PACKAGE_SECURITY_EXTERNAL_CAPABILITIES:MALWARE,SENSITIVE_INFORMATION,DEPENDENCY_VULNERABILITY,LICENSE}
+
+  # ---------------------------------------------------------------------------
+  # 第 8 节：Provider（OpenClaw / DeepEval / Langfuse）
+  # 适配层：apps/api/src/main/java/com/huawei/skillcenter/quality/{OpenClawRunnerAdapter,DeepEvalEvaluationAdapter,LangfuseObservabilityAdapter}.java
+  # 探针服务：apps/api/src/main/java/com/huawei/skillcenter/quality/ProviderConnectivityProbeService.java（admin only）
+  # ---------------------------------------------------------------------------
+  providers:
+    runner: ${SKILL_CENTER_PROVIDERS_RUNNER:openclaw}
+    evaluation: ${SKILL_CENTER_PROVIDERS_EVALUATION:deepeval}
+    observability: ${SKILL_CENTER_PROVIDERS_OBSERVABILITY:langfuse}
+    trace: ${SKILL_CENTER_PROVIDERS_TRACE:langfuse}
+    probe-ttl-seconds: ${SKILL_CENTER_PROVIDERS_PROBE_TTL_SECONDS:300}
+    probe-scheduler-enabled: ${SKILL_CENTER_PROVIDERS_PROBE_SCHEDULER_ENABLED:true}
+    probe-scheduler-interval-ms: ${SKILL_CENTER_PROVIDERS_PROBE_SCHEDULER_INTERVAL_MS:60000}
+    probe-scheduler-initial-delay-ms: ${SKILL_CENTER_PROVIDERS_PROBE_SCHEDULER_INITIAL_DELAY_MS:1000}
+    # 4 类硬编码：endpoint 必须 http(s):// 无 user-info/query/fragment；credential-ref 必须 secret://
+    # 默认凭据 Bean：EnvironmentProviderCredentialResolver 仅识别 secret://env/<NAME>，从 System.getenv() 读 token
+    # 生产替换建议：把 providerCredentialResolver() 替换为 Secret Manager 解析器（K8s ESO / Vault Agent / 阿里云 KMS 等），路径改为 secret://skillcenter/prod/<provider>/token
+    openclaw:
+      endpoint: ${SKILL_CENTER_OPENCLAW_ENDPOINT:}
+      credential-ref: ${SKILL_CENTER_OPENCLAW_CREDENTIAL_REF:}
+      mode: ${SKILL_CENTER_OPENCLAW_MODE:http}
+    deepeval:
+      endpoint: ${SKILL_CENTER_DEEPEVAL_ENDPOINT:}
+      credential-ref: ${SKILL_CENTER_DEEPEVAL_CREDENTIAL_REF:}
+      mode: ${SKILL_CENTER_DEEPEVAL_MODE:http}
+    langfuse:
+      endpoint: ${SKILL_CENTER_LANGFUSE_ENDPOINT:}
+      trace-endpoint: ${SKILL_CENTER_LANGFUSE_TRACE_ENDPOINT:}
+      credential-ref: ${SKILL_CENTER_LANGFUSE_CREDENTIAL_REF:}
+      mode: ${SKILL_CENTER_LANGFUSE_MODE:http}
+
+  # ---------------------------------------------------------------------------
+  # 第 9 节：发布目标（受控上线）
+  # ---------------------------------------------------------------------------
+  release-storage: ./data/governance/releases.json
+  release-target:
+    mode: ${SKILL_CENTER_RELEASE_TARGET_MODE:http}
+    endpoint: ${SKILL_CENTER_RELEASE_TARGET_ENDPOINT:}
+    credential-ref: ${SKILL_CENTER_RELEASE_TARGET_CREDENTIAL_REF:}
+    probe-scheduler-enabled: ${SKILL_CENTER_RELEASE_TARGET_PROBE_SCHEDULER_ENABLED:true}
+    probe-scheduler-interval-ms: ${SKILL_CENTER_RELEASE_TARGET_PROBE_SCHEDULER_INTERVAL_MS:60000}
+    probe-scheduler-initial-delay-ms: ${SKILL_CENTER_RELEASE_TARGET_PROBE_SCHEDULER_INITIAL_DELAY_MS:1000}
+    timeout-ms: ${SKILL_CENTER_RELEASE_TARGET_TIMEOUT_MS:10000}
+    probe-ttl-seconds: ${SKILL_CENTER_RELEASE_TARGET_PROBE_TTL_SECONDS:300}
+  release-admission-mode: ${SKILL_CENTER_RELEASE_ADMISSION_MODE:CONTROLLED}
+
+  # ---------------------------------------------------------------------------
+  # 第 10 节：搜索（OpenSearch HA）
+  # ---------------------------------------------------------------------------
+  search-index-backend: ${SKILL_CENTER_SEARCH_INDEX_BACKEND:opensearch}
+  search-index:
+    mode: ${SKILL_CENTER_SEARCH_INDEX_MODE:http}
+    endpoint: ${SKILL_CENTER_SEARCH_INDEX_ENDPOINT:}
+    index: ${SKILL_CENTER_SEARCH_INDEX_NAME:skillcenter-skills-v1}
+    credential-ref: ${SKILL_CENTER_SEARCH_INDEX_CREDENTIAL_REF:}
+    probe-scheduler-enabled: ${SKILL_CENTER_SEARCH_INDEX_PROBE_SCHEDULER_ENABLED:true}
+    probe-scheduler-interval-ms: ${SKILL_CENTER_SEARCH_INDEX_PROBE_SCHEDULER_INTERVAL_MS:60000}
+    probe-scheduler-initial-delay-ms: ${SKILL_CENTER_SEARCH_INDEX_PROBE_SCHEDULER_INITIAL_DELAY_MS:1000}
+    connect-timeout-ms: ${SKILL_CENTER_SEARCH_INDEX_CONNECT_TIMEOUT_MS:1000}
+    request-timeout-ms: ${SKILL_CENTER_SEARCH_INDEX_REQUEST_TIMEOUT_MS:5000}
+    max-response-bytes: ${SKILL_CENTER_SEARCH_INDEX_MAX_RESPONSE_BYTES:256000}
+    probe-ttl-seconds: ${SKILL_CENTER_SEARCH_INDEX_PROBE_TTL_SECONDS:300}
+  search-index-events:
+    enabled: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_ENABLED:true}
+    consumer-id: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_CONSUMER_ID:${skill-center.instance-id}}
+    poll-interval-ms: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_POLL_INTERVAL_MS:5000}
+    batch-size: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_BATCH_SIZE:100}
+    retention:
+      scheduler-enabled: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_SCHEDULER_ENABLED:true}
+      retention-days: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_DAYS:30}
+      consumer-stale-after-ms: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_CONSUMER_STALE_AFTER_MS:900000}
+      cleanup-interval-ms: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_CLEANUP_INTERVAL_MS:3600000}
+      cleanup-initial-delay-ms: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_CLEANUP_INITIAL_DELAY_MS:3600000}
+      cleanup-batch-size: ${SKILL_CENTER_SEARCH_INDEX_EVENTS_RETENTION_CLEANUP_BATCH_SIZE:1000}
+
+  # ---------------------------------------------------------------------------
+  # 第 11 节：后端选择（持久化域）
+  # ---------------------------------------------------------------------------
+  quality-evidence-backend: ${SKILL_CENTER_QUALITY_EVIDENCE_BACKEND:postgresql}
+  benchmark-backend: ${SKILL_CENTER_BENCHMARK_BACKEND:postgresql}
+  release-backend: ${SKILL_CENTER_RELEASE_BACKEND:postgresql}
+  optimization-work-item-backend: ${SKILL_CENTER_OPTIMIZATION_WORK_ITEM_BACKEND:postgresql}
+  optimization-experiment-backend: ${SKILL_CENTER_OPTIMIZATION_EXPERIMENT_BACKEND:postgresql}
+  production-evidence-backend: ${SKILL_CENTER_PRODUCTION_EVIDENCE_BACKEND:postgresql}
+  governance-backend: ${SKILL_CENTER_GOVERNANCE_BACKEND:postgresql}
+  execution-environment-backend: ${SKILL_CENTER_EXECUTION_ENVIRONMENT_BACKEND:postgresql}
+  skill-scope-backend: ${SKILL_CENTER_SKILL_SCOPE_BACKEND:postgresql}
+  skill-relation-backend: ${SKILL_CENTER_SKILL_RELATION_BACKEND:postgresql}
+
+# =============================================================================
+# Logging（生产审计与 SSO 失败定位）
+# =============================================================================
+logging:
+  level:
+    root: INFO
+    com.huawei.skillcenter.governance: INFO  # JwksKeySetProvider / HttpOrganizationDirectoryClient
+    com.huawei.skillcenter.security: INFO
+  pattern:
+    # 含 requestId + actor（供 SSO_ORGANIZATION 证据归档）
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [reqId=%X{requestId:-system}, actor=%X{actor:-anonymous}, traceId=%X{traceId:-none}] %logger{36} - %msg%n"
+
+# =============================================================================
+# Actuator（健康检查 / SSO 状态探针）
+# =============================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true

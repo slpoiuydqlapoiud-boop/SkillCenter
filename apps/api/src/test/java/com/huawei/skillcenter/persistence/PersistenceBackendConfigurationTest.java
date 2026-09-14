@@ -102,7 +102,7 @@ class PersistenceBackendConfigurationTest {
 
         assertThatThrownBy(() -> properties.validate(tempDir))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("backend must be json or postgresql");
+                .hasMessage("backend must be json, mysql or postgresql");
     }
 
     @Test

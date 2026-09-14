@@ -1,6 +1,7 @@
 param(
     [switch]$CheckServices,
     [switch]$CheckObservability,
+    [switch]$CheckRuntime,
     [switch]$Json,
     [switch]$FailOnMissing
 )
@@ -138,6 +139,32 @@ function Get-PortCheck {
     }
 }
 
+function Get-HttpCheck {
+    param(
+        [string]$Id,
+        [string]$Name,
+        [string]$Uri,
+        [hashtable]$Headers,
+        [string]$InstallHint
+    )
+
+    try {
+        if ($null -ne $Headers) {
+            $response = Invoke-WebRequest -UseBasicParsing -Uri $Uri -TimeoutSec 5 -Headers $Headers
+        } else {
+            $response = Invoke-WebRequest -UseBasicParsing -Uri $Uri -TimeoutSec 5
+        }
+        if ($response.StatusCode -eq 200) {
+            return New-Check $Id $Name "Application runtime" "integration" "READY" $Uri "HTTP 200" $InstallHint
+        }
+        return New-Check $Id $Name "Application runtime" "integration" "UNAVAILABLE" $Uri `
+            "HTTP $($response.StatusCode)" $InstallHint
+    } catch {
+        return New-Check $Id $Name "Application runtime" "integration" "UNAVAILABLE" $Uri `
+            "HTTP endpoint is not ready" $InstallHint
+    }
+}
+
 $checks = @(
     (Get-CommandCheck "jdk" "JDK 21" "java" @("-version") "Java toolchain" "development" "Install JDK 21 and set JAVA_HOME"),
     (Get-CommandCheck "maven" "Maven 3.9+" "mvn" @("-version") "Java build tool" "development" "Install Maven 3.9+ and add mvn to PATH"),
@@ -160,6 +187,22 @@ if ($CheckObservability) {
     $checks += Get-PortCheck "prometheus" "Prometheus" 9090 "Start the local observability stack with scripts/start-local.ps1 -WithObservability"
     $checks += Get-PortCheck "grafana" "Grafana" 3000 "Start the local observability stack with scripts/start-local.ps1 -WithObservability"
     $checks += Get-PortCheck "alertmanager" "Alertmanager" 9093 "Start the local observability stack with scripts/start-local.ps1 -WithObservability"
+}
+
+if ($CheckRuntime) {
+    $checks += Get-HttpCheck -Id "skillcenter-web" -Name "SkillCenter Web" -Uri "http://127.0.0.1:5173/" `
+        -InstallHint "Start the Web app with scripts/start-local.ps1"
+    $checks += Get-HttpCheck -Id "skillcenter-api-default" -Name "SkillCenter API (default)" `
+        -Uri "http://127.0.0.1:8080/api/v1/skills" `
+        -InstallHint "Start the default API with scripts/start-local.ps1 -Profile default"
+    $checks += Get-HttpCheck -Id "skillcenter-api-integration" -Name "SkillCenter API (integration)" `
+        -Uri "http://127.0.0.1:8081/api/v1/skills" `
+        -InstallHint "Start the integration API with scripts/start-local.ps1 -Profile integration"
+    $checks += Get-HttpCheck -Id "skillcenter-readiness-integration" `
+        -Name "SkillCenter integration readiness endpoint" `
+        -Uri "http://127.0.0.1:8081/api/v1/admin/platform/readiness" `
+        -Headers @{ "X-User-Role" = "admin" } `
+        -InstallHint "Start the integration API with scripts/start-local.ps1 -Profile integration"
 }
 
 $checks = @($checks)

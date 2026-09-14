@@ -3,6 +3,7 @@ package com.huawei.skillcenter.quality;
 import com.huawei.skillcenter.execution.ExecutionEnvironmentKind;
 import com.huawei.skillcenter.execution.ExecutionEnvironmentService;
 import com.huawei.skillcenter.execution.ExecutionEnvironmentSnapshot;
+import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,10 +13,13 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Comparator;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Service
 public class QualityEvaluationService {
@@ -34,6 +38,7 @@ public class QualityEvaluationService {
     private final ConcurrentHashMap<String, QualitySnapshot> snapshots = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, List<EvaluationCaseResult>> caseResults = new ConcurrentHashMap<>();
     private final Set<String> cancellationRequests = ConcurrentHashMap.newKeySet();
+    private final Set<CompletableFuture<Void>> activeWorkers = ConcurrentHashMap.newKeySet();
 
     @Autowired
     public QualityEvaluationService(SkillRunner runner, EvaluationProvider evaluationProvider,
@@ -151,20 +156,63 @@ public class QualityEvaluationService {
         String id = UUID.randomUUID().toString();
         Instant now = clock.instant();
         EvaluationRun queued = new EvaluationRun(id, request.skillId(), request.skillVersion(), suite.id(), suite.version(),
-                EvaluationRunStatus.QUEUED, runner.providerId(), evaluationProvider.providerId(), "mock", now, null,
+                EvaluationRunStatus.QUEUED, runner.providerId(), evaluationProvider.providerId(), runnerDataSource(), now, null,
                 suite.cases().size(), 0, 0, "", QualityGateStatus.BLOCKED, List.of("EVALUATION_NOT_COMPLETED"),
                 request.runtimeId(), request.mcpServerId(), request.llmProviderId(), request.experimentId(),
                 environments.runtime(), environments.mcpServer(), environments.llmProvider());
         runs.put(id, queued);
         persistEvidence();
-        CompletableFuture.runAsync(() -> {
-            try {
-                execute(id, request, suite);
-            } catch (RuntimeException exception) {
-                markFailed(id, exception);
-            }
-        });
+        CompletableFuture<Void> completion = new CompletableFuture<>();
+        activeWorkers.add(completion);
+        try {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    execute(id, request, suite);
+                } catch (RuntimeException exception) {
+                    markFailed(id, exception);
+                } finally {
+                    activeWorkers.remove(completion);
+                    completion.complete(null);
+                }
+            });
+        } catch (RuntimeException exception) {
+            activeWorkers.remove(completion);
+            completion.completeExceptionally(exception);
+            throw exception;
+        }
         return queued;
+    }
+
+    /**
+     * Waits for already-started evaluation workers to finish without changing cancellation semantics.
+     * This is used by lifecycle shutdown and deterministic test cleanup; it never starts new work.
+     */
+    boolean awaitQuiescence(Duration timeout) {
+        if (timeout == null || timeout.isNegative() || timeout.isZero()) {
+            throw new IllegalArgumentException("timeout must be positive");
+        }
+        long deadline = System.nanoTime() + timeout.toNanos();
+        while (true) {
+            CompletableFuture<?>[] pending = activeWorkers.toArray(CompletableFuture[]::new);
+            if (pending.length == 0) return true;
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0) return false;
+            try {
+                CompletableFuture.allOf(pending).get(remaining, TimeUnit.NANOSECONDS);
+            } catch (TimeoutException exception) {
+                return false;
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                return false;
+            } catch (java.util.concurrent.ExecutionException exception) {
+                // A worker's failure is already represented by its stable evaluation state.
+            }
+        }
+    }
+
+    @PreDestroy
+    void stopWorkers() {
+        awaitQuiescence(Duration.ofSeconds(5));
     }
 
     private EnvironmentSnapshots validateExecutionEnvironments(EvaluationRequest request) {
@@ -423,6 +471,7 @@ public class QualityEvaluationService {
         int passed = 0;
         int totalScore = 0;
         String errorCode = "";
+        String dataSource = queued.dataSource();
         List<EvaluationCaseResult> evaluatedCases = new java.util.ArrayList<>();
         for (EvaluationCase evaluationCase : suite.cases()) {
             if (isCancellationRequested(id)) {
@@ -434,6 +483,10 @@ public class QualityEvaluationService {
                     id, suite.id(), evaluationCase.id(), request.timeoutMs(), request.scenario(), request.runtimeId(),
                     request.mcpServerId(), request.llmProviderId());
             RunnerExecutionResult executionResult = sanitizeExecutionResult(executeWithRetry(runnerRequest));
+            if (!dataSource.equals(executionResult.dataSource())) {
+                saveCaseResults(id, evaluatedCases);
+                throw new ProviderUnavailableException(runner.providerId(), "MIXED_DATA_SOURCE");
+            }
             if (isCancellationRequested(id)) {
                 saveCaseResults(id, evaluatedCases);
                 cancellationRequests.remove(id);
@@ -473,7 +526,7 @@ public class QualityEvaluationService {
         Instant completed = clock.instant();
         EvaluationRun completedRun = new EvaluationRun(id, request.skillId(), request.skillVersion(), suite.id(),
                 suite.version(), EvaluationRunStatus.COMPLETED, runner.providerId(), evaluationProvider.providerId(),
-                "mock", queued.createdAt(), completed, suite.cases().size(), passed, score, errorCode,
+                dataSource, queued.createdAt(), completed, suite.cases().size(), passed, score, errorCode,
                 gate.status(), gate.reasons(), request.runtimeId(), request.mcpServerId(), request.llmProviderId(),
                 request.experimentId(), queued.runtimeEnvironment(), queued.mcpServerEnvironment(),
                 queued.llmProviderEnvironment());
@@ -487,7 +540,7 @@ public class QualityEvaluationService {
             runs.put(id, completedRun);
             caseResults.put(id, List.copyOf(evaluatedCases));
             snapshots.put(id, new QualitySnapshot(id, request.skillId(), request.skillVersion(), suite.id(), suite.version(),
-                    runner.providerId(), evaluationProvider.providerId(), "mock", completed, score,
+                    runner.providerId(), evaluationProvider.providerId(), dataSource, completed, score,
                     suite.cases().size(), passed, true, rules.version(), staticReport.score(), passRate,
                     gate.status(), gate.reasons(), request.runtimeId(), request.mcpServerId(), request.llmProviderId(),
                     queued.runtimeEnvironment(), queued.mcpServerEnvironment(), queued.llmProviderEnvironment()));
@@ -510,7 +563,7 @@ public class QualityEvaluationService {
                 } catch (InterruptedException exception) {
                     Thread.currentThread().interrupt();
                     return new RunnerExecutionResult(RunnerExecutionStatus.CANCELLED,
-                            runner.providerId(), runner.providerVersion(), "mock", 0, "", "RETRY_INTERRUPTED");
+                            runner.providerId(), runner.providerVersion(), runnerDataSource(), 0, "", "RETRY_INTERRUPTED");
                 }
             }
         }
@@ -520,7 +573,7 @@ public class QualityEvaluationService {
     private RunnerExecutionResult sanitizeExecutionResult(RunnerExecutionResult result) {
         if (result == null) {
             return new RunnerExecutionResult(RunnerExecutionStatus.FAILED, runner.providerId(),
-                    runner.providerVersion(), "mock", 0, "", "RUNNER_EXECUTION_FAILED");
+                    runner.providerVersion(), runnerDataSource(), 0, "", "RUNNER_EXECUTION_FAILED");
         }
         String errorCode;
         if (result.status() == RunnerExecutionStatus.SUCCEEDED) {
@@ -534,7 +587,19 @@ public class QualityEvaluationService {
             errorCode = ProviderErrorCodes.normalize(result.errorCode(), fallback);
         }
         return new RunnerExecutionResult(result.status(), result.providerId(), result.providerVersion(),
-                result.dataSource(), result.durationMs(), result.outputHash(), errorCode);
+                normalizeEvidenceDataSource(result.dataSource()), result.durationMs(), result.outputHash(), errorCode);
+    }
+
+    private String runnerDataSource() {
+        return normalizeEvidenceDataSource(runner.dataSource());
+    }
+
+    private String normalizeEvidenceDataSource(String value) {
+        String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+        if (!Set.of("mock", "production").contains(normalized)) {
+            throw new IllegalArgumentException("provider dataSource must be mock or production");
+        }
+        return normalized;
     }
 
     private static final class NoopObservabilityProvider implements ObservabilityProvider {

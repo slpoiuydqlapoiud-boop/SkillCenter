@@ -1,0 +1,3097 @@
+[ {
+  "executionId" : "c5c1e82d-b752-401d-a79d-40c70c36570a",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T13:25:21.110376500Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "57cf5d58-15b9-493b-9302-21f47dc9ff71",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T16:24:27.825569100Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "0dc67682-b1a2-4cfb-8221-d61f7e144bf6",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T16:26:55.922469200Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "c1881031-6d30-4fe8-9f8e-1872c85c7dd4",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T16:39:10.971625100Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "768b8937-f861-492a-a6db-1d69e3b5ede8",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T19:16:06.171257800Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "f479c895-b2b5-414b-99c2-0d2ca34498d8",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T19:17:07.441347400Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "1ed27059-67b5-4a21-9fcc-6604d5ebfc72",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T19:18:41.345369Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "58b1008b-21c1-43fe-b371-5581e66a6cf0",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T19:21:00.508262300Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "44b422e4-2075-48c5-b5d5-c5fc3b5d6348",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T19:26:29.271085400Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "afd8dd04-dd76-4b72-8c0a-12a43c4885cb",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T19:28:10.798808400Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "d5e0258a-3788-4389-aa8d-cbf013f3ff3a",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T19:46:50.777123400Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "8e9ba4f4-25b1-41a9-91d2-046d9301a7d7",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T19:52:08.873201800Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "3ecf45ec-386a-4fe4-af51-7615dbcd20c6",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T19:53:08.933502200Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "1a5385f3-f20d-47ba-bfc8-ef7668682e33",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T19:53:59.259703Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "8ca7b5a6-c96f-4efa-a139-a372417ad7b5",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T19:55:14.487334500Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "03395b82-7713-4d23-a4a1-48d21261b35b",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T21:05:26.009884300Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "b6d17661-950f-41e4-9808-91938bce224a",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T21:16:15.308467400Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "ad1edd63-53d0-4a7f-b493-0bd5d34dfb81",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T21:22:39.238074200Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "65422454-ef24-4c98-a53b-0a7d680fcb15",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T21:33:07.043757500Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "2024ed37-0c52-457f-bc63-9273f5a8c7ef",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T21:40:15.926897600Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "db8e1fe1-bc84-485a-8c20-69cb92a468a0",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T21:43:57.881282300Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "6727e87d-aa46-4291-897d-ca03ec9c9842",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T21:48:00.909378800Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "5ddd5efd-5422-4231-96a4-c59d6d4537a4",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T21:52:30.965579400Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "c3c11e50-3088-4363-8ffb-cfc4ef3e46cd",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T21:56:29.505439500Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "7e165127-91e6-4600-9a2a-3a0a2bf274a8",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T22:03:51.441682300Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "1f83ce22-c8a7-4bba-9513-3ed69ca2f281",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T22:05:37.888051Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "2f09564d-fc96-496e-8967-d21d7727132e",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T22:06:40.405780700Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "197be84f-a167-48d9-bb16-cf8129056586",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T22:07:57.110128800Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "3b127291-e66e-4fda-a773-4f154fe201b9",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T22:16:50.554185800Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "d4c870e9-6e02-4b9d-9896-0c82abfbd5a2",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T22:17:46.038713400Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "d8331803-95f9-4a69-a0fd-2f786decb06b",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T22:26:26.425157800Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "6468d475-bb80-490b-887a-eeeecc4ee9a4",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-24T22:27:23.023640800Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "52cd3f80-d47c-4dac-bc77-959a36a44d85",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T03:09:33.913851100Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "28d376c1-d100-4675-8349-70ab1c790cf9",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T03:15:43.522682100Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "5fdcc26d-e623-4463-862d-024f7a7aa82c",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T03:31:05.168715200Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "73490e6c-b92c-48aa-b11c-171131bfb20d",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T03:38:00.020672200Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "a547d0fb-d55c-44e8-a886-5017c1b9b5fd",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T03:40:03.312609900Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "6feab51b-0416-419c-93b7-40c8f83f9b10",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T03:43:21.854105Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "2d61f3c9-6f61-481c-a9fb-28e673851912",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T03:59:20.994490300Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "72ad433f-5783-4f28-81ac-e625d1cf6f4e",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T04:17:43.550340900Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "6d6437a9-fc11-4b0e-9edd-a5f3bdafdbc5",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T04:36:09.572669300Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "06013c3f-661f-4d78-a52d-1c3cb598c25c",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T04:40:29.756035300Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "3277d120-0dd1-4f5a-8291-23aab0ea05a0",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T04:52:03.622137900Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "07cc3fbf-d72a-4419-aea2-b13ced510ce3",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T05:01:54.035652100Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "25f0d459-e868-4eac-90ff-88fd0002db29",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T05:10:11.573775500Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "7b009a9c-a8c7-4adc-9aa1-053e82e11d2f",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T05:24:38.524290400Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "82535bab-b612-422a-982f-f5ac22fedef0",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T05:33:58.408767Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "63e45a09-21d4-45ea-9486-ca62bbca898a",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T05:36:37.014820Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "ae7aa360-04fe-485f-a2c0-90e33c27e6d8",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T05:52:27.170457600Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "cd1c72dc-62dc-4986-946b-6dcd9d99ab77",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T06:02:20.740406200Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "dfa3f048-49da-48ee-9170-dc5f0e3f7914",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T06:07:34.327375100Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "0b7017bb-55fd-48a1-83f8-58147809baef",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T06:15:37.809248700Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "ad9ac4bb-1dc9-4e10-8671-36fefe449f06",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T06:31:09.702277Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "6c4121b1-540a-44d4-9c04-60b0ec479093",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T06:34:27.024899700Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "5cff9e4b-36e0-40fa-8448-c48538ccf119",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T06:47:04.094228400Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "2bdaf710-0606-4183-8d20-94056a6f8af5",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T07:15:52.747534300Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "b768fa6c-67e2-48ea-9693-f81a53a5aeee",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T07:27:00.294524900Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "a27aa75f-63e7-4fd8-ae3b-a3f7c826e6d5",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T07:39:27.639275300Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "317856c1-d898-4445-972c-c19391dc636e",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T07:48:44.371485700Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "5e74deed-be84-4bd6-9bec-728ff06c8be4",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T07:58:05.363809400Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "07bb7a73-6b57-4707-a9a1-851519676b0b",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T08:01:31.967411200Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "8fafcf4a-51b8-4213-b0f5-f2f96ac658c8",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T08:31:36.788684900Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "91b9b618-4655-47fd-93a1-e8ef8d9271fc",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T08:44:49.648861800Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "42564278-c8ae-499c-abe7-0e5b9eca7a55",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T08:48:03.485000100Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "3019224e-386d-41bd-81b5-e7a5129cab82",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T08:58:08.544584300Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "12652519-9f70-4c84-9dae-845c5775aefc",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T09:12:25.530203300Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "7235dda0-6686-40bb-bb14-5ce63ecefb13",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T09:27:03.504744Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "b2c998d1-08a4-46a0-9d65-1116d0ff1927",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T09:28:21.945688200Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "8c7140b8-aa00-441c-bf51-39711e36adc3",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T09:34:43.737156200Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "ee6f55ea-bf2f-4d46-9f33-3aedfb000bd7",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T09:49:09.374101800Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "37fd38b4-fbe6-4ecb-8239-5f3a39426940",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T09:58:48.823497300Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "b02791c2-8537-49af-b0a8-9cc964933acd",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-08-25T10:14:22.945992100Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "",
+    "revision" : 0,
+    "status" : null
+  }
+}, {
+  "executionId" : "9930d564-96f1-4062-bc0b-a92735ebcbe8",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-09-08T07:42:47.221450Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  }
+}, {
+  "executionId" : "5d76af15-f186-4bc9-b23c-b923b6a43fda",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-09-08T08:12:06.146816300Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  }
+}, {
+  "executionId" : "344fffc1-f7f0-4061-8319-e67722b805e0",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-09-08T08:19:12.928714400Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  }
+}, {
+  "executionId" : "b0566ad9-494f-4d23-8e1e-e1e14813f23f",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-09-08T08:35:36.496799400Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  }
+}, {
+  "executionId" : "b63254aa-cc73-46a1-a8e5-7e79e28f8a30",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-09-08T08:40:41.704436300Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  }
+}, {
+  "executionId" : "c759180b-edf3-401f-b400-191875557348",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-09-08T08:56:55.287781700Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  }
+}, {
+  "executionId" : "c80ed71e-2b57-4f54-b3fe-0d0dbdbd0880",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-09-08T12:45:35.463541900Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  }
+}, {
+  "executionId" : "a1b5a971-2dd8-4398-b1c6-90428b202862",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-09-09T02:17:09.968219700Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  }
+}, {
+  "executionId" : "a1357826-850b-45bc-83b0-8b51acc70c7d",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-09-09T03:21:52.382509Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  }
+}, {
+  "executionId" : "998c19dd-6009-413f-9195-5f4bb1b7fb43",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-09-09T03:37:05.116460200Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  }
+}, {
+  "executionId" : "e2f96c16-80b5-4911-aab6-f6575d982557",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-09-09T03:45:41.966662700Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  }
+}, {
+  "executionId" : "8b99e3ae-b8ca-4853-b28f-c665d38b45d6",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-09-09T03:50:55.232946900Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  }
+}, {
+  "executionId" : "ca6843a7-bd35-4cb0-acdd-e24f45755a5f",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-09-09T03:57:32.391466200Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  }
+}, {
+  "executionId" : "2aae574d-0085-4148-95f1-112edb2d3840",
+  "skillId" : "eox-query",
+  "skillVersion" : "1.2.0",
+  "status" : "SUCCEEDED",
+  "providerId" : "mock-runner",
+  "providerVersion" : "1.0",
+  "dataSource" : "mock",
+  "durationMs" : 96,
+  "outputHash" : "0bfd0e45f0ec981a05f6632a7171608857b9b298ed8ed313bee24686c2c531a6",
+  "errorCode" : "",
+  "executedAt" : "2026-09-09T04:22:35.491815100Z",
+  "runtimeId" : "openclaw",
+  "mcpServerId" : "mcp-network",
+  "llmProviderId" : "llm-gateway",
+  "runtimeEnvironment" : {
+    "kind" : "AGENT_RUNTIME",
+    "environmentId" : "openclaw",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "mcpServerEnvironment" : {
+    "kind" : "MCP_SERVER",
+    "environmentId" : "mcp-network",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  },
+  "llmProviderEnvironment" : {
+    "kind" : "LLM_PROVIDER",
+    "environmentId" : "llm-gateway",
+    "version" : "context-v1",
+    "revision" : 1,
+    "status" : "ACTIVE"
+  }
+} ]

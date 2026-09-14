@@ -30,4 +30,8 @@ abstract class ProductionEvidenceBackendCondition implements Condition {
     static final class Postgresql extends ProductionEvidenceBackendCondition {
         Postgresql() { super("postgresql"); }
     }
+
+    static final class Mysql extends ProductionEvidenceBackendCondition {
+        Mysql() { super("mysql"); }
+    }
 }

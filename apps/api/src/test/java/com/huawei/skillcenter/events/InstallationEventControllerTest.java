@@ -10,6 +10,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.util.UUID;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -53,6 +55,41 @@ class InstallationEventControllerTest {
     }
 
     @Test
+    void installationUpgradeEventAcceptsTheSchemaFromVersionField() throws Exception {
+        MvcResult creation = mockMvc.perform(post("/api/v1/skills/eox-query/installations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"clientType\":\"codex\",\"clientVersion\":\"1.0.0\",\"method\":\"one-click\"}")
+                        .header("X-User-Id", "upgrade-owner")
+                        .header("X-User-Role", "viewer"))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String installationId = objectMapper.readTree(creation.getResponse().getContentAsString())
+                .path("data").path("installationId").asText();
+
+        mockMvc.perform(post("/api/v1/events/installations/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(upgradeBatch(installationId))
+                        .header("X-User-Id", "upgrade-owner")
+                        .header("X-User-Role", "viewer"))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.data.accepted").value(1))
+                .andExpect(jsonPath("$.data.rejected").value(0));
+    }
+
+    @Test
+    void installationBatchRejectsGatewayClientTypeAtTheSchemaBoundary() throws Exception {
+        mockMvc.perform(post("/api/v1/events/installations/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(batch("installation-not-used").replace("\"type\":\"codex\"", "\"type\":\"gateway\""))
+                        .header("X-User-Id", "event-owner")
+                        .header("X-User-Role", "viewer"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accepted").value(0))
+                .andExpect(jsonPath("$.data.rejected").value(1))
+                .andExpect(jsonPath("$.data.results[0].errorCode").value("EVENT_SCHEMA_INVALID"));
+    }
+
+    @Test
     void installationDetailIsNotVisibleToAnotherViewer() throws Exception {
         MvcResult creation = mockMvc.perform(post("/api/v1/skills/eox-query/installations")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -72,13 +109,14 @@ class InstallationEventControllerTest {
     }
 
     private String batch(String installationId) {
+        String eventId = UUID.randomUUID().toString();
         return """
                 {
                   "batchId":"batch-install-1",
                   "schemaVersion":"1.0",
                   "events":[{
                     "schemaVersion":"1.0",
-                    "eventId":"3d8f1d8f-68a2-4c50-a4d5-ec5f6d1f9fd2",
+                    "eventId":"%s",
                     "occurredAt":"2026-08-17T16:01:00+08:00",
                     "skillId":"eox-query",
                     "version":"1.2.0",
@@ -90,6 +128,11 @@ class InstallationEventControllerTest {
                     "outcome":"success"
                   }]
                 }
-                """;
+                """.formatted(eventId);
+    }
+
+    private String upgradeBatch(String installationId) {
+        return batch(installationId).replace("\"action\":\"install\"", "\"action\":\"upgrade\",\"fromVersion\":\"1.1.0\"")
+                .replace("event-owner", "upgrade-owner");
     }
 }

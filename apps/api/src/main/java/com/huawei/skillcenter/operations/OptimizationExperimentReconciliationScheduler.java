@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Resumes queued/running optimization experiments without changing their manual decision boundary.
- * It is opt-in and only runs when all experiment evidence is backed by shared PostgreSQL state.
+ * It is opt-in and only runs when all experiment evidence is backed by a ready shared database state.
  */
 @Component
 @ConditionalOnProperty(name = "skill-center.optimization-experiments.scheduler-enabled", havingValue = "true")
@@ -125,7 +125,7 @@ public class OptimizationExperimentReconciliationScheduler {
     private void requireReadyExperimentBackend(OptimizationExperimentBackendHealth backend) {
         OptimizationExperimentBackendReadiness readiness = backend.readiness();
         if (readiness == null || !"READY".equals(readiness.status())
-                || !"postgresql".equalsIgnoreCase(readiness.backend())) {
+                || !isSharedDatabaseBackend(readiness.backend())) {
             throw new IllegalStateException("optimization experiment scheduler requires READY shared experiment backend");
         }
     }
@@ -133,20 +133,22 @@ public class OptimizationExperimentReconciliationScheduler {
     private void requireReadyWorkItemBackend(OptimizationWorkItemBackendHealth backend) {
         OptimizationWorkItemBackendReadiness readiness = backend.readiness();
         if (readiness == null || !"READY".equals(readiness.status())
-                || !"postgresql".equalsIgnoreCase(readiness.backend())) {
+                || !isSharedDatabaseBackend(readiness.backend())) {
             throw new IllegalStateException("optimization experiment scheduler requires READY shared work-item backend");
         }
     }
 
     private void requireReadyQualityEvidenceBackend(PersistenceControlProperties properties,
                                                     PersistenceBackend persistence) {
-        if (!"postgresql".equalsIgnoreCase(properties.normalizedQualityEvidenceBackend())
-                || !"postgresql".equalsIgnoreCase(properties.normalizedBackend())) {
-            throw new IllegalStateException("optimization experiment scheduler requires PostgreSQL quality evidence");
+        String selected = PersistenceControlProperties.normalizeBackendValue(
+                properties.normalizedQualityEvidenceBackend());
+        String global = PersistenceControlProperties.normalizeBackendValue(properties.normalizedBackend());
+        if (!isSharedDatabaseBackend(selected) || !selected.equals(global)) {
+            throw new IllegalStateException("optimization experiment scheduler requires shared database quality evidence");
         }
         PersistenceBackendStatus status = persistence.status();
         if (status == null || !"READY".equals(status.state())
-                || !"postgresql".equalsIgnoreCase(status.backendId())
+                || !selected.equals(PersistenceControlProperties.normalizeBackendValue(status.backendId()))
                 || !hasSchema(status.schemaVersion(), 1)) {
             throw new IllegalStateException("optimization experiment scheduler requires READY quality evidence schema");
         }
@@ -158,7 +160,7 @@ public class OptimizationExperimentReconciliationScheduler {
         }
         BenchmarkBackendReadiness readiness = backend.readiness();
         if (readiness == null || !"READY".equals(readiness.status())
-                || !"postgresql".equalsIgnoreCase(readiness.backend())) {
+                || !isSharedDatabaseBackend(readiness.backend())) {
             throw new IllegalStateException("optimization experiment scheduler requires READY shared benchmark backend");
         }
     }
@@ -170,6 +172,10 @@ public class OptimizationExperimentReconciliationScheduler {
         } catch (RuntimeException exception) {
             return false;
         }
+    }
+
+    private boolean isSharedDatabaseBackend(String backend) {
+        return "postgresql".equalsIgnoreCase(backend) || "mysql".equalsIgnoreCase(backend);
     }
 
     private static <T> T require(T value, String name) {

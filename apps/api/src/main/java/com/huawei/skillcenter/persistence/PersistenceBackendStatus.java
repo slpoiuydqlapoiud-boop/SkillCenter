@@ -12,7 +12,7 @@ public record PersistenceBackendStatus(
     private static final String READY = "READY";
     private static final String FAIL_CLOSED = "FAIL_CLOSED";
     private static final String CONTROL_PLANE_ERROR = "PERSISTENCE_CONTROL_PLANE_ERROR";
-    private static final Set<String> BACKENDS = Set.of("json", "postgresql");
+    private static final Set<String> BACKENDS = Set.of("json", "mysql", "postgresql");
     private static final Set<String> STABLE_REASON_CODES = Set.of(
             CONTROL_PLANE_ERROR,
             "PERSISTENCE_POOL_CONFIGURATION_INVALID",

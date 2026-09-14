@@ -12,9 +12,9 @@
 
 - Skill source is created only by local ZIP upload; the website never creates or edits Skill source and has no draft state.
 - Governance persistence is local JSON at `skill-center.governance-storage` (default `./data/governance/state.json`) with atomic temp-file replacement.
-- Version statuses are exactly `pending_review`, `published`, `rejected`, and `withdrawn`.
+- Version statuses are `pending_review`, `security_review`, `published`, `rejected`, and `withdrawn`; high-risk versions require the intermediate security review state.
 - Public catalog and installation manifests expose only `published` versions.
-- Roles are `viewer`, `maintainer`, `reviewer`, and `admin`; missing `X-User-Role` defaults to `admin` for local development.
+- Product roles are `developer` and `admin`; `viewer`, `maintainer`, and `reviewer` remain compatibility aliases; missing `X-User-Role` defaults to `admin` for local development. Security review uses a different `admin` identity.
 - API errors remain `{error:{code,message,details},requestId}`; permission failures use `FORBIDDEN`, state conflicts use `REVIEW_STATE_CONFLICT`, and persistence failures use `PERSISTENCE_FAILED`.
 - Audit metadata is allow-listed identifiers/status only; prompt, output, file contents, credentials, and bearer tokens are never stored.
 - M0 contract tests and all M2 tests must continue to pass.
@@ -359,4 +359,3 @@ Start the API, upload the canonical package with `X-User-Role: maintainer`, conf
 - [ ] **Step 4: Record evidence**
 
 Document commands, status codes, role checks, restart persistence, endpoint samples, and remaining M4 boundaries in `docs/project/M3-governance-loop-status.md`; update the Web README and design QA notes to remove the “review/install placeholder” statement.
-

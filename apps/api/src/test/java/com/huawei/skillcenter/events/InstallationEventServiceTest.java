@@ -49,6 +49,37 @@ class InstallationEventServiceTest {
         assertThat(store.findInstallation("installation-1").orElseThrow().lastEventId()).isEqualTo(event.eventId().toString());
     }
 
+    @Test
+    void duplicateInstallationEventRemainsIdempotentAfterServiceRestart() {
+        InstallationEvent event = validInstallEvent();
+        assertThat(service.ingest(event).duplicate()).isFalse();
+
+        GovernanceStore restartedStore = new GovernanceStore(tempDir.resolve("state.json"), List.of());
+        InstallationEventService restarted = new InstallationEventService(restartedStore);
+
+        assertThat(restarted.ingest(event)).isEqualTo(new InstallationEventService.EventResult(
+                event.eventId(), true, true, null));
+        assertThat(restartedStore.snapshot().audits()).filteredOn(audit ->
+                "INSTALLATION_EVENT_ACCEPTED".equals(audit.action())).hasSize(1);
+    }
+
+    @Test
+    void conflictingInstallationEventRemainsRejectedAfterServiceRestart() {
+        InstallationEvent event = validInstallEvent();
+        assertThat(service.ingest(event).duplicate()).isFalse();
+
+        InstallationEvent conflicting = new InstallationEvent(event.schemaVersion(), event.eventId(),
+                event.occurredAt(), event.skillId(), event.version(), event.subject(), event.client(),
+                event.deviceId(), event.action(), event.method(), "failure", "INSTALLATION_FAILED");
+        GovernanceStore restartedStore = new GovernanceStore(tempDir.resolve("state.json"), List.of());
+        InstallationEventService restarted = new InstallationEventService(restartedStore);
+
+        assertThat(restarted.ingest(conflicting)).isEqualTo(new InstallationEventService.EventResult(
+                event.eventId(), false, false, "EVENT_ID_CONFLICT"));
+        assertThat(restartedStore.findInstallation("installation-1").orElseThrow().status())
+                .isEqualTo("installed");
+    }
+
     private InstallationRecord requestedInstallation() {
         return new InstallationRecord("installation-1", "manifest-1", "eox-query", "1.2.0",
                 "codex", "1.0.0", "alice", "requested", Instant.parse("2026-08-17T08:00:00Z"),

@@ -159,8 +159,13 @@ public final class RedisSkillSearchRefreshEventBus implements SkillSearchRefresh
     }
 
     private boolean isBusyGroup(RuntimeException exception) {
-        String message = exception.getMessage();
-        return message != null && message.toUpperCase(java.util.Locale.ROOT).contains("BUSYGROUP");
+        for (Throwable current = exception; current != null; current = current.getCause()) {
+            String message = current.getMessage();
+            if (message != null && message.toUpperCase(java.util.Locale.ROOT).contains("BUSYGROUP")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<MapRecord<String, Object, Object>> concat(List<MapRecord<String, Object, Object>> first,

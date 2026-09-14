@@ -193,8 +193,9 @@ public class PersistenceArtifactCatalog {
 
     private String physicalBackend(String artifactId, PersistenceControlProperties properties) {
         if ("governance-state".equals(artifactId)
-                && "postgresql".equals(properties.normalizedGovernanceBackend())) {
-            return "postgresql";
+                && ("mysql".equals(properties.normalizedGovernanceBackend())
+                || "postgresql".equals(properties.normalizedGovernanceBackend()))) {
+            return properties.normalizedGovernanceBackend();
         }
         if ("production-evidence".equals(artifactId)
                 && "postgresql".equals(properties.normalizedProductionEvidenceBackend())) {

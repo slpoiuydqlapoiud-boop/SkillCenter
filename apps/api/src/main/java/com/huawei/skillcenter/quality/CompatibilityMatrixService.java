@@ -7,6 +7,7 @@ import com.huawei.skillcenter.governance.Actor;
 import com.huawei.skillcenter.governance.AuditEvent;
 import com.huawei.skillcenter.governance.GovernanceStore;
 import com.huawei.skillcenter.governance.RoleGuard;
+import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
@@ -24,6 +25,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Service
 public class CompatibilityMatrixService {
@@ -33,7 +36,7 @@ public class CompatibilityMatrixService {
     private final GovernanceStore governanceStore;
     private final Clock clock;
     private final Set<String> cancellationRequests = ConcurrentHashMap.newKeySet();
-    private final Set<String> activeWorkers = ConcurrentHashMap.newKeySet();
+    private final ConcurrentHashMap<String, CompletableFuture<Void>> activeWorkers = new ConcurrentHashMap<>();
 
     @Autowired
     public CompatibilityMatrixService(QualityEvaluationService evaluationService,
@@ -119,14 +122,56 @@ public class CompatibilityMatrixService {
     }
 
     private void startOrchestration(String matrixRunId) {
-        if (!activeWorkers.add(matrixRunId)) return;
-        CompletableFuture.runAsync(() -> {
+        CompletableFuture<Void> completion = new CompletableFuture<>();
+        if (activeWorkers.putIfAbsent(matrixRunId, completion) != null) return;
+        try {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    orchestrate(matrixRunId);
+                } finally {
+                    activeWorkers.remove(matrixRunId, completion);
+                    completion.complete(null);
+                }
+            });
+        } catch (RuntimeException exception) {
+            activeWorkers.remove(matrixRunId, completion);
+            completion.completeExceptionally(exception);
+            throw exception;
+        }
+    }
+
+    /**
+     * Waits for matrix orchestration and child evaluation workers already started by this service.
+     * Cancellation remains cooperative and non-blocking; this method is for shutdown and cleanup.
+     */
+    boolean awaitQuiescence(Duration timeout) {
+        if (timeout == null || timeout.isNegative() || timeout.isZero()) {
+            throw new IllegalArgumentException("timeout must be positive");
+        }
+        long deadline = System.nanoTime() + timeout.toNanos();
+        while (true) {
+            CompletableFuture<?>[] pending = activeWorkers.values().toArray(CompletableFuture[]::new);
+            if (pending.length == 0) break;
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0) return false;
             try {
-                orchestrate(matrixRunId);
-            } finally {
-                activeWorkers.remove(matrixRunId);
+                CompletableFuture.allOf(pending).get(remaining, TimeUnit.NANOSECONDS);
+            } catch (TimeoutException exception) {
+                return false;
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                return false;
+            } catch (java.util.concurrent.ExecutionException exception) {
+                // The orchestration already records a stable failure state.
             }
-        });
+        }
+        long remaining = deadline - System.nanoTime();
+        return remaining > 0 && evaluationService.awaitQuiescence(Duration.ofNanos(remaining));
+    }
+
+    @PreDestroy
+    void stopWorkers() {
+        awaitQuiescence(Duration.ofSeconds(5));
     }
 
     public List<CompatibilityMatrixRun> list(String skillId, String skillVersion, String status,
